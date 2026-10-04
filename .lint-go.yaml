@@ -142,14 +142,11 @@ golangci:
         - path: ^gvc/fontfind\.go$
           linters: # 4 findings
             - gochecknoglobals # 1
-            - gocognit # 1
             - modernize # 1
         - path: ^gvc/image_renderer\.go$
           linters: # 124 findings
             - gochecknoglobals # 5
             - errcheck # 2
-            - nilerr # 2
-            - nilnil # 2
             - embeddedstructfieldcheck # 1
         - path: ^gvc/init\.go$
           linters: # 6 findings
@@ -158,7 +155,6 @@ golangci:
           linters: # 440 findings
             - errcheck # 69
             - gochecknoglobals # 47
-            - gocognit # 1
             - interfacebloat # 1
             - unconvert # 1
         - path: ^internal/wasm/ext\.go$

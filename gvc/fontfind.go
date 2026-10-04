@@ -31,9 +31,23 @@ func findFont(name string) (string, error) {
 		return name, nil
 	}
 
-	want := strings.ToLower(filepath.Base(name))
+	match := fontNameMatcher(filepath.Base(name))
+	for _, dir := range fontDirectories() {
+		if found := findFontInDir(dir, match); found != "" {
+			return found, nil
+		}
+	}
 
-	var wantBare string
+	return "", fmt.Errorf("%w: %s", ErrFontNotFound, name)
+}
+
+// fontNameMatcher reports whether a file name is the requested font, by the
+// name as given, with any font suffix added, or with the given suffix
+// removed; case does not count.
+func fontNameMatcher(requested string) func(base string) bool {
+	want := strings.ToLower(requested)
+
+	wantBare := ""
 
 	for _, suffix := range fontSuffixes {
 		if strings.HasSuffix(want, suffix) {
@@ -43,37 +57,41 @@ func findFont(name string) (string, error) {
 		}
 	}
 
-	for _, dir := range fontDirectories() {
-		found := ""
-		_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return nil //nolint:nilerr // an unreadable entry is skipped, not fatal
-			}
-
-			base := strings.ToLower(d.Name())
-			if base == want || (wantBare != "" && base == wantBare) {
-				found = path
-
-				return fs.SkipAll
-			}
-
-			for _, suffix := range fontSuffixes {
-				if base == want+suffix {
-					found = path
-
-					return fs.SkipAll
-				}
-			}
-
-			return nil
-		})
-
-		if found != "" {
-			return found, nil
+	return func(base string) bool {
+		base = strings.ToLower(base)
+		if base == want || (wantBare != "" && base == wantBare) {
+			return true
 		}
-	}
 
-	return "", fmt.Errorf("%w: %s", ErrFontNotFound, name)
+		for _, suffix := range fontSuffixes {
+			if base == want+suffix {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+// findFontInDir walks one font directory and returns the first file the
+// matcher accepts, or "" when there is none; unreadable entries are skipped.
+func findFontInDir(dir string, match func(string) bool) string {
+	found := ""
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil //nolint:nilerr // an unreadable entry is skipped, not fatal
+		}
+
+		if match(d.Name()) {
+			found = path
+
+			return fs.SkipAll
+		}
+
+		return nil
+	})
+
+	return found
 }
 
 // fontDirectories lists where the running platform keeps fonts, user

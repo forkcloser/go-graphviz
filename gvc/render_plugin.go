@@ -354,6 +354,19 @@ func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, e
 	}, nil
 }
 
+// jobCallback is the shape most render callbacks share: Graphviz hands the
+// job and nothing else.
+type jobCallback = func(ctx context.Context, job *wasm.Job) error
+
+func toPoints(p []*wasm.PointFloat) []*PointFloat {
+	points := make([]*PointFloat, len(p))
+	for i := range p {
+		points[i] = toPointFloat(p[i])
+	}
+
+	return points
+}
+
 func newRenderEngine(ctx context.Context, engine RenderEngine) (*wasm.RenderEngine, error) {
 	renderEngine, err := wasm.NewRenderEngine(ctx)
 	if err != nil {
@@ -361,30 +374,113 @@ func newRenderEngine(ctx context.Context, engine RenderEngine) (*wasm.RenderEngi
 	}
 
 	ptr := wasm.WasmPtr(renderEngine)
-	if err := renderEngine.SetBeginJob(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginJob(ctx, toJob(job))
-	}, ptr)); err != nil {
+
+	// The begin/end pairs all take the job alone; the table keeps one
+	// registration per line and one error path for all of them.
+	jobCallbacks := []struct {
+		set  func(context.Context, *wasm.CallbackFunc[jobCallback]) error
+		call func(context.Context, *Job) error
+	}{
+		{renderEngine.SetBeginJob, engine.BeginJob},
+		{renderEngine.SetEndJob, engine.EndJob},
+		{renderEngine.SetBeginGraph, engine.BeginGraph},
+		{renderEngine.SetEndGraph, engine.EndGraph},
+		{renderEngine.SetEndLayer, engine.EndLayer},
+		{renderEngine.SetBeginPage, engine.BeginPage},
+		{renderEngine.SetEndPage, engine.EndPage},
+		{renderEngine.SetBeginCluster, engine.BeginCluster},
+		{renderEngine.SetEndCluster, engine.EndCluster},
+		{renderEngine.SetBeginNodes, engine.BeginNodes},
+		{renderEngine.SetEndNodes, engine.EndNodes},
+		{renderEngine.SetBeginEdges, engine.BeginEdges},
+		{renderEngine.SetEndEdges, engine.EndEdges},
+		{renderEngine.SetBeginNode, engine.BeginNode},
+		{renderEngine.SetEndNode, engine.EndNode},
+		{renderEngine.SetBeginEdge, engine.BeginEdge},
+		{renderEngine.SetEndEdge, engine.EndEdge},
+		{renderEngine.SetEndAnchor, engine.EndAnchor},
+		{renderEngine.SetEndLabel, engine.EndLabel},
+	}
+	for _, cb := range jobCallbacks {
+		call := cb.call
+		if err := cb.set(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
+			return call(ctx, toJob(job))
+		}, ptr)); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := setRenderEngineShapes(ctx, renderEngine, engine, ptr); err != nil {
 		return nil, err
 	}
 
-	if err := renderEngine.SetEndJob(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndJob(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
+	return renderEngine, setRenderEngineText(ctx, renderEngine, engine, ptr)
+}
+
+// setRenderEngineShapes registers the geometry callbacks, each with its own
+// argument shape.
+func setRenderEngineShapes(
+	ctx context.Context,
+	renderEngine *wasm.RenderEngine,
+	engine RenderEngine,
+	ptr uint64,
+) error {
+	if err := renderEngine.SetEllipse(
+		ctx,
+		wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, filled int) error {
+			return engine.Ellipse(ctx, toJob(job), toPoints(p), filled > 0)
+		}, ptr),
+	); err != nil {
+		return err
 	}
 
-	if err := renderEngine.SetBeginGraph(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginGraph(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
+	if err := renderEngine.SetPolygon(
+		ctx,
+		wasm.CreateCallbackFunc(
+			func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, _ uint32, filled int) error {
+				return engine.Polygon(ctx, toJob(job), toPoints(p), filled > 0)
+			},
+			ptr,
+		),
+	); err != nil {
+		return err
 	}
 
-	if err := renderEngine.SetEndGraph(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndGraph(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
+	if err := renderEngine.SetBeziercurve(
+		ctx,
+		wasm.CreateCallbackFunc(
+			func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, _ uint32, filled int) error {
+				return engine.BezierCurve(ctx, toJob(job), toPoints(p), filled > 0)
+			},
+			ptr,
+		),
+	); err != nil {
+		return err
 	}
 
+	if err := renderEngine.SetPolyline(
+		ctx,
+		wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, _ uint32) error {
+			return engine.Polyline(ctx, toJob(job), toPoints(p))
+		}, ptr),
+	); err != nil {
+		return err
+	}
+
+	return renderEngine.SetLibraryShape(
+		ctx,
+		wasm.CreateCallbackFunc(
+			func(ctx context.Context, job *wasm.Job, shapeName string, p []*wasm.PointFloat, _ uint32, filled int) error {
+				return engine.LibraryShape(ctx, toJob(job), shapeName, toPoints(p), filled > 0)
+			},
+			ptr,
+		),
+	)
+}
+
+// setRenderEngineText registers the callbacks that carry text, labels,
+// layers, anchors and colours.
+func setRenderEngineText(ctx context.Context, renderEngine *wasm.RenderEngine, engine RenderEngine, ptr uint64) error {
 	if err := renderEngine.SetBeginLayer(
 		ctx,
 		wasm.CreateCallbackFunc(
@@ -394,85 +490,7 @@ func newRenderEngine(ctx context.Context, engine RenderEngine) (*wasm.RenderEngi
 			ptr,
 		),
 	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndLayer(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndLayer(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetBeginPage(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginPage(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndPage(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndPage(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetBeginCluster(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginCluster(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndCluster(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndCluster(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetBeginNodes(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginNodes(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndNodes(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndNodes(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetBeginEdges(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginEdges(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndEdges(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndEdges(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetBeginNode(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginNode(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndNode(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndNode(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetBeginEdge(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.BeginEdge(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndEdge(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndEdge(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := renderEngine.SetBeginAnchor(
@@ -481,13 +499,7 @@ func newRenderEngine(ctx context.Context, engine RenderEngine) (*wasm.RenderEngi
 			return engine.BeginAnchor(ctx, toJob(job), href, tooltip, target, id)
 		}, ptr),
 	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndAnchor(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndAnchor(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := renderEngine.SetBeginLabel(
@@ -496,13 +508,7 @@ func newRenderEngine(ctx context.Context, engine RenderEngine) (*wasm.RenderEngi
 			return engine.BeginLabel(ctx, toJob(job), LabelType(typ))
 		}, ptr),
 	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetEndLabel(ctx, wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job) error {
-		return engine.EndLabel(ctx, toJob(job))
-	}, ptr)); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := renderEngine.SetTextspan(
@@ -514,7 +520,7 @@ func newRenderEngine(ctx context.Context, engine RenderEngine) (*wasm.RenderEngi
 			ptr,
 		),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := renderEngine.SetResolveColor(
@@ -523,98 +529,15 @@ func newRenderEngine(ctx context.Context, engine RenderEngine) (*wasm.RenderEngi
 			return engine.ResolveColor(ctx, toJob(job), toColor(c))
 		}, ptr),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
-	if err := renderEngine.SetEllipse(
-		ctx,
-		wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, filled int) error {
-			points := make([]*PointFloat, len(p))
-			for i := range p {
-				points[i] = toPointFloat(p[i])
-			}
-
-			return engine.Ellipse(ctx, toJob(job), points, filled > 0)
-		}, ptr),
-	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetPolygon(
-		ctx,
-		wasm.CreateCallbackFunc(
-			func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, _ uint32, filled int) error {
-				points := make([]*PointFloat, len(p))
-				for i := range p {
-					points[i] = toPointFloat(p[i])
-				}
-
-				return engine.Polygon(ctx, toJob(job), points, filled > 0)
-			},
-			ptr,
-		),
-	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetBeziercurve(
-		ctx,
-		wasm.CreateCallbackFunc(
-			func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, _ uint32, filled int) error {
-				points := make([]*PointFloat, len(p))
-				for i := range p {
-					points[i] = toPointFloat(p[i])
-				}
-
-				return engine.BezierCurve(ctx, toJob(job), points, filled > 0)
-			},
-			ptr,
-		),
-	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetPolyline(
-		ctx,
-		wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job, p []*wasm.PointFloat, _ uint32) error {
-			points := make([]*PointFloat, len(p))
-			for i := range p {
-				points[i] = toPointFloat(p[i])
-			}
-
-			return engine.Polyline(ctx, toJob(job), points)
-		}, ptr),
-	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetComment(
+	return renderEngine.SetComment(
 		ctx,
 		wasm.CreateCallbackFunc(func(ctx context.Context, job *wasm.Job, comment string) error {
 			return engine.Comment(ctx, toJob(job), comment)
 		}, ptr),
-	); err != nil {
-		return nil, err
-	}
-
-	if err := renderEngine.SetLibraryShape(
-		ctx,
-		wasm.CreateCallbackFunc(
-			func(ctx context.Context, job *wasm.Job, shapeName string, p []*wasm.PointFloat, _ uint32, filled int) error {
-				points := make([]*PointFloat, len(p))
-				for i := range p {
-					points[i] = toPointFloat(p[i])
-				}
-
-				return engine.LibraryShape(ctx, toJob(job), shapeName, points, filled > 0)
-			},
-			ptr,
-		),
-	); err != nil {
-		return nil, err
-	}
-
-	return renderEngine, nil
+	)
 }
 
 type LabelType int
