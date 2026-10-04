@@ -23,89 +23,6 @@ func toDict(v *wasm.Dict) *Dict {
 	return &Dict{wasm: v}
 }
 
-func (d *Dict) getWasm() *wasm.Dict {
-	return d.wasm
-}
-
-type Link struct {
-	wasm *wasm.DictLink
-}
-
-func toLink(v *wasm.DictLink) *Link {
-	if v == nil {
-		return nil
-	}
-
-	return &Link{wasm: v}
-}
-
-func (l *Link) getWasm() *wasm.DictLink {
-	return l.wasm
-}
-
-type Method struct {
-	wasm *wasm.DictMethod
-}
-
-func toMethod(v *wasm.DictMethod) *Method {
-	if v == nil {
-		return nil
-	}
-
-	return &Method{wasm: v}
-}
-
-func (m *Method) getWasm() *wasm.DictMethod {
-	return m.wasm
-}
-
-type Disc struct {
-	wasm *wasm.DictDisc
-}
-
-func toDisc(v *wasm.DictDisc) *Disc {
-	if v == nil {
-		return nil
-	}
-
-	return &Disc{wasm: v}
-}
-
-func (d *Disc) getWasm() *wasm.DictDisc {
-	return d.wasm
-}
-
-type Stat struct {
-	wasm *wasm.DictStat
-}
-
-func (s *Stat) getWasm() *wasm.DictStat {
-	return s.wasm
-}
-
-type (
-	Search  func(*Dict, any, int) any
-	Make    func(*Dict, any, *Disc) any
-	Memory  func(*Dict, any, uint, *Disc) any
-	Free    func(*Dict, any, *Disc)
-	Compare func(*Dict, any, any, *Disc) int
-	Hash    func(*Dict, any, *Disc) uint
-	Event   func(*Dict, int, any, *Disc) int
-)
-
-func StrHash(a1 any, a2 int) (uint, error) {
-	return wasm.StrHash(context.Background(), a1, a2)
-}
-
-func Open(disc *Disc, mtd *Method) (*Dict, error) {
-	res, err := wasm.NewDictWithDisc(context.Background(), disc.getWasm(), mtd.getWasm())
-	if err != nil {
-		return nil, err
-	}
-
-	return toDict(res), nil
-}
-
 func (d *Dict) Close() error {
 	res, err := d.wasm.Close(context.Background())
 	if err != nil {
@@ -216,6 +133,22 @@ func (d *Dict) Stat(a0 *Stat, a1 int) (int, error) {
 	return res, nil
 }
 
+func (d *Dict) getWasm() *wasm.Dict {
+	return d.wasm
+}
+
+type Link struct {
+	wasm *wasm.DictLink
+}
+
+func toLink(v *wasm.DictLink) *Link {
+	if v == nil {
+		return nil
+	}
+
+	return &Link{wasm: v}
+}
+
 func (l *Link) Right() *Link {
 	return toLink(l.wasm.GetRight())
 }
@@ -240,6 +173,73 @@ func (l *Link) Hash() uint {
 // parameter is too.
 func (l *Link) SetHash(v uint32) {
 	l.wasm.SetHash(v)
+}
+
+func (l *Link) getWasm() *wasm.DictLink {
+	return l.wasm
+}
+
+type Method struct {
+	wasm *wasm.DictMethod
+}
+
+func toMethod(v *wasm.DictMethod) *Method {
+	if v == nil {
+		return nil
+	}
+
+	return &Method{wasm: v}
+}
+
+func (m *Method) getWasm() *wasm.DictMethod {
+	return m.wasm
+}
+
+type Disc struct {
+	wasm *wasm.DictDisc
+}
+
+func toDisc(v *wasm.DictDisc) *Disc {
+	if v == nil {
+		return nil
+	}
+
+	return &Disc{wasm: v}
+}
+
+func (d *Disc) getWasm() *wasm.DictDisc {
+	return d.wasm
+}
+
+type Stat struct {
+	wasm *wasm.DictStat
+}
+
+func (s *Stat) getWasm() *wasm.DictStat {
+	return s.wasm
+}
+
+type (
+	Search  func(*Dict, any, int) any
+	Make    func(*Dict, any, *Disc) any
+	Memory  func(*Dict, any, uint, *Disc) any
+	Free    func(*Dict, any, *Disc)
+	Compare func(*Dict, any, any, *Disc) int
+	Hash    func(*Dict, any, *Disc) uint
+	Event   func(*Dict, int, any, *Disc) int
+)
+
+func StrHash(a1 any, a2 int) (uint, error) {
+	return wasm.StrHash(context.Background(), a1, a2)
+}
+
+func Open(disc *Disc, mtd *Method) (*Dict, error) {
+	res, err := wasm.NewDictWithDisc(context.Background(), disc.getWasm(), mtd.getWasm())
+	if err != nil {
+		return nil, err
+	}
+
+	return toDict(res), nil
 }
 
 // ErrDict is the error every failed libcdt call wraps; the message Graphviz

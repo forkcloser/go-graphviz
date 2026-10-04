@@ -108,7 +108,6 @@ golangci:
         - path: ^cdt/cdt\.go$
           linters: # 48 findings
             - errcheck # 3
-            - funcorder # 2
         - path: ^cgraph/attribute\.go$
           linters: # 487 findings
             - errcheck # 210
@@ -117,7 +116,6 @@ golangci:
         - path: ^cgraph/cgraph\.go$
           linters: # 280 findings
             - errcheck # 49
-            - funcorder # 11
             - gochecknoglobals # 5
             - varnamelen # 3
         - path: ^cgraph/init\.go$
@@ -145,7 +143,6 @@ golangci:
           linters: # 30 findings
             - gochecknoglobals # 7
             - errcheck # 4
-            - funcorder # 1
         - path: ^gvc/fontfind\.go$
           linters: # 4 findings
             - gochecknoglobals # 1
@@ -156,12 +153,10 @@ golangci:
             - varnamelen # 2
         - path: ^gvc/image_plugin\.go$
           linters: # 13 findings
-            - funcorder # 1
             - varnamelen # 1
         - path: ^gvc/image_renderer\.go$
           linters: # 124 findings
             - varnamelen # 17
-            - funcorder # 13
             - gochecknoglobals # 5
             - errcheck # 2
             - nilerr # 2
@@ -174,7 +169,6 @@ golangci:
           linters: # 440 findings
             - errcheck # 69
             - gochecknoglobals # 47
-            - funcorder # 13
             - varnamelen # 2
             - gocognit # 1
             - interfacebloat # 1
