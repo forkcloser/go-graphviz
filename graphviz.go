@@ -48,26 +48,26 @@ const (
 )
 
 func New(ctx context.Context) (*Graphviz, error) {
-	c, err := gvc.New(ctx)
+	gctx, err := gvc.New(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Graphviz{
-		ctx:    c,
+		ctx:    gctx,
 		dir:    Directed,
 		layout: DOT,
 	}, nil
 }
 
 func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Graphviz, error) {
-	c, err := gvc.NewWithPlugins(ctx, plugins...)
+	gctx, err := gvc.NewWithPlugins(ctx, plugins...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Graphviz{
-		ctx:    c,
+		ctx:    gctx,
 		dir:    Directed,
 		layout: DOT,
 	}, nil

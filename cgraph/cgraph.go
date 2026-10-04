@@ -578,8 +578,8 @@ func (g *Graph) SubGraphByName(name string) (*Graph, error) {
 // it does not exist. Graphviz 13 made agidsubg a pure lookup, so creation
 // goes through agsubg under the ID's decimal name; the subgraph's ID is then
 // allocated by the graph's ID discipline, not forced to id.
-func (g *Graph) CreateSubGraphByID(id ID) (*Graph, error) {
-	res, err := g.wasm.IdSubGraph(context.Background(), uint64(id))
+func (g *Graph) CreateSubGraphByID(graphID ID) (*Graph, error) {
+	res, err := g.wasm.IdSubGraph(context.Background(), uint64(graphID))
 	if err != nil {
 		return nil, err
 	}
@@ -588,7 +588,7 @@ func (g *Graph) CreateSubGraphByID(id ID) (*Graph, error) {
 		return toGraph(res), nil
 	}
 
-	created, err := g.wasm.SubGraph(context.Background(), strconv.FormatUint(uint64(id), 10), 1)
+	created, err := g.wasm.SubGraph(context.Background(), strconv.FormatUint(uint64(graphID), 10), 1)
 	if err != nil {
 		return nil, err
 	}
@@ -1487,31 +1487,31 @@ func Open(name string, desc *Desc, disc *Disc) (*Graph, error) {
 	return g, nil
 }
 
-func setupNodeLabelIfEmpty(g *Graph) error {
-	n, err := g.FirstNode()
+func setupNodeLabelIfEmpty(graph *Graph) error {
+	node, err := graph.FirstNode()
 	if err != nil {
 		return err
 	}
 
-	if n == nil {
+	if node == nil {
 		return nil
 	}
 
-	if err = setLabelIfEmpty(n); err != nil {
+	if err = setLabelIfEmpty(node); err != nil {
 		return err
 	}
 
 	for {
-		n, err = g.NextNode(n)
+		node, err = graph.NextNode(node)
 		if err != nil {
 			return err
 		}
 
-		if n == nil {
+		if node == nil {
 			break
 		}
 
-		if err := setLabelIfEmpty(n); err != nil {
+		if err := setLabelIfEmpty(node); err != nil {
 			return err
 		}
 	}

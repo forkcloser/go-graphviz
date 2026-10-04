@@ -88,13 +88,13 @@ func buildLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImage
 }
 
 func newLoadImageEngine(ctx context.Context, engine LoadImageEngine) (*wasm.LoadImageEngine, error) {
-	e, err := wasm.NewLoadImageEngine(ctx)
+	loadEngine, err := wasm.NewLoadImageEngine(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ptr := wasm.WasmPtr(e)
-	if err := e.SetLoadImage(
+	ptr := wasm.WasmPtr(loadEngine)
+	if err := loadEngine.SetLoadImage(
 		ctx,
 		wasm.CreateCallbackFunc(
 			func(ctx context.Context, job *wasm.Job, shape *wasm.UserShape, bf *wasm.BoxFloat, filled bool) error {
@@ -106,5 +106,5 @@ func newLoadImageEngine(ctx context.Context, engine LoadImageEngine) (*wasm.Load
 		return nil, err
 	}
 
-	return e, nil
+	return loadEngine, nil
 }
