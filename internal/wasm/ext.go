@@ -85,9 +85,9 @@ func SymListZero(ctx context.Context) (*SymList, error) {
 
 var fsMu sync.Mutex
 
-func SetWasmFileSystem(fs fs.FS) {
+func SetWasmFileSystem(fsys fs.FS) {
 	fsMu.Lock()
-	mod.fs.subFS = fs
+	mod.fs.subFS = fsys
 	fsMu.Unlock()
 }
 

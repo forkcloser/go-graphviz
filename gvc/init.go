@@ -5,12 +5,19 @@ import (
 )
 
 func init() {
-	getRenderEnginePtr := func(job *wasm.Job) uint64 {
-		return job.GetGvc().GetApi()[wasm.API_RENDER].GetTypeptr().GetEngine().(uint64)
+	// The engine slot holds the pointer the plugin registered; anything else
+	// is a binding error, and 0 hands Graphviz a null engine, which fails the
+	// job instead of calling through a bad pointer.
+	enginePtr := func(job *wasm.Job, api wasm.API) uint64 {
+		ptr, ok := job.GetGvc().GetApi()[api].GetTypeptr().GetEngine().(uint64)
+		if !ok {
+			return 0
+		}
+
+		return ptr
 	}
-	getLoadImageEnginePtr := func(job *wasm.Job) uint64 {
-		return job.GetGvc().GetApi()[wasm.API_LOADIMAGE].GetTypeptr().GetEngine().(uint64)
-	}
+	getRenderEnginePtr := func(job *wasm.Job) uint64 { return enginePtr(job, wasm.API_RENDER) }
+	getLoadImageEnginePtr := func(job *wasm.Job) uint64 { return enginePtr(job, wasm.API_LOADIMAGE) }
 
 	wasm.Register_RenderEngine_BeginJob(func(job *wasm.Job) (uint64, error) { return getRenderEnginePtr(job), nil })
 	wasm.Register_RenderEngine_EndJob(func(job *wasm.Job) (uint64, error) { return getRenderEnginePtr(job), nil })
@@ -68,7 +75,7 @@ func init() {
 	)
 
 	wasm.Register_LoadImageEngine_LoadImage(
-		func(job *wasm.Job, shape *wasm.UserShape, bf *wasm.BoxFloat, filled bool) (uint64, error) {
+		func(job *wasm.Job, _ *wasm.UserShape, _ *wasm.BoxFloat, _ bool) (uint64, error) {
 			return getLoadImageEnginePtr(job), nil
 		},
 	)

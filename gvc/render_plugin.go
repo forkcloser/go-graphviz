@@ -57,127 +57,127 @@ type RenderEngine interface {
 
 type DefaultRenderEngine struct{}
 
-func (e *DefaultRenderEngine) BeginJob(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginJob(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndJob(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndJob(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginGraph(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginGraph(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndGraph(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndGraph(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginLayer(_ context.Context, _ *Job, layerName string, layerNum, numLayers int) error {
+func (*DefaultRenderEngine) BeginLayer(_ context.Context, _ *Job, _ string, _, _ int) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndLayer(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndLayer(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginPage(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginPage(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndPage(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndPage(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginCluster(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginCluster(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndCluster(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndCluster(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginNodes(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginNodes(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndNodes(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndNodes(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginEdges(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginEdges(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndEdges(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndEdges(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginNode(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginNode(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndNode(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndNode(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginEdge(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) BeginEdge(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndEdge(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndEdge(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginAnchor(_ context.Context, _ *Job, _, _, _, _ string) error {
+func (*DefaultRenderEngine) BeginAnchor(_ context.Context, _ *Job, _, _, _, _ string) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndAnchor(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndAnchor(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BeginLabel(_ context.Context, _ *Job, _ LabelType) error {
+func (*DefaultRenderEngine) BeginLabel(_ context.Context, _ *Job, _ LabelType) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) EndLabel(_ context.Context, _ *Job) error {
+func (*DefaultRenderEngine) EndLabel(_ context.Context, _ *Job) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) TextSpan(_ context.Context, _ *Job, _ *PointFloat, _ *TextSpan) error {
+func (*DefaultRenderEngine) TextSpan(_ context.Context, _ *Job, _ *PointFloat, _ *TextSpan) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) ResolveColor(_ context.Context, _ *Job, _ *Color) error {
+func (*DefaultRenderEngine) ResolveColor(_ context.Context, _ *Job, _ *Color) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) Ellipse(_ context.Context, _ *Job, _ []*PointFloat, _ bool) error {
+func (*DefaultRenderEngine) Ellipse(_ context.Context, _ *Job, _ []*PointFloat, _ bool) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) Polygon(_ context.Context, _ *Job, _ []*PointFloat, _ bool) error {
+func (*DefaultRenderEngine) Polygon(_ context.Context, _ *Job, _ []*PointFloat, _ bool) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) BezierCurve(_ context.Context, _ *Job, _ []*PointFloat, _ bool) error {
+func (*DefaultRenderEngine) BezierCurve(_ context.Context, _ *Job, _ []*PointFloat, _ bool) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) Polyline(_ context.Context, _ *Job, _ []*PointFloat) error {
+func (*DefaultRenderEngine) Polyline(_ context.Context, _ *Job, _ []*PointFloat) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) Comment(_ context.Context, _ *Job, _ string) error {
+func (*DefaultRenderEngine) Comment(_ context.Context, _ *Job, _ string) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) LibraryShape(_ context.Context, _ *Job, _ string, _ []*PointFloat, _ bool) error {
+func (*DefaultRenderEngine) LibraryShape(_ context.Context, _ *Job, _ string, _ []*PointFloat, _ bool) error {
 	return nil
 }
 
-func (e *DefaultRenderEngine) LoadImage(_ context.Context, _ *Job, _ *UserShape, _ *BoxFloat, _ bool) error {
+func (*DefaultRenderEngine) LoadImage(_ context.Context, _ *Job, _ *UserShape, _ *BoxFloat, _ bool) error {
 	return nil
 }
 
@@ -247,15 +247,15 @@ func NewRenderPlugin(
 		opt(cfg)
 	}
 
-	return newRenderPlugin(ctx, cfg)
+	return buildRenderPlugin(ctx, cfg)
 }
 
 func PNGRenderPlugin(ctx context.Context) (*RenderPlugin, error) {
-	return newRenderPlugin(ctx, defaultRenderPluginConfig("png", newPNGRenderEngine()))
+	return buildRenderPlugin(ctx, defaultRenderPluginConfig("png", newPNGRenderEngine()))
 }
 
 func JPGRenderPlugin(ctx context.Context) (*RenderPlugin, error) {
-	return newRenderPlugin(ctx, defaultRenderPluginConfig("jpg", newJPGRenderEngine()))
+	return buildRenderPlugin(ctx, defaultRenderPluginConfig("jpg", newJPGRenderEngine()))
 }
 
 func defaultRenderPluginConfig(typ string, engine RenderEngine) *renderConfig {
@@ -289,7 +289,7 @@ type renderConfig struct {
 	RenderEngine RenderEngine
 }
 
-func newRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, error) {
+func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, error) {
 	plg, err := wasm.NewPluginAPI(ctx)
 	if err != nil {
 		return nil, err
@@ -853,76 +853,76 @@ func (a *PostScriptAlias) getWasm() *wasm.PostscriptAlias {
 	return a.wasm
 }
 
-func (s *PostScriptAlias) Name() string {
-	return s.wasm.GetName()
+func (a *PostScriptAlias) Name() string {
+	return a.wasm.GetName()
 }
 
-func (s *PostScriptAlias) SetName(v string) {
-	s.wasm.SetName(v)
+func (a *PostScriptAlias) SetName(v string) {
+	a.wasm.SetName(v)
 }
 
-func (s *PostScriptAlias) Family() string {
-	return s.wasm.GetFamily()
+func (a *PostScriptAlias) Family() string {
+	return a.wasm.GetFamily()
 }
 
-func (s *PostScriptAlias) SetFamily(v string) {
-	s.wasm.SetFamily(v)
+func (a *PostScriptAlias) SetFamily(v string) {
+	a.wasm.SetFamily(v)
 }
 
-func (s *PostScriptAlias) Weight() string {
-	return s.wasm.GetWeight()
+func (a *PostScriptAlias) Weight() string {
+	return a.wasm.GetWeight()
 }
 
-func (s *PostScriptAlias) SetWeight(v string) {
-	s.wasm.SetWeight(v)
+func (a *PostScriptAlias) SetWeight(v string) {
+	a.wasm.SetWeight(v)
 }
 
-func (s *PostScriptAlias) Stretch() string {
-	return s.wasm.GetStretch()
+func (a *PostScriptAlias) Stretch() string {
+	return a.wasm.GetStretch()
 }
 
-func (s *PostScriptAlias) SetStretch(v string) {
-	s.wasm.SetStretch(v)
+func (a *PostScriptAlias) SetStretch(v string) {
+	a.wasm.SetStretch(v)
 }
 
-func (s *PostScriptAlias) Style() string {
-	return s.wasm.GetStyle()
+func (a *PostScriptAlias) Style() string {
+	return a.wasm.GetStyle()
 }
 
-func (s *PostScriptAlias) SetStyle(v string) {
-	s.wasm.SetStyle(v)
+func (a *PostScriptAlias) SetStyle(v string) {
+	a.wasm.SetStyle(v)
 }
 
-func (s *PostScriptAlias) XFigCode() int {
-	return int(s.wasm.GetXfigCode())
+func (a *PostScriptAlias) XFigCode() int {
+	return int(a.wasm.GetXfigCode())
 }
 
-func (s *PostScriptAlias) SetXFigCode(v int) {
-	s.wasm.SetXfigCode(int64(v))
+func (a *PostScriptAlias) SetXFigCode(v int) {
+	a.wasm.SetXfigCode(int64(v))
 }
 
-func (s *PostScriptAlias) SVGFontFamily() string {
-	return s.wasm.GetSvgFontFamily()
+func (a *PostScriptAlias) SVGFontFamily() string {
+	return a.wasm.GetSvgFontFamily()
 }
 
-func (s *PostScriptAlias) SetSVGFontFamily(v string) {
-	s.wasm.SetSvgFontFamily(v)
+func (a *PostScriptAlias) SetSVGFontFamily(v string) {
+	a.wasm.SetSvgFontFamily(v)
 }
 
-func (s *PostScriptAlias) SVGFontWeight() string {
-	return s.wasm.GetSvgFontWeight()
+func (a *PostScriptAlias) SVGFontWeight() string {
+	return a.wasm.GetSvgFontWeight()
 }
 
-func (s *PostScriptAlias) SetSVGFontWeight(v string) {
-	s.wasm.SetSvgFontWeight(v)
+func (a *PostScriptAlias) SetSVGFontWeight(v string) {
+	a.wasm.SetSvgFontWeight(v)
 }
 
-func (s *PostScriptAlias) SVGFontStyle() string {
-	return s.wasm.GetSvgFontStyle()
+func (a *PostScriptAlias) SVGFontStyle() string {
+	return a.wasm.GetSvgFontStyle()
 }
 
-func (s *PostScriptAlias) SetSVGFontStyle(v string) {
-	s.wasm.SetSvgFontStyle(v)
+func (a *PostScriptAlias) SetSVGFontStyle(v string) {
+	a.wasm.SetSvgFontStyle(v)
 }
 
 type Scale = PointFloat
@@ -1313,7 +1313,12 @@ func (s *UserShape) SetDPI(v int) {
 }
 
 func (s *UserShape) Data() []byte {
-	return s.wasm.GetData().([]byte)
+	data, ok := s.wasm.GetData().([]byte)
+	if !ok {
+		return nil
+	}
+
+	return data
 }
 
 func (s *UserShape) SetData(v []byte) {

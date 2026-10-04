@@ -1,3 +1,6 @@
+// Package cdt mirrors libcdt, Graphviz's container data types: the
+// dictionaries, their links, methods and disciplines, as typed handles over
+// the WebAssembly module's memory.
 package cdt
 
 import (

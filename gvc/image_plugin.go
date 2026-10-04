@@ -27,7 +27,7 @@ type DefaultLoadImageEngine struct{}
 
 func NewLoadImagePlugin(ctx context.Context, typ string, engine LoadImageEngine) (*LoadImagePlugin, error) {
 	cfg := defaultLoadImagePluginConfig(typ, engine)
-	return newLoadImagePlugin(ctx, cfg)
+	return buildLoadImagePlugin(ctx, cfg)
 }
 
 func PNGLoadImagePlugin(ctx context.Context, engine LoadImageEngine) (*LoadImagePlugin, error) {
@@ -41,7 +41,7 @@ func defaultLoadImagePluginConfig(typ string, engine LoadImageEngine) *loadImage
 	}
 }
 
-func newLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImagePlugin, error) {
+func buildLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImagePlugin, error) {
 	plg, err := wasm.NewPluginAPI(ctx)
 	if err != nil {
 		return nil, err

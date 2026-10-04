@@ -1,3 +1,6 @@
+// Package cgraph mirrors libcgraph, Graphviz's graph library: graphs, nodes,
+// edges, subgraphs, their attributes and the DOT reader and writer, as typed
+// handles over the WebAssembly module's memory.
 package cgraph
 
 import (
