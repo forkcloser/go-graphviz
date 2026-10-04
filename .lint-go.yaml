@@ -64,6 +64,17 @@
 
 golangci:
   linters:
+    disable:
+      # The module runs one WebAssembly instance of Graphviz, created at init
+      # and shared by every Graph and Context; wazero documents that calling a
+      # function of one instance from two goroutines is not safe, and
+      # Graphviz keeps global state behind it (its error buffer, the plugin
+      # registry, the layout engines' statics). Callers serialize their use
+      # of the library, and the tests must not run concurrently either: a
+      # parallel test would race the instance, not exercise the code. The
+      # linter that asks every test for t.Parallel is therefore off, as a
+      # judgment, not a backlog item.
+      - paralleltest
     exclusions:
       paths:
         # Generated: bind.go by `just bindings` from internal/wasm/bind.proto,
@@ -129,7 +140,6 @@ golangci:
             - errcheck # 4
             - revive # 4
             - gochecknoglobals # 2
-            - paralleltest # 2
             - staticcheck # 2
             - noctx # 1
         - path: ^graphviz\.go$
@@ -140,10 +150,8 @@ golangci:
         - path: ^graphviz16_test\.go$
           linters: # 11 findings
             - errcheck # 6
-            - paralleltest # 3
         - path: ^graphviz_test\.go$
           linters: # 28 findings
-            - paralleltest # 14
             - errcheck # 5
             - revive # 4
             - thelper # 1
