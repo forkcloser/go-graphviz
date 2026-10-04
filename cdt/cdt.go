@@ -232,8 +232,10 @@ func (l *Link) Hash() uint {
 	return uint(l.wasm.GetHash())
 }
 
-func (l *Link) SetHash(v uint) {
-	l.wasm.SetHash(uint32(v))
+// SetHash sets the link's hash; the field is 32 bits wide in libcdt, so the
+// parameter is too.
+func (l *Link) SetHash(v uint32) {
+	l.wasm.SetHash(v)
 }
 
 func toError(result int) error {
