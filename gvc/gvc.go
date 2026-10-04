@@ -98,6 +98,7 @@ func (c *Context) RenderFilename(ctx context.Context, g *cgraph.Graph, format, f
 	if _, err := os.Stat(filename); err != nil {
 		// file does not exist.
 		// Since gvc.RenderFilename fails if the file doesn't exist, we create it beforehand.
+		// #nosec G304 -- the caller names its own output file
 		if _, err := os.Create(filename); err != nil {
 			return fmt.Errorf("failed to create file: %w", err)
 		}

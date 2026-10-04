@@ -101,7 +101,6 @@ golangci:
             - errcheck # 3
             - funcorder # 2
             - err113 # 1
-            - gosec # 1
         - path: ^cgraph/attribute\.go$
           linters: # 487 findings
             - revive # 254
@@ -114,7 +113,6 @@ golangci:
             - errcheck # 49
             - funcorder # 11
             - gochecknoglobals # 5
-            - gosec # 5
             - varnamelen # 3
             - err113 # 1
             - wrapcheck # 1
@@ -172,7 +170,6 @@ golangci:
             - err113 # 2
             - varnamelen # 2
             - wrapcheck # 2
-            - gosec # 1
         - path: ^gvc/image_plugin\.go$
           linters: # 13 findings
             - revive # 7
@@ -185,7 +182,6 @@ golangci:
             - funcorder # 13
             - wrapcheck # 13
             - gochecknoglobals # 5
-            - gosec # 5
             - unparam # 3
             - err113 # 2
             - errcheck # 2

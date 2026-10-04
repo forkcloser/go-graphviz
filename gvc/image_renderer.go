@@ -67,7 +67,12 @@ func (r *ImageRenderer) setRGB(rgba [4]uint) {
 }
 
 func (r *ImageRenderer) BeginPage(ctx context.Context, job *Job) error {
-	gctx := gg.NewContext(int(job.Width()), int(job.Height()))
+	width, height := job.Width(), job.Height()
+	if width > math.MaxInt32 || height > math.MaxInt32 {
+		return fmt.Errorf("page of %d by %d points is beyond the raster renderer's bounds", width, height)
+	}
+
+	gctx := gg.NewContext(int(width), int(height))
 	translation := job.Translation()
 	gctx.Translate(r.toX(job, translation.X()), r.toY(job, -translation.Y()))
 	r.ctx = gctx
@@ -90,6 +95,7 @@ func (r *ImageRenderer) encodeJPG(w io.Writer) error {
 }
 
 func (r *ImageRenderer) saveJPG(path string) error {
+	// #nosec G304 -- the output file is the one the render job names
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -265,6 +271,7 @@ func (r *ImageRenderer) lookupFontFromTTFFile(
 	dpi *PointFloat,
 	fontPath string,
 ) (font.Face, error) {
+	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
 	fontData, err := os.ReadFile(fontPath)
 	if err != nil {
 		return nil, nil
@@ -293,6 +300,7 @@ func (r *ImageRenderer) lookupFontFromTTCFile(
 		return nil, nil
 	}
 
+	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
 	fontData, err := os.ReadFile(fontPath)
 	if err != nil {
 		return nil, err

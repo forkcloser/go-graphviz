@@ -301,6 +301,7 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 }
 
 func ParseFile(path string) (*Graph, error) {
+	// #nosec G304 -- reading the file the caller names is this function's purpose
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -681,32 +682,34 @@ func (s *Symbol) ID() int {
 	return int(s.wasm.GetId())
 }
 
-func (s *Symbol) SetID(v int) {
-	s.wasm.SetId(int32(v))
+// SetID sets the symbol's index; the field is a 32-bit int in libcgraph, so
+// the parameter is too.
+func (s *Symbol) SetID(v int32) {
+	s.wasm.SetId(v)
 }
 
 func (s *Symbol) Kind() uint {
 	return uint(s.wasm.GetKind())
 }
 
-func (s *Symbol) SetKind(v uint) {
-	s.wasm.SetKind(uint32(v))
+func (s *Symbol) SetKind(v uint32) {
+	s.wasm.SetKind(v)
 }
 
 func (s *Symbol) Fixed() uint {
 	return uint(s.wasm.GetFixed())
 }
 
-func (s *Symbol) SetFixed(v uint) {
-	s.wasm.SetFixed(uint32(v))
+func (s *Symbol) SetFixed(v uint32) {
+	s.wasm.SetFixed(v)
 }
 
 func (s *Symbol) Print() uint {
 	return uint(s.wasm.GetPrint())
 }
 
-func (s *Symbol) SetPrint(v uint) {
-	s.wasm.SetPrint(uint32(v))
+func (s *Symbol) SetPrint(v uint32) {
+	s.wasm.SetPrint(v)
 }
 
 func (d *DataDict) Header() *Record {
