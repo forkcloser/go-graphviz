@@ -61,3 +61,55 @@
 #     - github.com/example/project/internal/generated
 #   exclude-errors-in-files:         # appends file prefixes: NilAway has no per-line suppression
 #     - internal/legacy/
+
+golangci:
+  linters:
+    exclusions:
+      paths:
+        # Generated: bind.go by `just bindings` from internal/wasm/bind.proto,
+        # nori.pb.go by protoc from the generator's own schema. The generator,
+        # not its output, is what review reads.
+        - internal/wasm/bind.go
+        - internal/tools/nori/nori/nori.pb.go
+      rules:
+        # Every call into the WebAssembly module takes a context because wazero
+        # requires one per call, field reads included; the gvc accessors (Job,
+        # PointFloat, Object...) read fields and have no context parameter by
+        # design, so they pass Background. contextcheck reads that as a dropped
+        # cancellation; nothing is cancelled by a memory read, and threading a
+        # context through every accessor would change the public API for no
+        # observable effect.
+        - path: ^gvc/
+          linters:
+            - contextcheck
+    settings:
+      depguard:
+        rules:
+          main:
+            allow:
+              # The module's declared dependencies: the WebAssembly runtime the
+              # embedded Graphviz runs on, and the raster renderer's drawing,
+              # font and image libraries.
+              - github.com/tetratelabs/wazero
+              - github.com/fogleman/gg
+              - github.com/golang/freetype
+              - golang.org/x/image
+      # internal/wasm is this module's own binding, generated from bind.proto;
+      # an error it returns is already the module's own, and cgraph, cdt and
+      # gvc are the thin typed layer over it. Wrapping at that boundary would
+      # add a second, identical message to every call.
+      wrapcheck:
+        ignore-package-globs:
+          - github.com/forkcloser/go-graphviz/internal/wasm
+      revive:
+        rules:
+          # cgraph and gvc mirror libcgraph's and libgvc's structs one to one
+          # (Graph, Node, Edge, Sym, Job, Device, Render...); the count is the
+          # C API's, not a design choice to shrink.
+          - name: max-public-structs
+            arguments: [20]
+  formatters:
+    exclusions:
+      paths:
+        - internal/wasm/bind.go
+        - internal/tools/nori/nori/nori.pb.go
