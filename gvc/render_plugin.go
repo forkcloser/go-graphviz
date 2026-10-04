@@ -13,12 +13,26 @@ type RenderPlugin struct {
 	engine RenderEngine
 }
 
-func (p *RenderPlugin) raw() *wasm.PluginAPI {
-	return p.plugin
+func NewRenderPlugin(
+	ctx context.Context,
+	typ string,
+	engine RenderEngine,
+	opts ...RenderPluginOption,
+) (*RenderPlugin, error) {
+	cfg := defaultRenderPluginConfig(typ, engine)
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	return buildRenderPlugin(ctx, cfg)
 }
 
 func (p *RenderPlugin) RenderEngine() RenderEngine {
 	return p.engine
+}
+
+func (p *RenderPlugin) raw() *wasm.PluginAPI {
+	return p.plugin
 }
 
 type RenderEngine interface {
@@ -234,20 +248,6 @@ func WithRenderPAD(pad float64) RenderPluginOption {
 	return func(cfg *renderConfig) {
 		cfg.PAD = pad
 	}
-}
-
-func NewRenderPlugin(
-	ctx context.Context,
-	typ string,
-	engine RenderEngine,
-	opts ...RenderPluginOption,
-) (*RenderPlugin, error) {
-	cfg := defaultRenderPluginConfig(typ, engine)
-	for _, opt := range opts {
-		opt(cfg)
-	}
-
-	return buildRenderPlugin(ctx, cfg)
 }
 
 func PNGRenderPlugin(ctx context.Context) (*RenderPlugin, error) {
@@ -645,14 +645,6 @@ func toPoint(v *wasm.Point) *Point {
 	return &Point{wasm: v}
 }
 
-func (p *Point) getWasm() *wasm.Point {
-	if p == nil {
-		return nil
-	}
-
-	return p.wasm
-}
-
 func (p *Point) X() int {
 	return int(p.wasm.GetX())
 }
@@ -669,6 +661,14 @@ func (p *Point) SetY(y int) {
 	p.wasm.SetY(int64(y))
 }
 
+func (p *Point) getWasm() *wasm.Point {
+	if p == nil {
+		return nil
+	}
+
+	return p.wasm
+}
+
 type PointFloat struct {
 	wasm *wasm.PointFloat
 }
@@ -679,14 +679,6 @@ func toPointFloat(v *wasm.PointFloat) *PointFloat {
 	}
 
 	return &PointFloat{wasm: v}
-}
-
-func (p *PointFloat) getWasm() *wasm.PointFloat {
-	if p == nil {
-		return nil
-	}
-
-	return p.wasm
 }
 
 func (p *PointFloat) X() float64 {
@@ -703,6 +695,14 @@ func (p *PointFloat) Y() float64 {
 
 func (p *PointFloat) SetY(y float64) {
 	p.wasm.SetY(y)
+}
+
+func (p *PointFloat) getWasm() *wasm.PointFloat {
+	if p == nil {
+		return nil
+	}
+
+	return p.wasm
 }
 
 type TextSpan struct {
@@ -777,14 +777,6 @@ func toTextFont(v *wasm.TextFont) *TextFont {
 	return &TextFont{wasm: v}
 }
 
-func (f *TextFont) getWasm() *wasm.TextFont {
-	if f == nil {
-		return nil
-	}
-
-	return f.wasm
-}
-
 func (f *TextFont) Name() string {
 	return f.wasm.GetName()
 }
@@ -833,6 +825,14 @@ func (f *TextFont) SetCount(v uint) {
 	f.wasm.SetCount(uint64(v))
 }
 
+func (f *TextFont) getWasm() *wasm.TextFont {
+	if f == nil {
+		return nil
+	}
+
+	return f.wasm
+}
+
 type PostScriptAlias struct {
 	wasm *wasm.PostscriptAlias
 }
@@ -843,14 +843,6 @@ func toPostScriptAlias(v *wasm.PostscriptAlias) *PostScriptAlias {
 	}
 
 	return &PostScriptAlias{wasm: v}
-}
-
-func (a *PostScriptAlias) getWasm() *wasm.PostscriptAlias {
-	if a == nil {
-		return nil
-	}
-
-	return a.wasm
 }
 
 func (a *PostScriptAlias) Name() string {
@@ -923,6 +915,14 @@ func (a *PostScriptAlias) SVGFontStyle() string {
 
 func (a *PostScriptAlias) SetSVGFontStyle(v string) {
 	a.wasm.SetSvgFontStyle(v)
+}
+
+func (a *PostScriptAlias) getWasm() *wasm.PostscriptAlias {
+	if a == nil {
+		return nil
+	}
+
+	return a.wasm
 }
 
 type Scale = PointFloat
@@ -1136,14 +1136,6 @@ func toColor(v *wasm.Color) *Color {
 	return &Color{wasm: v}
 }
 
-func (c *Color) getWasm() *wasm.Color {
-	if c == nil {
-		return nil
-	}
-
-	return c.wasm
-}
-
 func (c *Color) RGBADouble() [4]float64 {
 	res := c.wasm.GetRgbaDouble()
 	return [4]float64{res[0], res[1], res[2], res[3]}
@@ -1202,6 +1194,14 @@ func (c *Color) Type() ColorType {
 
 func (c *Color) SetType(v ColorType) {
 	c.wasm.SetType(wasm.ColorType(v))
+}
+
+func (c *Color) getWasm() *wasm.Color {
+	if c == nil {
+		return nil
+	}
+
+	return c.wasm
 }
 
 type UserShape struct {

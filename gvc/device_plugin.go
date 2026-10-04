@@ -14,6 +14,15 @@ type DevicePlugin struct {
 // (the `dpi` attribute's default, 96 dots per inch).
 const defaultDeviceDPI = 96
 
+func NewDevicePlugin(ctx context.Context, typ string, opts ...DevicePluginOption) (*DevicePlugin, error) {
+	cfg := defaultDevicePluginConfig(typ)
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	return buildDevicePlugin(ctx, cfg)
+}
+
 func (p *DevicePlugin) raw() *wasm.PluginAPI {
 	return p.plugin
 }
@@ -51,15 +60,6 @@ func WithDeviceDPI(x, y float64) DevicePluginOption {
 			Y: y,
 		}
 	}
-}
-
-func NewDevicePlugin(ctx context.Context, typ string, opts ...DevicePluginOption) (*DevicePlugin, error) {
-	cfg := defaultDevicePluginConfig(typ)
-	for _, opt := range opts {
-		opt(cfg)
-	}
-
-	return buildDevicePlugin(ctx, cfg)
 }
 
 func PNGDevicePlugin(ctx context.Context) (*DevicePlugin, error) {

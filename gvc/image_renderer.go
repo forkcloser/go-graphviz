@@ -54,23 +54,6 @@ type ImageRenderer struct {
 	ctx *gg.Context
 }
 
-func (*ImageRenderer) toX(job *Job, x float64) float64 {
-	return job.Scale().X() * x
-}
-
-func (*ImageRenderer) toY(job *Job, y float64) float64 {
-	return job.Scale().Y() * y
-}
-
-// setRGB sets the drawing colour from Graphviz's 8-bit channels.
-func (r *ImageRenderer) setRGB(rgba [4]uint) {
-	r.ctx.SetRGB(
-		float64(rgba[0])/colorChannelMax,
-		float64(rgba[1])/colorChannelMax,
-		float64(rgba[2])/colorChannelMax,
-	)
-}
-
 func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	width, height := job.Width(), job.Height()
 	if width > math.MaxInt32 || height > math.MaxInt32 {
@@ -83,46 +66,6 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	r.ctx = gctx
 
 	return nil
-}
-
-func (*ImageRenderer) isPNG(job *Job) bool {
-	return job.OutputLangName() == "png"
-}
-
-func (*ImageRenderer) isJPG(job *Job) bool {
-	return job.OutputLangName() == "jpg"
-}
-
-func (r *ImageRenderer) encodeJPG(w io.Writer) error {
-	if err := jpeg.Encode(w, r.ctx.Image(), &jpeg.Options{Quality: jpeg.DefaultQuality}); err != nil {
-		return fmt.Errorf("encoding the page as JPEG: %w", err)
-	}
-
-	return nil
-}
-
-func (r *ImageRenderer) saveJPG(path string) error {
-	// #nosec G304 -- the output file is the one the render job names
-	file, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("creating %s: %w", path, err)
-	}
-	defer file.Close()
-
-	return r.encodeJPG(file)
-}
-
-func (r *ImageRenderer) setPenStyle(job *Job) {
-	o := job.Object()
-	switch o.Pen() {
-	case PenDashed:
-		r.ctx.SetDash(dashLength)
-	case PenDotted:
-		r.ctx.SetDash(dotLength, dashLength)
-	case PenSolid, PenNone:
-	}
-
-	r.ctx.SetLineWidth(o.PenWidth())
 }
 
 func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
@@ -194,6 +137,229 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, s
 	r.ctx.DrawStringAnchored(span.Text(), p.X(), -y, 0, 0)
 
 	return nil
+}
+
+func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, p []*PointFloat, filled bool) error {
+	r.ctx.Push()
+	defer r.ctx.Pop()
+
+	r.setPenStyle(job)
+	rx := r.toX(job, p[1].X()-p[0].X())
+	ry := r.toY(job, p[1].Y()-p[0].Y())
+
+	var c *Color
+	if filled {
+		c = job.Object().FillColor()
+
+		r.ctx.FillPreserve()
+	} else {
+		c = job.Object().PenColor()
+	}
+
+	rgba := c.RGBAUint()
+	r.setRGB(rgba)
+	r.ctx.DrawEllipse(r.toX(job, p[0].X()), r.toY(job, -p[0].Y()), rx, ry)
+
+	if filled {
+		r.ctx.Fill()
+	} else {
+		r.ctx.Stroke()
+	}
+
+	return nil
+}
+
+func (r *ImageRenderer) Polygon(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
+	r.ctx.Push()
+	defer r.ctx.Pop()
+
+	r.setPenStyle(job)
+
+	var c *Color
+	if filled {
+		c = job.Object().FillColor()
+	} else {
+		c = job.Object().PenColor()
+	}
+
+	rgba := c.RGBAUint()
+	r.setRGB(rgba)
+	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
+
+	for i := 1; i < len(a); i++ {
+		r.ctx.LineTo(r.toX(job, a[i].X()), r.toY(job, -a[i].Y()))
+	}
+
+	r.ctx.ClosePath()
+
+	if filled {
+		r.ctx.Fill()
+	} else {
+		r.ctx.Stroke()
+	}
+
+	return nil
+}
+
+func (r *ImageRenderer) Polyline(_ context.Context, job *Job, a []*PointFloat) error {
+	r.ctx.Push()
+	defer r.ctx.Pop()
+
+	r.setPenStyle(job)
+	rgba := job.Object().PenColor().RGBAUint()
+	r.setRGB(rgba)
+	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
+
+	for i := 1; i < len(a); i++ {
+		r.ctx.LineTo(r.toX(job, a[i].X()), r.toY(job, -a[i].Y()))
+	}
+
+	r.ctx.Stroke()
+
+	return nil
+}
+
+func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
+	r.ctx.Push()
+	defer r.ctx.Pop()
+
+	r.setPenStyle(job)
+
+	var c *Color
+	if filled {
+		c = job.Object().FillColor()
+
+		r.ctx.FillPreserve()
+	} else {
+		c = job.Object().PenColor()
+	}
+
+	rgba := c.RGBAUint()
+	r.setRGB(rgba)
+	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
+
+	for i := 1; i < len(a); i += 3 {
+		r.ctx.CubicTo(
+			r.toX(job, a[i].X()),
+			r.toY(job, -a[i].Y()),
+			r.toX(job, a[i+1].X()),
+			r.toY(job, -a[i+1].Y()),
+			r.toX(job, a[i+2].X()),
+			r.toY(job, -a[i+2].Y()),
+		)
+	}
+
+	if filled {
+		r.ctx.Fill()
+	} else {
+		r.ctx.Stroke()
+	}
+
+	return nil
+}
+
+func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, bf *BoxFloat, _ bool) error {
+	r.ctx.Push()
+	defer r.ctx.Pop()
+
+	fs := wasm.FileSystem()
+
+	f, err := fs.Open(shape.Name())
+	if err != nil {
+		return fmt.Errorf("opening image %s: %w", shape.Name(), err)
+	}
+
+	var buf bytes.Buffer
+	io.Copy(&buf, f)
+
+	img, _, err := image.Decode(&buf)
+	if err != nil {
+		return fmt.Errorf("decoding image %s: %w", shape.Name(), err)
+	}
+
+	topLeftX := bf.LL().X()
+	topLeftY := bf.LL().Y()
+
+	node := job.Object().Node()
+	if node != nil {
+		if node.FixedSize() || node.ImageScale() != cgraph.ImageScaleDefault {
+			bottomRightX := bf.UR().X()
+			bottomRightY := bf.UR().Y()
+			width := bottomRightX - topLeftX
+			height := bottomRightY - topLeftY
+			img = resizeLanczos(img, int(width), int(height))
+			xPAD := defaultXPAD / half
+			yPAD := defaultYPAD / half
+			posX := (topLeftX + xPAD) * job.Scale().X()
+			posY := (topLeftY + yPAD) * job.Scale().Y()
+			r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
+
+			return nil
+		}
+	}
+
+	posX := topLeftX * job.Scale().X()
+	posY := topLeftY * job.Scale().Y()
+	r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
+
+	return nil
+}
+
+func (*ImageRenderer) toX(job *Job, x float64) float64 {
+	return job.Scale().X() * x
+}
+
+func (*ImageRenderer) toY(job *Job, y float64) float64 {
+	return job.Scale().Y() * y
+}
+
+// setRGB sets the drawing colour from Graphviz's 8-bit channels.
+func (r *ImageRenderer) setRGB(rgba [4]uint) {
+	r.ctx.SetRGB(
+		float64(rgba[0])/colorChannelMax,
+		float64(rgba[1])/colorChannelMax,
+		float64(rgba[2])/colorChannelMax,
+	)
+}
+
+func (*ImageRenderer) isPNG(job *Job) bool {
+	return job.OutputLangName() == "png"
+}
+
+func (*ImageRenderer) isJPG(job *Job) bool {
+	return job.OutputLangName() == "jpg"
+}
+
+func (r *ImageRenderer) encodeJPG(w io.Writer) error {
+	if err := jpeg.Encode(w, r.ctx.Image(), &jpeg.Options{Quality: jpeg.DefaultQuality}); err != nil {
+		return fmt.Errorf("encoding the page as JPEG: %w", err)
+	}
+
+	return nil
+}
+
+func (r *ImageRenderer) saveJPG(path string) error {
+	// #nosec G304 -- the output file is the one the render job names
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("creating %s: %w", path, err)
+	}
+	defer file.Close()
+
+	return r.encodeJPG(file)
+}
+
+func (r *ImageRenderer) setPenStyle(job *Job) {
+	o := job.Object()
+	switch o.Pen() {
+	case PenDashed:
+		r.ctx.SetDash(dashLength)
+	case PenDotted:
+		r.ctx.SetDash(dotLength, dashLength)
+	case PenSolid, PenNone:
+	}
+
+	r.ctx.SetLineWidth(o.PenWidth())
 }
 
 func (r *ImageRenderer) getFontFace(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
@@ -353,177 +519,11 @@ func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, 
 	}), nil
 }
 
-func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, p []*PointFloat, filled bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.setPenStyle(job)
-	rx := r.toX(job, p[1].X()-p[0].X())
-	ry := r.toY(job, p[1].Y()-p[0].Y())
-
-	var c *Color
-	if filled {
-		c = job.Object().FillColor()
-
-		r.ctx.FillPreserve()
-	} else {
-		c = job.Object().PenColor()
-	}
-
-	rgba := c.RGBAUint()
-	r.setRGB(rgba)
-	r.ctx.DrawEllipse(r.toX(job, p[0].X()), r.toY(job, -p[0].Y()), rx, ry)
-
-	if filled {
-		r.ctx.Fill()
-	} else {
-		r.ctx.Stroke()
-	}
-
-	return nil
-}
-
-func (r *ImageRenderer) Polygon(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.setPenStyle(job)
-
-	var c *Color
-	if filled {
-		c = job.Object().FillColor()
-	} else {
-		c = job.Object().PenColor()
-	}
-
-	rgba := c.RGBAUint()
-	r.setRGB(rgba)
-	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
-
-	for i := 1; i < len(a); i++ {
-		r.ctx.LineTo(r.toX(job, a[i].X()), r.toY(job, -a[i].Y()))
-	}
-
-	r.ctx.ClosePath()
-
-	if filled {
-		r.ctx.Fill()
-	} else {
-		r.ctx.Stroke()
-	}
-
-	return nil
-}
-
-func (r *ImageRenderer) Polyline(_ context.Context, job *Job, a []*PointFloat) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.setPenStyle(job)
-	rgba := job.Object().PenColor().RGBAUint()
-	r.setRGB(rgba)
-	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
-
-	for i := 1; i < len(a); i++ {
-		r.ctx.LineTo(r.toX(job, a[i].X()), r.toY(job, -a[i].Y()))
-	}
-
-	r.ctx.Stroke()
-
-	return nil
-}
-
-func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.setPenStyle(job)
-
-	var c *Color
-	if filled {
-		c = job.Object().FillColor()
-
-		r.ctx.FillPreserve()
-	} else {
-		c = job.Object().PenColor()
-	}
-
-	rgba := c.RGBAUint()
-	r.setRGB(rgba)
-	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
-
-	for i := 1; i < len(a); i += 3 {
-		r.ctx.CubicTo(
-			r.toX(job, a[i].X()),
-			r.toY(job, -a[i].Y()),
-			r.toX(job, a[i+1].X()),
-			r.toY(job, -a[i+1].Y()),
-			r.toX(job, a[i+2].X()),
-			r.toY(job, -a[i+2].Y()),
-		)
-	}
-
-	if filled {
-		r.ctx.Fill()
-	} else {
-		r.ctx.Stroke()
-	}
-
-	return nil
-}
-
 const (
 	defaultGAP  = 4
 	defaultXPAD = 4 * defaultGAP
 	defaultYPAD = 2 * defaultGAP
 )
-
-func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, bf *BoxFloat, _ bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	fs := wasm.FileSystem()
-
-	f, err := fs.Open(shape.Name())
-	if err != nil {
-		return fmt.Errorf("opening image %s: %w", shape.Name(), err)
-	}
-
-	var buf bytes.Buffer
-	io.Copy(&buf, f)
-
-	img, _, err := image.Decode(&buf)
-	if err != nil {
-		return fmt.Errorf("decoding image %s: %w", shape.Name(), err)
-	}
-
-	topLeftX := bf.LL().X()
-	topLeftY := bf.LL().Y()
-
-	node := job.Object().Node()
-	if node != nil {
-		if node.FixedSize() || node.ImageScale() != cgraph.ImageScaleDefault {
-			bottomRightX := bf.UR().X()
-			bottomRightY := bf.UR().Y()
-			width := bottomRightX - topLeftX
-			height := bottomRightY - topLeftY
-			img = resizeLanczos(img, int(width), int(height))
-			xPAD := defaultXPAD / half
-			yPAD := defaultYPAD / half
-			posX := (topLeftX + xPAD) * job.Scale().X()
-			posY := (topLeftY + yPAD) * job.Scale().Y()
-			r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
-
-			return nil
-		}
-	}
-
-	posX := topLeftX * job.Scale().X()
-	posY := topLeftY * job.Scale().Y()
-	r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
-
-	return nil
-}
 
 type FontLoader func(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error)
 
