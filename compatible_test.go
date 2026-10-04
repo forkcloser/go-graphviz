@@ -63,7 +63,7 @@ func generateTestData() error {
 				return err
 			}
 
-			pathToHashDump[p] = base64.StdEncoding.EncodeToString(b.Bytes())
+			pathToHashDump[filepath.ToSlash(p)] = base64.StdEncoding.EncodeToString(b.Bytes())
 
 			return nil
 		}); err != nil {
@@ -135,7 +135,7 @@ func TestGraphviz_Compatible(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				dump, err := base64.StdEncoding.DecodeString(pathToHashDump[path])
+				dump, err := base64.StdEncoding.DecodeString(pathToHashDump[filepath.ToSlash(path)])
 				if err != nil {
 					t.Fatal(err)
 				}
