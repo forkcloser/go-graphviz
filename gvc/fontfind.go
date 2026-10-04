@@ -2,12 +2,17 @@ package gvc
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
+
+// ErrFontNotFound is returned when no font file answers to a requested name,
+// on the platform's font directories or in a TrueType collection.
+var ErrFontNotFound = errors.New("font not found")
 
 // fontSuffixes are the file types the raster renderer can load: TrueType,
 // TrueType collections and OpenType.
@@ -68,7 +73,7 @@ func findFont(name string) (string, error) {
 		}
 	}
 
-	return "", errors.New("font not found: " + name)
+	return "", fmt.Errorf("%w: %s", ErrFontNotFound, name)
 }
 
 // fontDirectories lists where the running platform keeps fonts, user

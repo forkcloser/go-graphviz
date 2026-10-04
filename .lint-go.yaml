@@ -100,7 +100,6 @@ golangci:
             - revive # 34
             - errcheck # 3
             - funcorder # 2
-            - err113 # 1
         - path: ^cgraph/attribute\.go$
           linters: # 487 findings
             - revive # 254
@@ -114,7 +113,6 @@ golangci:
             - funcorder # 11
             - gochecknoglobals # 5
             - varnamelen # 3
-            - err113 # 1
             - wrapcheck # 1
         - path: ^cgraph/init\.go$
           linters: # 23 findings
@@ -160,14 +158,12 @@ golangci:
             - funcorder # 1
         - path: ^gvc/fontfind\.go$
           linters: # 4 findings
-            - err113 # 1
             - gochecknoglobals # 1
             - gocognit # 1
             - modernize # 1
         - path: ^gvc/gvc\.go$
           linters: # 25 findings
             - revive # 13
-            - err113 # 2
             - varnamelen # 2
             - wrapcheck # 2
         - path: ^gvc/image_plugin\.go$
@@ -183,7 +179,6 @@ golangci:
             - wrapcheck # 13
             - gochecknoglobals # 5
             - unparam # 3
-            - err113 # 2
             - errcheck # 2
             - nilerr # 2
             - nilnil # 2

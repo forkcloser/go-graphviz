@@ -40,7 +40,7 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 	}
 
 	if gvc == nil {
-		return nil, errors.New("failed to create graphviz context")
+		return nil, ErrNoContext
 	}
 
 	return &Context{gvc: gvc}, nil
@@ -198,9 +198,12 @@ func toError(result int) error {
 	return lastError()
 }
 
+// ErrNoContext is returned when Graphviz cannot allocate a rendering context.
+var ErrNoContext = errors.New("graphviz context could not be created")
+
 func lastError() error {
 	if e, _ := wasm.LastError(context.Background()); e != "" {
-		return errors.New(e)
+		return fmt.Errorf("%w: %s", cgraph.ErrGraphviz, e)
 	}
 
 	return nil
