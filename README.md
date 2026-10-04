@@ -1,4 +1,4 @@
-# go-graphviz [![Go](https://github.com/goccy/go-graphviz/workflows/Go/badge.svg)](https://github.com/goccy/go-graphviz/actions) [![GoDoc](https://godoc.org/github.com/goccy/go-graphviz?status.svg)](https://pkg.go.dev/github.com/goccy/go-graphviz) 
+# go-graphviz [![Go](https://github.com/forkcloser/go-graphviz/workflows/Go/badge.svg)](https://github.com/forkcloser/go-graphviz/actions) [![GoDoc](https://godoc.org/github.com/forkcloser/go-graphviz?status.svg)](https://pkg.go.dev/github.com/forkcloser/go-graphviz) 
 
 Go bindings for Graphviz
 
@@ -28,7 +28,7 @@ The above are the formats supported by default. You can also add custom formats.
 # Installation
 
 ```bash
-$ go get github.com/goccy/go-graphviz
+$ go get github.com/forkcloser/go-graphviz
 ```
 
 # Synopsis
@@ -44,7 +44,7 @@ import (
   "fmt"
   "log"
 
-  "github.com/goccy/go-graphviz"
+  "github.com/forkcloser/go-graphviz"
 )
 
 func main() {
@@ -116,7 +116,7 @@ if err := g.RenderFilename(ctx, graph, graphviz.PNG, "/path/to/graph.png"); err 
 ### Installation
 
 ```bash
-$ go install github.com/goccy/go-graphviz/cmd/dot@latest
+$ go install github.com/forkcloser/go-graphviz/cmd/dot@latest
 ```
 
 ### Usage

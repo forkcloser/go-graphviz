@@ -5,7 +5,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/goccy/go-graphviz"
+	"github.com/forkcloser/go-graphviz"
 )
 
 func renderDOTGraph(ctx context.Context) ([]byte, error) {
