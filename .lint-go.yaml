@@ -126,7 +126,6 @@ golangci:
           linters: # 19 findings
             - errcheck # 4
             - gochecknoglobals # 2
-            - staticcheck # 2
             - noctx # 1
         - path: ^graphviz16_test\.go$
           linters: # 11 findings
