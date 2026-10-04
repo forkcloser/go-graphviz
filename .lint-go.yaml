@@ -159,7 +159,6 @@ golangci:
             - revive # 12
             - gochecknoglobals # 7
             - errcheck # 4
-            - mnd # 2
             - funcorder # 1
         - path: ^gvc/fontfind\.go$
           linters: # 4 findings
@@ -182,7 +181,6 @@ golangci:
         - path: ^gvc/image_renderer\.go$
           linters: # 124 findings
             - revive # 35
-            - mnd # 24
             - varnamelen # 17
             - funcorder # 13
             - wrapcheck # 13

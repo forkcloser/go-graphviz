@@ -10,6 +10,10 @@ type DevicePlugin struct {
 	plugin *wasm.PluginAPI
 }
 
+// defaultDeviceDPI is Graphviz's own default resolution for raster output
+// (the `dpi` attribute's default, 96 dots per inch).
+const defaultDeviceDPI = 96
+
 func (p *DevicePlugin) raw() *wasm.PluginAPI {
 	return p.plugin
 }
@@ -87,8 +91,8 @@ func defaultDevicePluginConfig(typ string) *deviceConfig {
 			DeviceDoesTrueColor,
 		},
 		DPI: deviceDPI{
-			X: 96,
-			Y: 96,
+			X: defaultDeviceDPI,
+			Y: defaultDeviceDPI,
 		},
 	}
 }
