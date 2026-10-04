@@ -279,7 +279,7 @@ func (r *ImageRenderer) lookupFontFromTTCFile(
 		return nil, err
 	}
 
-	for j := 0; j < c.NumFonts(); j++ {
+	for j := range c.NumFonts() {
 		ft, err := c.Font(j)
 		if err != nil {
 			return nil, err
