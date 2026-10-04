@@ -29,6 +29,21 @@ var (
 	fontCache = make(map[string]font.Face)
 )
 
+const (
+	// Pen styles, in points: Graphviz draws a dashed line as four on, four
+	// off, and a dotted one as two on, four off.
+	dashLength = 4.0
+	dotLength  = 2.0
+	// half centres a span or an image on its anchor.
+	half = 2.0
+	// colorChannelMax is the top of Graphviz's 8-bit colour channels; gg
+	// takes channels in [0, 1].
+	colorChannelMax = 255.0
+	// lanczosLobes is the support of the Lanczos kernel in pixels (three
+	// lobes), the resampling filter node images have always used here.
+	lanczosLobes = 3.0
+)
+
 type ImageRenderer struct {
 	*DefaultRenderEngine
 	ctx *gg.Context
@@ -40,6 +55,15 @@ func (r *ImageRenderer) toX(job *Job, x float64) float64 {
 
 func (r *ImageRenderer) toY(job *Job, y float64) float64 {
 	return job.Scale().Y() * y
+}
+
+// setRGB sets the drawing colour from Graphviz's 8-bit channels.
+func (r *ImageRenderer) setRGB(rgba [4]uint) {
+	r.ctx.SetRGB(
+		float64(rgba[0])/colorChannelMax,
+		float64(rgba[1])/colorChannelMax,
+		float64(rgba[2])/colorChannelMax,
+	)
 }
 
 func (r *ImageRenderer) BeginPage(ctx context.Context, job *Job) error {
@@ -79,9 +103,9 @@ func (r *ImageRenderer) setPenStyle(job *Job) {
 	o := job.Object()
 	switch o.Pen() {
 	case PenDashed:
-		r.ctx.SetDash(4.0)
+		r.ctx.SetDash(dashLength)
 	case PenDotted:
-		r.ctx.SetDash(2.0, 4.0)
+		r.ctx.SetDash(dotLength, dashLength)
 	case PenSolid, PenNone:
 	}
 
@@ -127,7 +151,7 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, s
 	defer r.ctx.Pop()
 
 	rgba := job.Object().PenColor().RGBAUint()
-	r.ctx.SetRGB(float64(rgba[0])/255.0, float64(rgba[1])/255.0, float64(rgba[2])/255.0)
+	r.setRGB(rgba)
 
 	font := span.Font()
 
@@ -149,7 +173,7 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, s
 	case 'l':
 		// skip
 	case 'n':
-		p.SetX(p.X() - r.toX(job, span.Size().X()/2.0))
+		p.SetX(p.X() - r.toX(job, span.Size().X()/half))
 	}
 
 	r.ctx.SetFontFace(face)
@@ -332,7 +356,7 @@ func (r *ImageRenderer) Ellipse(ctx context.Context, job *Job, p []*PointFloat, 
 	}
 
 	rgba := c.RGBAUint()
-	r.ctx.SetRGB(float64(rgba[0])/255.0, float64(rgba[1])/255.0, float64(rgba[2])/255.0)
+	r.setRGB(rgba)
 	r.ctx.DrawEllipse(r.toX(job, p[0].X()), r.toY(job, -p[0].Y()), rx, ry)
 
 	if filled {
@@ -358,7 +382,7 @@ func (r *ImageRenderer) Polygon(ctx context.Context, job *Job, a []*PointFloat, 
 	}
 
 	rgba := c.RGBAUint()
-	r.ctx.SetRGB(float64(rgba[0])/255.0, float64(rgba[1])/255.0, float64(rgba[2])/255.0)
+	r.setRGB(rgba)
 	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
 
 	for i := 1; i < len(a); i++ {
@@ -382,7 +406,7 @@ func (r *ImageRenderer) Polyline(ctx context.Context, job *Job, a []*PointFloat)
 
 	r.setPenStyle(job)
 	rgba := job.Object().PenColor().RGBAUint()
-	r.ctx.SetRGB(float64(rgba[0])/255.0, float64(rgba[1])/255.0, float64(rgba[2])/255.0)
+	r.setRGB(rgba)
 	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
 
 	for i := 1; i < len(a); i++ {
@@ -410,7 +434,7 @@ func (r *ImageRenderer) BezierCurve(ctx context.Context, job *Job, a []*PointFlo
 	}
 
 	rgba := c.RGBAUint()
-	r.ctx.SetRGB(float64(rgba[0])/255.0, float64(rgba[1])/255.0, float64(rgba[2])/255.0)
+	r.setRGB(rgba)
 	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
 
 	for i := 1; i < len(a); i += 3 {
@@ -469,8 +493,8 @@ func (r *ImageRenderer) LoadImage(ctx context.Context, job *Job, shape *UserShap
 			width := bottomRightX - topLeftX
 			height := bottomRightY - topLeftY
 			img = resizeLanczos(img, int(width), int(height))
-			xPAD := defaultXPAD / 2.0
-			yPAD := defaultYPAD / 2.0
+			xPAD := defaultXPAD / half
+			yPAD := defaultYPAD / half
 			posX := (topLeftX + xPAD) * job.Scale().X()
 			posY := (topLeftY + yPAD) * job.Scale().Y()
 			r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
@@ -504,13 +528,13 @@ func SetFontLoader(loader FontLoader) {
 // the renderer has always used for node images; x/image/draw ships only the
 // box, bilinear and Catmull-Rom interpolators, so the kernel is spelled out.
 var lanczos3 = &draw.Kernel{
-	Support: 3.0,
+	Support: lanczosLobes,
 	At: func(t float64) float64 {
 		if t < 0 {
 			t = -t
 		}
 
-		if t >= 3.0 {
+		if t >= lanczosLobes {
 			return 0
 		}
 
@@ -520,7 +544,7 @@ var lanczos3 = &draw.Kernel{
 
 		x := math.Pi * t
 
-		return 3.0 * math.Sin(x) * math.Sin(x/3.0) / (x * x)
+		return lanczosLobes * math.Sin(x) * math.Sin(x/lanczosLobes) / (x * x)
 	},
 }
 
