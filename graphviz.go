@@ -6,9 +6,9 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/goccy/go-graphviz/cgraph"
-	"github.com/goccy/go-graphviz/gvc"
-	"github.com/goccy/go-graphviz/internal/wasm"
+	"github.com/forkcloser/go-graphviz/cgraph"
+	"github.com/forkcloser/go-graphviz/gvc"
+	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
 type Graphviz struct {

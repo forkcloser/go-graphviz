@@ -3,9 +3,9 @@ package gvc
 import (
 	"context"
 
-	"github.com/goccy/go-graphviz/cdt"
-	"github.com/goccy/go-graphviz/cgraph"
-	"github.com/goccy/go-graphviz/internal/wasm"
+	"github.com/forkcloser/go-graphviz/cdt"
+	"github.com/forkcloser/go-graphviz/cgraph"
+	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
 type RenderPlugin struct {

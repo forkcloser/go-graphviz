@@ -1,7 +1,7 @@
 package gvc
 
 import (
-	"github.com/goccy/go-graphviz/internal/wasm"
+	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
 func init() {
