@@ -406,7 +406,7 @@ func (f *GoFile) ExportMethods() []*GoExportFunction {
 
 func (f *GoFile) toExportFunction(fn *FunctionDef, receiver *Type) *GoExportFunction {
 	argsDef := fn.Args
-	var args = make([]*GoArg, 0, len(argsDef))
+	args := make([]*GoArg, 0, len(argsDef))
 	for idx, typ := range argsDef {
 		args = append(args, &GoArg{
 			Index:     idx,

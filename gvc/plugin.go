@@ -15,22 +15,27 @@ func DefaultPlugins(ctx context.Context) ([]Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	pngDevicePlugin, err := PNGDevicePlugin(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	jpgRenderPlugin, err := JPGRenderPlugin(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	jpgDevicePlugin, err := JPGDevicePlugin(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	pngLoadImagePlugin, err := PNGLoadImagePlugin(ctx, pngRenderPlugin.RenderEngine())
 	if err != nil {
 		return nil, err
 	}
+
 	return []Plugin{
 		pngRenderPlugin,
 		pngDevicePlugin,

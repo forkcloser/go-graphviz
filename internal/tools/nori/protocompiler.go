@@ -2,6 +2,7 @@ package nori
 
 import (
 	"context"
+	_ "embed"
 	"io"
 	"os"
 
@@ -11,8 +12,6 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
-
-	_ "embed"
 )
 
 type errorReporter struct {
@@ -27,7 +26,11 @@ func (r *errorReporter) Error(err reporter.ErrorWithPos) error {
 func (r *errorReporter) Warning(_ reporter.ErrorWithPos) {
 }
 
-func ProtoCompile(ctx context.Context, file string, importPaths ...string) ([]*descriptorpb.FileDescriptorProto, error) {
+func ProtoCompile(
+	ctx context.Context,
+	file string,
+	importPaths ...string,
+) ([]*descriptorpb.FileDescriptorProto, error) {
 	var r errorReporter
 
 	compiler := protocompile.Compiler{

@@ -25,8 +25,11 @@ func findFont(name string) (string, error) {
 	if _, err := os.Stat(name); err == nil {
 		return name, nil
 	}
+
 	want := strings.ToLower(filepath.Base(name))
+
 	var wantBare string
+
 	for _, suffix := range fontSuffixes {
 		if strings.HasSuffix(want, suffix) {
 			wantBare = strings.TrimSuffix(want, suffix)
@@ -34,18 +37,21 @@ func findFont(name string) (string, error) {
 			break
 		}
 	}
+
 	for _, dir := range fontDirectories() {
 		found := ""
 		_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 			if err != nil || d.IsDir() {
 				return nil //nolint:nilerr // an unreadable entry is skipped, not fatal
 			}
+
 			base := strings.ToLower(d.Name())
 			if base == want || (wantBare != "" && base == wantBare) {
 				found = path
 
 				return fs.SkipAll
 			}
+
 			for _, suffix := range fontSuffixes {
 				if base == want+suffix {
 					found = path
@@ -56,6 +62,7 @@ func findFont(name string) (string, error) {
 
 			return nil
 		})
+
 		if found != "" {
 			return found, nil
 		}
@@ -68,6 +75,7 @@ func findFont(name string) (string, error) {
 // directories first.
 func fontDirectories() []string {
 	home, _ := os.UserHomeDir()
+
 	switch runtime.GOOS {
 	case "darwin":
 		return nonEmpty(
@@ -80,6 +88,7 @@ func fontDirectories() []string {
 		if windir := os.Getenv("windir"); windir != "" {
 			dirs = append(dirs, filepath.Join(windir, "Fonts"))
 		}
+
 		if local := os.Getenv("localappdata"); local != "" {
 			dirs = append(dirs, filepath.Join(local, "Microsoft", "Windows", "Fonts"))
 		}
@@ -94,6 +103,7 @@ func fontDirectories() []string {
 		} else {
 			dirs = append(dirs, filepath.Join(home, ".local", "share", "fonts"))
 		}
+
 		if data := os.Getenv("XDG_DATA_DIRS"); data != "" {
 			for _, d := range filepath.SplitList(data) {
 				dirs = append(dirs, filepath.Join(d, "fonts"))

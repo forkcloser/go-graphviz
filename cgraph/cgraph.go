@@ -18,6 +18,7 @@ func toGraph(v *wasm.Graph) *Graph {
 	if v == nil {
 		return nil
 	}
+
 	return &Graph{wasm: v}
 }
 
@@ -25,6 +26,7 @@ func (g *Graph) getWasm() *wasm.Graph {
 	if g == nil {
 		return nil
 	}
+
 	return g.wasm
 }
 
@@ -36,6 +38,7 @@ func toNode(v *wasm.Node) *Node {
 	if v == nil {
 		return nil
 	}
+
 	return &Node{wasm: v}
 }
 
@@ -43,6 +46,7 @@ func (n *Node) getWasm() *wasm.Node {
 	if n == nil {
 		return nil
 	}
+
 	return n.wasm
 }
 
@@ -54,6 +58,7 @@ func toSubNode(v *wasm.SubNode) *SubNode {
 	if v == nil {
 		return nil
 	}
+
 	return &SubNode{wasm: v}
 }
 
@@ -61,6 +66,7 @@ func (n *SubNode) getWasm() *wasm.SubNode {
 	if n == nil {
 		return nil
 	}
+
 	return n.wasm
 }
 
@@ -72,6 +78,7 @@ func toEdge(v *wasm.Edge) *Edge {
 	if v == nil {
 		return nil
 	}
+
 	return &Edge{wasm: v}
 }
 
@@ -79,6 +86,7 @@ func (e *Edge) getWasm() *wasm.Edge {
 	if e == nil {
 		return nil
 	}
+
 	return e.wasm
 }
 
@@ -90,6 +98,7 @@ func toDesc(v *wasm.GraphDescriptor) *Desc {
 	if v == nil {
 		return nil
 	}
+
 	return &Desc{wasm: v}
 }
 
@@ -97,6 +106,7 @@ func (d *Desc) getWasm() *wasm.GraphDescriptor {
 	if d == nil {
 		return nil
 	}
+
 	return d.wasm
 }
 
@@ -108,6 +118,7 @@ func toDisc(v *wasm.ClientDiscipline) *Disc {
 	if v == nil {
 		return nil
 	}
+
 	return &Disc{wasm: v}
 }
 
@@ -115,6 +126,7 @@ func (d *Disc) getWasm() *wasm.ClientDiscipline {
 	if d == nil {
 		return nil
 	}
+
 	return d.wasm
 }
 
@@ -127,6 +139,7 @@ func toSymbol(v *wasm.Sym) *Symbol {
 	if v == nil {
 		return nil
 	}
+
 	return &Symbol{wasm: v}
 }
 
@@ -134,6 +147,7 @@ func (s *Symbol) getWasm() *wasm.Sym {
 	if s == nil {
 		return nil
 	}
+
 	return s.wasm
 }
 
@@ -146,6 +160,7 @@ func toRecord(v *wasm.Record) *Record {
 	if v == nil {
 		return nil
 	}
+
 	return &Record{wasm: v}
 }
 
@@ -153,6 +168,7 @@ func (r *Record) getWasm() *wasm.Record {
 	if r == nil {
 		return nil
 	}
+
 	return r.wasm
 }
 
@@ -164,6 +180,7 @@ func toTag(v *wasm.Tag) *Tag {
 	if v == nil {
 		return nil
 	}
+
 	return &Tag{wasm: v}
 }
 
@@ -171,6 +188,7 @@ func (t *Tag) getWasm() *wasm.Tag {
 	if t == nil {
 		return nil
 	}
+
 	return t.wasm
 }
 
@@ -182,6 +200,7 @@ func toObject(v *wasm.Object) *Object {
 	if v == nil {
 		return nil
 	}
+
 	return &Object{wasm: v}
 }
 
@@ -189,6 +208,7 @@ func (o *Object) getWasm() *wasm.Object {
 	if o == nil {
 		return nil
 	}
+
 	return o.wasm
 }
 
@@ -200,6 +220,7 @@ func toCommonFields(v *wasm.CommonFields) *CommonFields {
 	if v == nil {
 		return nil
 	}
+
 	return &CommonFields{wasm: v}
 }
 
@@ -207,6 +228,7 @@ func (c *CommonFields) getWasm() *wasm.CommonFields {
 	if c == nil {
 		return nil
 	}
+
 	return c.wasm
 }
 
@@ -218,6 +240,7 @@ func toState(v *wasm.State) *State {
 	if v == nil {
 		return nil
 	}
+
 	return &State{wasm: v}
 }
 
@@ -225,6 +248,7 @@ func (s *State) getWasm() *wasm.State {
 	if s == nil {
 		return nil
 	}
+
 	return s.wasm
 }
 
@@ -236,6 +260,7 @@ func toCallbackStack(v *wasm.CallbackStack) *CallbackStack {
 	if v == nil {
 		return nil
 	}
+
 	return &CallbackStack{wasm: v}
 }
 
@@ -243,6 +268,7 @@ func (c *CallbackStack) getWasm() *wasm.CallbackStack {
 	if c == nil {
 		return nil
 	}
+
 	return c.wasm
 }
 
@@ -254,6 +280,7 @@ func toAttr(v *wasm.Attr) *Attr {
 	if v == nil {
 		return nil
 	}
+
 	return &Attr{wasm: v}
 }
 
@@ -261,6 +288,7 @@ func (a *Attr) getWasm() *wasm.Attr {
 	if a == nil {
 		return nil
 	}
+
 	return a.wasm
 }
 
@@ -272,6 +300,7 @@ func toDataDict(v *wasm.DataDict) *DataDict {
 	if v == nil {
 		return nil
 	}
+
 	return &DataDict{wasm: v}
 }
 
@@ -279,6 +308,7 @@ func (d *DataDict) getWasm() *wasm.DataDict {
 	if d == nil {
 		return nil
 	}
+
 	return d.wasm
 }
 
@@ -289,13 +319,16 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if graph == nil {
 		return nil, lastError()
 	}
+
 	g := toGraph(graph)
 	if err := setupNodeLabelIfEmpty(g); err != nil {
 		return nil, err
 	}
+
 	return g, nil
 }
 
@@ -304,6 +337,7 @@ func ParseFile(path string) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return ParseBytes(file)
 }
 
@@ -312,13 +346,16 @@ func Open(name string, desc *Desc, disc *Disc) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if graph == nil {
 		return nil, lastError()
 	}
+
 	g := toGraph(graph)
 	if err := setupNodeLabelIfEmpty(g); err != nil {
 		return nil, err
 	}
+
 	return g, nil
 }
 
@@ -327,24 +364,30 @@ func setupNodeLabelIfEmpty(g *Graph) error {
 	if err != nil {
 		return err
 	}
+
 	if n == nil {
 		return nil
 	}
+
 	if err := setLabelIfEmpty(n); err != nil {
 		return err
 	}
+
 	for {
 		n, err = g.NextNode(n)
 		if err != nil {
 			return err
 		}
+
 		if n == nil {
 			break
 		}
+
 		if err := setLabelIfEmpty(n); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -352,6 +395,7 @@ func setLabelIfEmpty(n *Node) error {
 	if n.Label() == "" {
 		n.SetLabel("\\N")
 	}
+
 	return nil
 }
 
@@ -414,6 +458,7 @@ func (o *Object) SafeSet(name, value, def string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -534,6 +579,7 @@ func (e *Edge) Head() (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(n), nil
 }
 
@@ -542,6 +588,7 @@ func (e *Edge) Tail() (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(n), nil
 }
 
@@ -596,6 +643,7 @@ func (c *CommonFields) SetLookupByName(v [3]*cdt.Dict) {
 	for i := range args {
 		args[i] = toDictWasm(v[i])
 	}
+
 	c.wasm.SetLookupByName(args)
 }
 
@@ -609,6 +657,7 @@ func (c *CommonFields) SetLookupByID(v [3]*cdt.Dict) {
 	for i := range args {
 		args[i] = toDictWasm(v[i])
 	}
+
 	c.wasm.SetLookupById(args)
 }
 
@@ -801,6 +850,7 @@ func (g *Graph) CopyAttr(t *Graph) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -809,6 +859,7 @@ func (g *Graph) BindRecord(name string, size uint, moveToFront int) error {
 	if _, err := wasm.BindRecord(context.Background(), g.wasm, name, size, moveToFront); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -817,6 +868,7 @@ func (g *Graph) Record(name string, moveToFront int) (*Record, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toRecord(res), nil
 }
 
@@ -825,6 +877,7 @@ func (g *Graph) DeleteRecord(name string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -842,6 +895,7 @@ func (g *Graph) Set(name, value string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -850,6 +904,7 @@ func (g *Graph) SetSymbolName(sym *Symbol, value string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -858,6 +913,7 @@ func (g *Graph) SafeSet(name, value, def string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -869,6 +925,7 @@ func (g *Graph) SafeSetHTML(name, value, def string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -877,6 +934,7 @@ func (g *Graph) Close() error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -885,6 +943,7 @@ func (g *Graph) IsSimple() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return res == 1, nil
 }
 
@@ -893,6 +952,7 @@ func (g *Graph) CreateNodeByName(name string) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -901,6 +961,7 @@ func (g *Graph) NodeByName(name string) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -909,6 +970,7 @@ func (g *Graph) CreateNodeByID(id ID) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -917,6 +979,7 @@ func (g *Graph) NodeByID(id ID) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -925,6 +988,7 @@ func (g *Graph) CreateSubNode(n *Node) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -933,6 +997,7 @@ func (g *Graph) SubNode(n *Node) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -941,6 +1006,7 @@ func (g *Graph) FirstNode() (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -949,6 +1015,7 @@ func (g *Graph) NextNode(n *Node) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -957,6 +1024,7 @@ func (g *Graph) LastNode() (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -965,6 +1033,7 @@ func (g *Graph) PreviousNode(n *Node) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toNode(res), nil
 }
 
@@ -973,38 +1042,43 @@ func (g *Graph) SubRep(n *Node) (*SubNode, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toSubNode(res), nil
 }
 
-func (g *Graph) CreateEdgeByName(name string, start *Node, end *Node) (*Edge, error) {
+func (g *Graph) CreateEdgeByName(name string, start, end *Node) (*Edge, error) {
 	res, err := g.wasm.Edge(context.Background(), start.getWasm(), end.getWasm(), name, 1)
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
-func (g *Graph) EdgeByName(name string, start *Node, end *Node) (*Edge, error) {
+func (g *Graph) EdgeByName(name string, start, end *Node) (*Edge, error) {
 	res, err := g.wasm.Edge(context.Background(), start.getWasm(), end.getWasm(), name, 0)
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
-func (g *Graph) CreateEdgeByID(id ID, start *Node, end *Node) (*Edge, error) {
+func (g *Graph) CreateEdgeByID(id ID, start, end *Node) (*Edge, error) {
 	res, err := g.wasm.IdEdge(context.Background(), start.getWasm(), end.getWasm(), uint64(id), 1)
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
-func (g *Graph) EdgeByID(id ID, start *Node, end *Node) (*Edge, error) {
+func (g *Graph) EdgeByID(id ID, start, end *Node) (*Edge, error) {
 	res, err := g.wasm.IdEdge(context.Background(), start.getWasm(), end.getWasm(), uint64(id), 0)
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1013,6 +1087,7 @@ func (g *Graph) CreateSubEdge(e *Edge) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1021,6 +1096,7 @@ func (g *Graph) SubEdge(e *Edge) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1029,6 +1105,7 @@ func (g *Graph) FirstIn(n *Node) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1037,6 +1114,7 @@ func (g *Graph) FirstOut(n *Node) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1045,6 +1123,7 @@ func (g *Graph) NextIn(e *Edge) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1053,6 +1132,7 @@ func (g *Graph) NextOut(e *Edge) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1061,6 +1141,7 @@ func (g *Graph) FirstEdge(n *Node) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1069,6 +1150,7 @@ func (g *Graph) NextEdge(e *Edge, n *Node) (*Edge, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toEdge(res), nil
 }
 
@@ -1077,6 +1159,7 @@ func (g *Graph) Contains(o any) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return res == 1, nil
 }
 
@@ -1089,6 +1172,7 @@ func (g *Graph) Delete(obj any) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1097,6 +1181,7 @@ func (g *Graph) DeleteSubGraph(sub *Graph) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1105,6 +1190,7 @@ func (g *Graph) DeleteNode(n *Node) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return res == 1, nil
 }
 
@@ -1113,6 +1199,7 @@ func (g *Graph) DeleteEdge(e *Edge) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return res == 1, nil
 }
 
@@ -1152,6 +1239,7 @@ func (g *Graph) StrFree(s string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1161,6 +1249,7 @@ func (g *Graph) StrFreeHTML(s string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1169,6 +1258,7 @@ func (g *Graph) Attr(kind int, name, value string) (*Symbol, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toSymbol(res), nil
 }
 
@@ -1177,10 +1267,11 @@ func (g *Graph) NextAttr(kind int, attr *Symbol) (*Symbol, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toSymbol(res), nil
 }
 
-func (g *Graph) Init(kind int, recName string, recSize int, moveToFront int) error {
+func (g *Graph) Init(kind int, recName string, recSize, moveToFront int) error {
 	return g.wasm.Init(context.Background(), kind, recName, recSize, moveToFront)
 }
 
@@ -1193,6 +1284,7 @@ func (g *Graph) CreateSubGraphByName(name string) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toGraph(res), nil
 }
 
@@ -1201,6 +1293,7 @@ func (g *Graph) SubGraphByName(name string) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toGraph(res), nil
 }
 
@@ -1213,13 +1306,16 @@ func (g *Graph) CreateSubGraphByID(id ID) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if res != nil {
 		return toGraph(res), nil
 	}
+
 	created, err := g.wasm.SubGraph(context.Background(), strconv.FormatUint(uint64(id), 10), 1)
 	if err != nil {
 		return nil, err
 	}
+
 	return toGraph(created), nil
 }
 
@@ -1228,6 +1324,7 @@ func (g *Graph) SubGraphByID(id ID) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toGraph(res), nil
 }
 
@@ -1236,6 +1333,7 @@ func (g *Graph) FirstSubGraph() (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toGraph(res), nil
 }
 
@@ -1244,6 +1342,7 @@ func (g *Graph) NextSubGraph() (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toGraph(res), nil
 }
 
@@ -1312,6 +1411,7 @@ func (n *Node) CopyAttr(t *Node) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1319,6 +1419,7 @@ func (n *Node) BindRecord(name string, size uint, moveToFront int) error {
 	if _, err := wasm.BindRecord(context.Background(), n.wasm, name, size, moveToFront); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -1327,6 +1428,7 @@ func (n *Node) Record(name string, moveToFront int) (*Record, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toRecord(res), nil
 }
 
@@ -1335,6 +1437,7 @@ func (n *Node) DeleteRecord(name string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1352,6 +1455,7 @@ func (n *Node) Set(name, value string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1360,6 +1464,7 @@ func (n *Node) SetSymbolName(sym *Symbol, value string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1368,6 +1473,7 @@ func (n *Node) SafeSet(name, value, def string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1379,6 +1485,7 @@ func (n *Node) SafeSetHTML(name, value, def string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1387,6 +1494,7 @@ func (n *Node) ReLabel(newname string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1395,6 +1503,7 @@ func (n *Node) Before(v *Node) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1407,6 +1516,7 @@ func (e *Edge) CopyAttr(t *Edge) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1414,6 +1524,7 @@ func (e *Edge) BindRecord(name string, size uint, moveToFront int) error {
 	if _, err := wasm.BindRecord(context.Background(), e.wasm, name, size, moveToFront); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -1422,6 +1533,7 @@ func (e *Edge) Record(name string, moveToFront int) (*Record, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toRecord(res), nil
 }
 
@@ -1430,6 +1542,7 @@ func (e *Edge) DeleteRecord(name string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1447,6 +1560,7 @@ func (e *Edge) Set(name, value string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1455,6 +1569,7 @@ func (e *Edge) SetSymbolName(sym *Symbol, value string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1463,6 +1578,7 @@ func (e *Edge) SafeSet(name, value, def string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1474,6 +1590,7 @@ func (e *Edge) SafeSetHTML(name, value, def string) error {
 	if err != nil {
 		return err
 	}
+
 	return toError(res)
 }
 
@@ -1488,12 +1605,13 @@ func Canon(s string, html int) (string, error) {
 	if html != 0 {
 		return "<" + s + ">", nil
 	}
+
 	return CanonStr(s)
 }
 
 // StrCanon canonicalizes s into buf, which must hold at least 2*len(s)+3
 // bytes (agstrcanon's own bound); CanonStr sizes the buffer itself.
-func StrCanon(s string, buf string) (string, error) {
+func StrCanon(s, buf string) (string, error) {
 	return wasm.StrCanon(context.Background(), s, buf)
 }
 
@@ -1509,6 +1627,7 @@ func AttrSym(obj *Object, name string) (*Symbol, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return toSymbol(sym), nil
 }
 
@@ -1516,6 +1635,7 @@ func toError(result int) error {
 	if result == 0 {
 		return nil
 	}
+
 	return lastError()
 }
 
@@ -1523,5 +1643,6 @@ func lastError() error {
 	if e, _ := wasm.LastError(context.Background()); e != "" {
 		return errors.New(e)
 	}
+
 	return nil
 }

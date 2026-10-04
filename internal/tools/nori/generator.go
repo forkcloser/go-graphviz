@@ -7,13 +7,12 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/goccy/nori/nori"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/pluginpb"
-
-	"github.com/goccy/nori/nori"
 )
 
 type File struct {
@@ -263,7 +262,11 @@ func (r *Resolver) resolveFileReference(def *descriptorpb.FileDescriptorProto) e
 	return nil
 }
 
-func (r *Resolver) resolveMessageReferences(pkgName string, parentMsgNames []string, defs []*descriptorpb.DescriptorProto) error {
+func (r *Resolver) resolveMessageReferences(
+	pkgName string,
+	parentMsgNames []string,
+	defs []*descriptorpb.DescriptorProto,
+) error {
 	for _, def := range defs {
 		if err := r.resolveMessageReference(pkgName, parentMsgNames, def); err != nil {
 			return err
@@ -272,7 +275,11 @@ func (r *Resolver) resolveMessageReferences(pkgName string, parentMsgNames []str
 	return nil
 }
 
-func (r *Resolver) resolveMessageReference(pkgName string, parentMsgNames []string, def *descriptorpb.DescriptorProto) error {
+func (r *Resolver) resolveMessageReference(
+	pkgName string,
+	parentMsgNames []string,
+	def *descriptorpb.DescriptorProto,
+) error {
 	msgNames := append(parentMsgNames, def.GetName())
 	fqdn := fmt.Sprintf("%s.%s", pkgName, strings.Join(msgNames, "."))
 	if _, exists := r.messageMap[fqdn]; exists {
@@ -293,7 +300,11 @@ func (r *Resolver) resolveMessageReference(pkgName string, parentMsgNames []stri
 	return nil
 }
 
-func (r *Resolver) resolveFieldReferences(pkgName string, msgNames []string, defs []*descriptorpb.FieldDescriptorProto) error {
+func (r *Resolver) resolveFieldReferences(
+	pkgName string,
+	msgNames []string,
+	defs []*descriptorpb.FieldDescriptorProto,
+) error {
 	for _, def := range defs {
 		if err := r.resolveFieldReference(pkgName, msgNames, def); err != nil {
 			return err
@@ -302,7 +313,11 @@ func (r *Resolver) resolveFieldReferences(pkgName string, msgNames []string, def
 	return nil
 }
 
-func (r *Resolver) resolveFieldReference(pkgName string, msgNames []string, def *descriptorpb.FieldDescriptorProto) error {
+func (r *Resolver) resolveFieldReference(
+	pkgName string,
+	msgNames []string,
+	def *descriptorpb.FieldDescriptorProto,
+) error {
 	fqdn := fmt.Sprintf("%s.%s.%s", pkgName, strings.Join(msgNames, "."), def.GetName())
 	if _, exists := r.fieldMap[fqdn]; exists {
 		return nil
@@ -313,7 +328,11 @@ func (r *Resolver) resolveFieldReference(pkgName string, msgNames []string, def 
 	return nil
 }
 
-func (r *Resolver) resolveEnumReferences(pkgName string, parentMsgNames []string, defs []*descriptorpb.EnumDescriptorProto) error {
+func (r *Resolver) resolveEnumReferences(
+	pkgName string,
+	parentMsgNames []string,
+	defs []*descriptorpb.EnumDescriptorProto,
+) error {
 	for _, def := range defs {
 		if err := r.resolveEnumReference(pkgName, parentMsgNames, def); err != nil {
 			return err
@@ -322,7 +341,11 @@ func (r *Resolver) resolveEnumReferences(pkgName string, parentMsgNames []string
 	return nil
 }
 
-func (r *Resolver) resolveEnumReference(pkgName string, parentMsgNames []string, def *descriptorpb.EnumDescriptorProto) error {
+func (r *Resolver) resolveEnumReference(
+	pkgName string,
+	parentMsgNames []string,
+	def *descriptorpb.EnumDescriptorProto,
+) error {
 	enumName := def.GetName()
 	fqdn := fmt.Sprintf("%s.%s", pkgName, strings.Join(append(parentMsgNames, enumName), "."))
 	if _, exists := r.enumMap[fqdn]; exists {
@@ -337,7 +360,12 @@ func (r *Resolver) resolveEnumReference(pkgName string, parentMsgNames []string,
 	return nil
 }
 
-func (r *Resolver) resolveEnumValueReferences(pkgName string, parentMsgNames []string, enumName string, defs []*descriptorpb.EnumValueDescriptorProto) error {
+func (r *Resolver) resolveEnumValueReferences(
+	pkgName string,
+	parentMsgNames []string,
+	enumName string,
+	defs []*descriptorpb.EnumValueDescriptorProto,
+) error {
 	for _, def := range defs {
 		if err := r.resolveEnumValueReference(pkgName, parentMsgNames, enumName, def); err != nil {
 			return err
@@ -346,7 +374,12 @@ func (r *Resolver) resolveEnumValueReferences(pkgName string, parentMsgNames []s
 	return nil
 }
 
-func (r *Resolver) resolveEnumValueReference(pkgName string, parentMsgNames []string, enumName string, def *descriptorpb.EnumValueDescriptorProto) error {
+func (r *Resolver) resolveEnumValueReference(
+	pkgName string,
+	parentMsgNames []string,
+	enumName string,
+	def *descriptorpb.EnumValueDescriptorProto,
+) error {
 	enumValueName := def.GetName()
 	fqdn := fmt.Sprintf("%s.%s", pkgName, strings.Join(append(parentMsgNames, enumName, enumValueName), "."))
 	if _, exists := r.enumValueMap[fqdn]; exists {
@@ -625,7 +658,12 @@ func (r *Resolver) existsPackage(fqdn string) bool {
 	return false
 }
 
-func (r *Resolver) resolveFieldType(pkgName string, kind descriptorpb.FieldDescriptorProto_Type, typeName string, isRepeated bool) (*Type, error) {
+func (r *Resolver) resolveFieldType(
+	pkgName string,
+	kind descriptorpb.FieldDescriptorProto_Type,
+	typeName string,
+	isRepeated bool,
+) (*Type, error) {
 	typeName = strings.TrimPrefix(typeName, ".") // trim leading dot character.
 	if !r.existsPackage(typeName) {
 		typeName = fmt.Sprintf("%s.%s", pkgName, typeName)
@@ -714,7 +752,10 @@ func (r *Resolver) resolveMessageRule(pkgName string, msg *Message, def *nori.Me
 			}
 		}
 		if funcBasePtrCount != 1 {
-			return fmt.Errorf("failed to resolve %s funcptr. funcbaseptr flag must be enabled for one of the arguments", msg.Name)
+			return fmt.Errorf(
+				"failed to resolve %s funcptr. funcbaseptr flag must be enabled for one of the arguments",
+				msg.Name,
+			)
 		}
 	}
 	hasConstructor := true
@@ -733,7 +774,11 @@ func (r *Resolver) resolveMessageRule(pkgName string, msg *Message, def *nori.Me
 	return nil
 }
 
-func (r *Resolver) resolveMessage(pkgName string, parentMsgNames []string, def *descriptorpb.DescriptorProto) (*Message, error) {
+func (r *Resolver) resolveMessage(
+	pkgName string,
+	parentMsgNames []string,
+	def *descriptorpb.DescriptorProto,
+) (*Message, error) {
 	msgName := def.GetName()
 	msgNames := append(parentMsgNames, msgName)
 	fqdn := fmt.Sprintf("%s.%s", pkgName, strings.Join(msgNames, "."))
@@ -766,7 +811,12 @@ func (r *Resolver) resolveMessage(pkgName string, parentMsgNames []string, def *
 	return msg, nil
 }
 
-func (r *Resolver) resolveFields(pkgName string, msgNames, oneofNames []string, msg *Message, defs []*descriptorpb.FieldDescriptorProto) ([]*Field, error) {
+func (r *Resolver) resolveFields(
+	pkgName string,
+	msgNames, oneofNames []string,
+	msg *Message,
+	defs []*descriptorpb.FieldDescriptorProto,
+) ([]*Field, error) {
 	ret := make([]*Field, 0, len(defs))
 	for _, def := range defs {
 		field, err := r.resolveField(pkgName, msgNames, oneofNames, msg, def)
@@ -778,7 +828,12 @@ func (r *Resolver) resolveFields(pkgName string, msgNames, oneofNames []string, 
 	return ret, nil
 }
 
-func (r *Resolver) resolveField(pkgName string, msgNames, oneofNames []string, msg *Message, def *descriptorpb.FieldDescriptorProto) (*Field, error) {
+func (r *Resolver) resolveField(
+	pkgName string,
+	msgNames, oneofNames []string,
+	msg *Message,
+	def *descriptorpb.FieldDescriptorProto,
+) (*Field, error) {
 	ruleDef, err := getExtensionRule[*nori.FieldRule](def.GetOptions(), nori.E_Field)
 	if err != nil {
 		return nil, err
@@ -789,7 +844,12 @@ func (r *Resolver) resolveField(pkgName string, msgNames, oneofNames []string, m
 	if !exists {
 		return nil, fmt.Errorf("failed to find field from %s", fqdn)
 	}
-	fieldType, err := r.resolveFieldType(pkgName, def.GetType(), def.GetTypeName(), def.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED)
+	fieldType, err := r.resolveFieldType(
+		pkgName,
+		def.GetType(),
+		def.GetTypeName(),
+		def.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -879,7 +939,10 @@ func (r *Resolver) resolveEnumRule(enum *Enum, def *nori.EnumRule) error {
 	return nil
 }
 
-func (r *Resolver) resolveEnumValues(pkgName, enumName string, defs []*descriptorpb.EnumValueDescriptorProto) ([]*EnumValue, error) {
+func (r *Resolver) resolveEnumValues(
+	pkgName, enumName string,
+	defs []*descriptorpb.EnumValueDescriptorProto,
+) ([]*EnumValue, error) {
 	ret := make([]*EnumValue, 0, len(defs))
 	for _, def := range defs {
 		value, err := r.resolveEnumValue(pkgName, enumName, def)
@@ -891,7 +954,10 @@ func (r *Resolver) resolveEnumValues(pkgName, enumName string, defs []*descripto
 	return ret, nil
 }
 
-func (r *Resolver) resolveEnumValue(pkgName, enumName string, def *descriptorpb.EnumValueDescriptorProto) (*EnumValue, error) {
+func (r *Resolver) resolveEnumValue(
+	pkgName, enumName string,
+	def *descriptorpb.EnumValueDescriptorProto,
+) (*EnumValue, error) {
 	valueName := def.GetName()
 	fqdn := fmt.Sprintf("%s.%s.%s", pkgName, enumName, valueName)
 	value, exists := r.enumValueMap[fqdn]
@@ -950,7 +1016,8 @@ func getExtensionRule[T proto.Message](opts proto.Message, extType protoreflect.
 	return rule, nil
 }
 
-// setRuleFromDynamicMessage if each options are represented dynamicpb.Message type, convert and set it to rule instance.
+// setRuleFromDynamicMessage if each options are represented dynamicpb.Message type, convert and set it to rule
+// instance.
 // NOTE: compile proto files by compiler package, extension is replaced by dynamicpb.Message.
 func setRuleFromDynamicMessage(opts proto.Message, extFullName protoreflect.FullName, rule proto.Message) bool {
 	isSet := false

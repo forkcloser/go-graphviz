@@ -199,7 +199,8 @@ func (g *Graph) SetDamping(v float64) *Graph {
 
 // SetK
 // Spring constant used in virtual physical model.
-// It roughly corresponds to an ideal edge length (in inches), in that increasing K tends to increase the distance between nodes.
+// It roughly corresponds to an ideal edge length (in inches), in that increasing K tends to increase the distance
+// between nodes.
 // Note that the edge attribute len can be used to override this value for adjacent nodes.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:K
 func (g *Graph) SetK(v float64) *Graph {
@@ -223,7 +224,8 @@ func (g *Graph) SetK(v float64) *Graph {
 // If the edge has a label, this will also be active.
 // Finally, if the edge has a head or tail label, this will also be active.
 //
-// Note that, for edges, the attributes headURL, tailURL, labelURL and edgeURL allow control of various parts of an edge.
+// Note that, for edges, the attributes headURL, tailURL, labelURL and edgeURL allow control of various parts of an
+// edge.
 // Also note that, if active areas of two edges overlap, it is unspecified which area dominates.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:URL
 func (g *Graph) SetURL(v string) *Graph {
@@ -247,7 +249,8 @@ func (g *Graph) SetURL(v string) *Graph {
 // If the edge has a label, this will also be active.
 // Finally, if the edge has a head or tail label, this will also be active.
 //
-// Note that, for edges, the attributes headURL, tailURL, labelURL and edgeURL allow control of various parts of an edge.
+// Note that, for edges, the attributes headURL, tailURL, labelURL and edgeURL allow control of various parts of an
+// edge.
 // Also note that, if active areas of two edges overlap, it is unspecified which area dominates.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:URL
 func (n *Node) SetURL(v string) *Node {
@@ -271,7 +274,8 @@ func (n *Node) SetURL(v string) *Node {
 // If the edge has a label, this will also be active.
 // Finally, if the edge has a head or tail label, this will also be active.
 //
-// Note that, for edges, the attributes headURL, tailURL, labelURL and edgeURL allow control of various parts of an edge.
+// Note that, for edges, the attributes headURL, tailURL, labelURL and edgeURL allow control of various parts of an
+// edge.
 // Also note that, if active areas of two edges overlap, it is unspecified which area dominates.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:URL
 func (e *Edge) SetURL(v string) *Edge {
@@ -366,10 +370,12 @@ func (g *Graph) SetBB(llx, lly, urx, ury float64) *Graph {
 // See also the gradientangle attribute for setting the gradient angle.
 //
 // For certain output formats, such as PostScript, no fill is done for the root graph unless bgcolor is explicitly set.
-// For bitmap formats, however, the bits need to be initialized to something, so the canvas is filled with white by default.
+// For bitmap formats, however, the bits need to be initialized to something, so the canvas is filled with white by
+// default.
 // This means that if the bitmap output is included in some other document,
-// all of the bits within the bitmap's bounding box will be set, overwriting whatever color or graphics were already on the page.
-// If this effect is not desired, and you only want to set bits explicitly assigned in drawing the graph, set bgcolor="transparent".
+// all of the bits within the bitmap's bounding box will be set, overwriting whatever color or graphics were already on
+// the page. If this effect is not desired, and you only want to set bits explicitly assigned in drawing the graph, set
+// bgcolor="transparent".
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:bgcolor
 func (g *Graph) SetBackgroundColor(v string) *Graph {
 	g.SafeSet(string(bgcolorAttr), v, "")
@@ -389,7 +395,8 @@ func (g *Graph) SetCenter(v bool) *Graph {
 // The default value is "UTF-8".
 // The other legal value is "iso-8859-1" or, equivalently, "Latin1".
 // The charset attribute is case-insensitive.
-// Note that if the character encoding used in the input does not match the charset value, the resulting output may be very strange.
+// Note that if the character encoding used in the input does not match the charset value, the resulting output may be
+// very strange.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:charset
 func (g *Graph) SetCharset(v string) *Graph {
 	g.SafeSet(string(charsetAttr), v, "UTF-8")
@@ -407,7 +414,8 @@ const (
 // SetClusterRank
 // Mode used for handling clusters.
 // If clusterrank is "local", a subgraph whose name begins with "cluster" is given special treatment.
-// The subgraph is laid out separately, and then integrated as a unit into its parent graph, with a bounding rectangle drawn about it.
+// The subgraph is laid out separately, and then integrated as a unit into its parent graph, with a bounding rectangle
+// drawn about it.
 // If the cluster has a label parameter, this label is displayed within the rectangle.
 // Note also that there can be clusters within clusters.
 // At present, the modes "global" and "none" appear to be identical, both turning off the special cluster processing.
@@ -424,8 +432,9 @@ func (g *Graph) SetClusterRank(v ClusterMode) *Graph {
 // In the latter case, if colorList has no fractions,
 // the edge is drawn using parallel splines or lines, one for each color in the list, in the order given.
 // The head arrow, if any, is drawn using the first color in the list, and the tail arrow, if any, the second color.
-// This supports the common case of drawing opposing edges, but using parallel splines instead of separately routed multiedges.
-// If any fraction is used, the colors are drawn in series, with each color being given roughly its specified fraction of the edge.
+// This supports the common case of drawing opposing edges, but using parallel splines instead of separately routed
+// multiedges. If any fraction is used, the colors are drawn in series, with each color being given roughly its
+// specified fraction of the edge.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:color
 func (n *Node) SetColor(v string) *Node {
 	n.SafeSet(string(colorAttr), v, "black")
@@ -439,8 +448,9 @@ func (n *Node) SetColor(v string) *Node {
 // In the latter case, if colorList has no fractions,
 // the edge is drawn using parallel splines or lines, one for each color in the list, in the order given.
 // The head arrow, if any, is drawn using the first color in the list, and the tail arrow, if any, the second color.
-// This supports the common case of drawing opposing edges, but using parallel splines instead of separately routed multiedges.
-// If any fraction is used, the colors are drawn in series, with each color being given roughly its specified fraction of the edge.
+// This supports the common case of drawing opposing edges, but using parallel splines instead of separately routed
+// multiedges. If any fraction is used, the colors are drawn in series, with each color being given roughly its
+// specified fraction of the edge.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:color
 func (e *Edge) SetColor(v string) *Edge {
 	e.SafeSet(string(colorAttr), v, "black")
@@ -450,7 +460,8 @@ func (e *Edge) SetColor(v string) *Edge {
 // SetColorScheme
 // This attribute specifies a color scheme namespace.
 // If defined, it specifies the context for interpreting color names.
-// In particular, if a color value has form "xxx" or "//xxx", then the color xxx will be evaluated according to the current color scheme.
+// In particular, if a color value has form "xxx" or "//xxx", then the color xxx will be evaluated according to the
+// current color scheme.
 // If no color scheme is set, the standard X11 naming is used.
 // For example, if colorscheme=bugn9, then color=7 is interpreted as "/bugn9/7".
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:colorscheme
@@ -462,7 +473,8 @@ func (g *Graph) SetColorScheme(v string) *Graph {
 // SetColorScheme
 // This attribute specifies a color scheme namespace.
 // If defined, it specifies the context for interpreting color names.
-// In particular, if a color value has form "xxx" or "//xxx", then the color xxx will be evaluated according to the current color scheme.
+// In particular, if a color value has form "xxx" or "//xxx", then the color xxx will be evaluated according to the
+// current color scheme.
 // If no color scheme is set, the standard X11 naming is used.
 // For example, if colorscheme=bugn9, then color=7 is interpreted as "/bugn9/7".
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:colorscheme
@@ -474,7 +486,8 @@ func (n *Node) SetColorScheme(v string) *Node {
 // SetColorScheme
 // This attribute specifies a color scheme namespace.
 // If defined, it specifies the context for interpreting color names.
-// In particular, if a color value has form "xxx" or "//xxx", then the color xxx will be evaluated according to the current color scheme.
+// In particular, if a color value has form "xxx" or "//xxx", then the color xxx will be evaluated according to the
+// current color scheme.
 // If no color scheme is set, the standard X11 naming is used.
 // For example, if colorscheme=bugn9, then color=7 is interpreted as "/bugn9/7".
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:colorscheme
@@ -534,7 +547,8 @@ func (e *Edge) SetConstraint(v bool) *Edge {
 }
 
 // SetDecorate
-// If true, attach edge label to edge by a 2-segment polyline, underlining the label, then going to the closest point of spline.
+// If true, attach edge label to edge by a 2-segment polyline, underlining the label, then going to the closest point of
+// spline.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:decorate
 func (e *Edge) SetDecorate(v bool) *Edge {
 	e.SafeSet(string(decorateAttr), toBoolString(v), falseStr)
@@ -568,7 +582,8 @@ func (g *Graph) SetDim(v int) *Graph {
 // Note that, at present, all aspects of rendering are 2D.
 // This includes the shape and size of nodes, overlap removal, and edge routing.
 // Thus, for dimen > 2, the only valid information is the pos attribute of the nodes.
-// All other coordinates will be 2D and, at best, will reflect a projection of a higher-dimensional point onto the plane.
+// All other coordinates will be 2D and, at best, will reflect a projection of a higher-dimensional point onto the
+// plane.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:dimen
 func (g *Graph) SetDimen(v int) *Graph {
 	g.SafeSet(string(dimAttr), fmt.Sprint(v), "2")
@@ -596,7 +611,8 @@ func (e *Edge) SetDir(v DirType) *Edge {
 
 // SetDirEdgeConstraints
 // Only valid when mode="ipsep".
-// If true, constraints are generated for each edge in the largest (heuristic) directed acyclic subgraph such that the edge must point downwards.
+// If true, constraints are generated for each edge in the largest (heuristic) directed acyclic subgraph such that the
+// edge must point downwards.
 // If "hier", generates level constraints similar to those used with mode="hier".
 // The main difference is that, in the latter case, only these constraints are involved, so a faster solver can be used.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:diredgeconstraints
@@ -617,7 +633,8 @@ func (n *Node) SetDistortion(v float64) *Node {
 // SetDPI
 // This specifies the expected number of pixels per inch on a display device.
 // For bitmap output, this guarantees that text rendering will be done more accurately, both in size and in placement.
-// For SVG output, it is used to guarantee that the dimensions in the output correspond to the correct number of points or inches.
+// For SVG output, it is used to guarantee that the dimensions in the output correspond to the correct number of points
+// or inches.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:dpi
 func (g *Graph) SetDPI(v float64) *Graph {
 	g.SafeSet(string(dpiAttr), fmt.Sprint(v), "96.0")
@@ -684,8 +701,9 @@ func (g *Graph) SetESep(v float64) *Graph {
 // SetFillColor
 // Color used to fill the background of a node or cluster assuming style=filled, or a filled arrowhead.
 // If fillcolor is not defined, color is used. (For clusters, if color is not defined, bgcolor is used.)
-// If this is not defined, the default is used, except for shape=point or when the output format is MIF, which use black by default.
-// If the value is a colorList, a gradient fill is used. By default, this is a linear fill; setting style=radial will cause a radial fill.
+// If this is not defined, the default is used, except for shape=point or when the output format is MIF, which use black
+// by default. If the value is a colorList, a gradient fill is used. By default, this is a linear fill; setting
+// style=radial will cause a radial fill.
 // At present, only two colors are used.
 // If the second color (after a colon) is missing, the default color is used for it.
 // See also the gradientangle attribute for setting the gradient angle.
@@ -705,8 +723,9 @@ func (n *Node) FixedSize() bool {
 // SetFixedSize
 // If false, the size of a node is determined by smallest width and height needed to contain its label and image,
 // if any, with a margin specified by the margin attribute.
-// The width and height must also be at least as large as the sizes specified by the width and height attributes, which specify the minimum values for these parameters.
-// If true, the node size is specified by the values of the width and height attributes only and is not expanded to contain the text label.
+// The width and height must also be at least as large as the sizes specified by the width and height attributes, which
+// specify the minimum values for these parameters. If true, the node size is specified by the values of the width and
+// height attributes only and is not expanded to contain the text label.
 // There will be a warning if the label (with margin) cannot fit within these limits.
 //
 // If the fixedsize attribute is set to shape,
@@ -947,7 +966,8 @@ func (e *Edge) SetHref(v string) *Edge {
 // SetID
 // Allows the graph author to provide an id for graph objects which is to be included in the output.
 // Normal "\N", "\E", "\G" substitutions are applied.
-// If provided, it is the responsibility of the provider to keep its values sufficiently unique for its intended downstream use.
+// If provided, it is the responsibility of the provider to keep its values sufficiently unique for its intended
+// downstream use.
 // Note, in particular, that "\E" does not provide a unique id for multi-edges.
 // If no id attribute is provided, then a unique internal id is used.
 // However, this value is unpredictable by the graph writer.
@@ -963,7 +983,8 @@ func (g *Graph) SetID(v string) *Graph {
 // SetID
 // Allows the graph author to provide an id for graph objects which is to be included in the output.
 // Normal "\N", "\E", "\G" substitutions are applied.
-// If provided, it is the responsibility of the provider to keep its values sufficiently unique for its intended downstream use.
+// If provided, it is the responsibility of the provider to keep its values sufficiently unique for its intended
+// downstream use.
 // Note, in particular, that "\E" does not provide a unique id for multi-edges.
 // If no id attribute is provided, then a unique internal id is used.
 // However, this value is unpredictable by the graph writer.
@@ -979,7 +1000,8 @@ func (n *Node) SetID(v string) *Node {
 // SetID
 // Allows the graph author to provide an id for graph objects which is to be included in the output.
 // Normal "\N", "\E", "\G" substitutions are applied.
-// If provided, it is the responsibility of the provider to keep its values sufficiently unique for its intended downstream use.
+// If provided, it is the responsibility of the provider to keep its values sufficiently unique for its intended
+// downstream use.
 // Note, in particular, that "\E" does not provide a unique id for multi-edges.
 // If no id attribute is provided, then a unique internal id is used.
 // However, this value is unpredictable by the graph writer.
@@ -1004,7 +1026,8 @@ func (e *Edge) SetID(v string) *Edge {
 // An SVG image file must contain width and height attributes, typically as part of the svg element.
 // The values for these should have the form of a floating point number, followed by optional units,
 // e.g., width="76pt".
-// Recognized units are in, px, pc, pt, cm and mm for inches, pixels, picas, points, centimeters and millimeters, respectively.
+// Recognized units are in, px, pc, pt, cm and mm for inches, pixels, picas, points, centimeters and millimeters,
+// respectively.
 // The default unit is points.
 //
 // Unlike with the shapefile attribute, the image is treated as node content rather than the entire node.
@@ -1016,10 +1039,12 @@ func (n *Node) SetImage(v string) *Node {
 }
 
 // SetImagePath
-// Specifies a list of directories in which to look for image files as specified by the image attribute or using the IMG element in HTML-like labels.
-// The string should be a list of (absolute or relative) pathnames, each separated by a semicolon (for Windows) or a colon (all other OS).
+// Specifies a list of directories in which to look for image files as specified by the image attribute or using the IMG
+// element in HTML-like labels. The string should be a list of (absolute or relative) pathnames, each separated by a
+// semicolon (for Windows) or a colon (all other OS).
 // The first directory in which a file of the given name is found will be used to load the image.
-// If imagepath is not set, relative pathnames for the image file will be interpreted with respect to the current working directory.
+// If imagepath is not set, relative pathnames for the image file will be interpreted with respect to the current
+// working directory.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:imagepath
 func (g *Graph) SetImagePath(v string) *Graph {
 	g.SafeSet(string(imagePathAttr), v, "")
@@ -1064,14 +1089,24 @@ func (n *Node) ImageScale() ImageScale {
 	if v == "" {
 		return ImageScaleDefault
 	}
+
 	return ImageScale(v)
 }
 
 // SetImageScale
-// Attribute controlling how an image fills its containing node. In general, the image is given its natural size, (cf. dpi), and the node size is made large enough to contain its image, its label, its margin, and its peripheries. Its width and height will also be at least as large as its minimum width and height. If, however, fixedsize=true, the width and height attributes specify the exact size of the node.
-// During rendering, in the default case (imagescale=false), the image retains its natural size. If imagescale=true, the image is uniformly scaled (i.e., its aspect ratio is preserved) to fit inside the node. At least one dimension of the image will be as large as possible given the size of the node. When imagescale=width, the width of the image is scaled to fill the node width. The corresponding property holds when imagescale=height. When imagescale=both, both the height and the width are scaled separately to fill the node.
+// Attribute controlling how an image fills its containing node. In general, the image is given its natural size, (cf.
+// dpi), and the node size is made large enough to contain its image, its label, its margin, and its peripheries. Its
+// width and height will also be at least as large as its minimum width and height. If, however, fixedsize=true, the
+// width and height attributes specify the exact size of the node. During rendering, in the default case
+// (imagescale=false), the image retains its natural size. If imagescale=true, the image is uniformly scaled (i.e., its
+// aspect ratio is preserved) to fit inside the node. At least one dimension of the image will be as large as possible
+// given the size of the node. When imagescale=width, the width of the image is scaled to fill the node width. The
+// corresponding property holds when imagescale=height. When imagescale=both, both the height and the width are scaled
+// separately to fill the node.
 //
-// In all cases, if a dimension of the image is larger than the corresponding dimension of the node, that dimension of the image is scaled down to fit the node. As with the case of expansion, if imagescale=true, width and height are scaled uniformly.
+// In all cases, if a dimension of the image is larger than the corresponding dimension of the node, that dimension of
+// the image is scaled down to fit the node. As with the case of expansion, if imagescale=true, width and height are
+// scaled uniformly.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:imagescale
 func (n *Node) SetImageScale(v ImageScale) *Node {
 	n.SafeSet(string(imageScaleAttr), string(v), string(ImageScaleDefault))
@@ -1082,7 +1117,8 @@ func (n *Node) SetImageScale(v ImageScale) *Node {
 // For layout algorithms that support initial input positions (specified by the pos attribute),
 // this attribute can be used to appropriately scale the values.
 // By default, fdp and neato interpret the x and y values of pos as being in inches.
-// (NOTE: neato -n(2) treats the coordinates as being in points, being the unit used by the layout algorithms for the pos attribute.)
+// (NOTE: neato -n(2) treats the coordinates as being in points, being the unit used by the layout algorithms for the
+// pos attribute.)
 // Thus, if the graph has pos attributes in points, one should set inputscale=72.
 // This can also be set on the command line using the -s flag flag.
 // If not set, no scaling is done and the units on input are treated as inches.
@@ -1102,8 +1138,9 @@ func (g *Graph) Label() string {
 // Text label attached to objects.
 // If a node's shape is record, then the label can have a special format which describes the record layout.
 // Note that a node's default label is "\N", so the node's name or ID becomes its label.
-// Technically, a node's name can be an HTML string but this will not mean that the node's label will be interpreted as an HTML-like label.
-// This is because the node's actual label is an ordinary string, which will be replaced by the raw bytes stored in the node's name.
+// Technically, a node's name can be an HTML string but this will not mean that the node's label will be interpreted as
+// an HTML-like label. This is because the node's actual label is an ordinary string, which will be replaced by the raw
+// bytes stored in the node's name.
 // To get an HTML-like label, the label attribute value itself must be an HTML string.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:label
 func (g *Graph) SetLabel(v string) *Graph {
@@ -1127,8 +1164,9 @@ func (n *Node) Label() string {
 // Text label attached to objects.
 // If a node's shape is record, then the label can have a special format which describes the record layout.
 // Note that a node's default label is "\N", so the node's name or ID becomes its label.
-// Technically, a node's name can be an HTML string but this will not mean that the node's label will be interpreted as an HTML-like label.
-// This is because the node's actual label is an ordinary string, which will be replaced by the raw bytes stored in the node's name.
+// Technically, a node's name can be an HTML string but this will not mean that the node's label will be interpreted as
+// an HTML-like label. This is because the node's actual label is an ordinary string, which will be replaced by the raw
+// bytes stored in the node's name.
 // To get an HTML-like label, the label attribute value itself must be an HTML string.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:label
 func (n *Node) SetLabel(v string) *Node {
@@ -1152,8 +1190,9 @@ func (e *Edge) Label() string {
 // Text label attached to objects.
 // If a node's shape is record, then the label can have a special format which describes the record layout.
 // Note that a node's default label is "\N", so the node's name or ID becomes its label.
-// Technically, a node's name can be an HTML string but this will not mean that the node's label will be interpreted as an HTML-like label.
-// This is because the node's actual label is an ordinary string, which will be replaced by the raw bytes stored in the node's name.
+// Technically, a node's name can be an HTML string but this will not mean that the node's label will be interpreted as
+// an HTML-like label. This is because the node's actual label is an ordinary string, which will be replaced by the raw
+// bytes stored in the node's name.
 // To get an HTML-like label, the label attribute value itself must be an HTML string.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:label
 func (e *Edge) SetLabel(v string) *Edge {
@@ -1178,10 +1217,12 @@ func (e *Edge) SetLabelURL(v string) *Edge {
 }
 
 // SetLabelScheme
-// The value indicates whether to treat a node whose name has the form |edgelabel|* as a special node representing an edge label.
+// The value indicates whether to treat a node whose name has the form |edgelabel|* as a special node representing an
+// edge label.
 // The default (0) produces no effect.
-// If the attribute is set to 1, sfdp uses a penalty-based method to make that kind of node close to the center of its neighbor.
-// With a value of 2, sfdp uses a penalty-based method to make that kind of node close to the old center of its neighbor.
+// If the attribute is set to 1, sfdp uses a penalty-based method to make that kind of node close to the center of its
+// neighbor. With a value of 2, sfdp uses a penalty-based method to make that kind of node close to the old center of
+// its neighbor.
 // Finally, a value of 3 invokes a two-step process of overlap removal and straightening.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:label_scheme
 func (g *Graph) SetLabelScheme(v int) *Graph {
@@ -1190,7 +1231,8 @@ func (g *Graph) SetLabelScheme(v int) *Graph {
 }
 
 // SetLabelAngle
-// This, along with labeldistance, determine where the headlabel (taillabel) are placed with respect to the head (tail) in polar coordinates.
+// This, along with labeldistance, determine where the headlabel (taillabel) are placed with respect to the head (tail)
+// in polar coordinates.
 // The origin in the coordinate system is the point where the edge touches the node.
 // The ray of 0 degrees goes from the origin back along the edge, parallel to the edge at the origin.
 // The angle, in degrees, specifies the rotation from the 0 degree ray,
@@ -1275,13 +1317,15 @@ const (
 
 // SetLabelLocation
 // Vertical placement of labels for nodes, root graphs and clusters.
-// For graphs and clusters, only "t" and "b" are allowed, corresponding to placement at the top and bottom, respectively.
+// For graphs and clusters, only "t" and "b" are allowed, corresponding to placement at the top and bottom,
+// respectively.
 // By default, root graph labels go on the bottom and cluster labels go on the top.
 // Note that a subgraph inherits attributes from its parent.
 // Thus, if the root graph sets labelloc to "b", the subgraph inherits this value.
 //
 // For nodes, this attribute is used only when the height of the node is larger than the height of its label.
-// If labelloc is set to "t", "c", or "b", the label is aligned with the top, centered, or aligned with the bottom of the node, respectively.
+// If labelloc is set to "t", "c", or "b", the label is aligned with the top, centered, or aligned with the bottom of
+// the node, respectively.
 // In the default case, the label is vertically centered.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:labelloc
 func (g *Graph) SetLabelLocation(v LabelLocation) *Graph {
@@ -1291,13 +1335,15 @@ func (g *Graph) SetLabelLocation(v LabelLocation) *Graph {
 
 // SetLabelLocation
 // Vertical placement of labels for nodes, root graphs and clusters.
-// For graphs and clusters, only "t" and "b" are allowed, corresponding to placement at the top and bottom, respectively.
+// For graphs and clusters, only "t" and "b" are allowed, corresponding to placement at the top and bottom,
+// respectively.
 // By default, root graph labels go on the bottom and cluster labels go on the top.
 // Note that a subgraph inherits attributes from its parent.
 // Thus, if the root graph sets labelloc to "b", the subgraph inherits this value.
 //
 // For nodes, this attribute is used only when the height of the node is larger than the height of its label.
-// If labelloc is set to "t", "c", or "b", the label is aligned with the top, centered, or aligned with the bottom of the node, respectively.
+// If labelloc is set to "t", "c", or "b", the label is aligned with the top, centered, or aligned with the bottom of
+// the node, respectively.
 // In the default case, the label is vertically centered.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:labelloc
 func (n *Node) SetLabelLocation(v LabelLocation) *Node {
@@ -1388,7 +1434,8 @@ func (g *Graph) SetLayerSeparator(v string) *Graph {
 // Specifies the name of the layout algorithm to use, such as "dot" or "neato".
 // Normally, graphs should be kept independent of a type of layout.
 // In some cases, however, it can be convenient to embed the type of layout desired within the graph.
-// For example, a graph containing position information from a layout might want to record what the associated layout algorithm was.
+// For example, a graph containing position information from a layout might want to record what the associated layout
+// algorithm was.
 // This attribute takes precedence over the -K flag or the actual command name used.
 func (g *Graph) SetLayout(v string) *Graph {
 	g.SafeSet(string(layoutAttr), v, "")
@@ -1525,8 +1572,9 @@ func (g *Graph) SetMaxIterator(v int) *Graph {
 }
 
 // SetMCLimit
-// Multiplicative scale factor used to alter the MinQuit (default = 8) and MaxIter (default = 24) parameters used during crossing minimization.
-// These correspond to the number of tries without improvement before quitting and the maximum number of iterations in each pass.
+// Multiplicative scale factor used to alter the MinQuit (default = 8) and MaxIter (default = 24) parameters used during
+// crossing minimization. These correspond to the number of tries without improvement before quitting and the maximum
+// number of iterations in each pass.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:mclimit
 func (g *Graph) SetMCLimit(v float64) *Graph {
 	g.SafeSet(string(mcLimitAttr), fmt.Sprint(v), "1.0")
@@ -1564,13 +1612,16 @@ const (
 // Technique for optimizing the layout.
 // For neato, if mode is "major", neato uses stress majorization.
 // If mode is "KK", neato uses a version of the gradient descent method.
-// The only advantage to the latter technique is that it is sometimes appreciably faster for small (number of nodes < 100) graphs.
+// The only advantage to the latter technique is that it is sometimes appreciably faster for small (number of nodes <
+// 100) graphs.
 // A significant disadvantage is that it may cycle.
-// There are two experimental modes in neato, "hier", which adds a top-down directionality similar to the layout used in dot,
-// and "ipsep", which allows the graph to specify minimum vertical and horizontal distances between nodes. (See the sep attribute.)
+// There are two experimental modes in neato, "hier", which adds a top-down directionality similar to the layout used in
+// dot, and "ipsep", which allows the graph to specify minimum vertical and horizontal distances between nodes. (See the
+// sep attribute.)
 //
 // For sfdp, the default mode is "spring", which corresponds to using a spring-electrical model.
-// Setting mode to "maxent" causes a similar model to be run but one that also takes into account edge lengths specified by the "len" attribute.
+// Setting mode to "maxent" causes a similar model to be run but one that also takes into account edge lengths specified
+// by the "len" attribute.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:mode
 func (g *Graph) SetMode(v ModeType) *Graph {
 	g.SafeSet(string(modeAttr), string(v), string(MajorMode))
@@ -1608,7 +1659,8 @@ func (g *Graph) SetModel(v ModelType) *Graph {
 }
 
 // SetMosek
-// If Graphviz is built with MOSEK defined, mode=ipsep and mosek=true, the Mosek software (www.mosek.com) is use to solve the ipsep constraints.
+// If Graphviz is built with MOSEK defined, mode=ipsep and mosek=true, the Mosek software (www.mosek.com) is use to
+// solve the ipsep constraints.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:mosek
 func (g *Graph) SetMosek(v bool) *Graph {
 	g.SafeSet(string(mosekAttr), toBoolString(v), falseStr)
@@ -1641,11 +1693,13 @@ func (g *Graph) SetNodeSeparator(v float64) *Graph {
 
 // SetNoJustify
 // By default, the justification of multi-line labels is done within the largest context that makes sense.
-// Thus, in the label of a polygonal node, a left-justified line will align with the left side of the node (shifted by the prescribed margin).
+// Thus, in the label of a polygonal node, a left-justified line will align with the left side of the node (shifted by
+// the prescribed margin).
 // In record nodes, left-justified line will line up with the left side of the enclosing column of fields.
 // If nojustify is "true", multi-line labels will be justified in the context of itself.
 // For example, if the attribute is set, the first label line is long, and the second is shorter
-// and left-justified, the second will align with the left-most character in the first line, regardless of how large the node might be.
+// and left-justified, the second will align with the left-most character in the first line, regardless of how large the
+// node might be.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:nojustify
 func (g *Graph) SetNoJustify(v bool) *Graph {
 	g.SafeSet(string(noJustifyAttr), toBoolString(v), falseStr)
@@ -1654,11 +1708,13 @@ func (g *Graph) SetNoJustify(v bool) *Graph {
 
 // SetNoJustify
 // By default, the justification of multi-line labels is done within the largest context that makes sense.
-// Thus, in the label of a polygonal node, a left-justified line will align with the left side of the node (shifted by the prescribed margin).
+// Thus, in the label of a polygonal node, a left-justified line will align with the left side of the node (shifted by
+// the prescribed margin).
 // In record nodes, left-justified line will line up with the left side of the enclosing column of fields.
 // If nojustify is "true", multi-line labels will be justified in the context of itself.
 // For example, if the attribute is set, the first label line is long, and the second is shorter
-// and left-justified, the second will align with the left-most character in the first line, regardless of how large the node might be.
+// and left-justified, the second will align with the left-most character in the first line, regardless of how large the
+// node might be.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:nojustify
 func (n *Node) SetNoJustify(v bool) *Node {
 	n.SafeSet(string(noJustifyAttr), toBoolString(v), falseStr)
@@ -1667,11 +1723,13 @@ func (n *Node) SetNoJustify(v bool) *Node {
 
 // SetNoJustify
 // By default, the justification of multi-line labels is done within the largest context that makes sense.
-// Thus, in the label of a polygonal node, a left-justified line will align with the left side of the node (shifted by the prescribed margin).
+// Thus, in the label of a polygonal node, a left-justified line will align with the left side of the node (shifted by
+// the prescribed margin).
 // In record nodes, left-justified line will line up with the left side of the enclosing column of fields.
 // If nojustify is "true", multi-line labels will be justified in the context of itself.
 // For example, if the attribute is set, the first label line is long, and the second is shorter
-// and left-justified, the second will align with the left-most character in the first line, regardless of how large the node might be.
+// and left-justified, the second will align with the left-most character in the first line, regardless of how large the
+// node might be.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:nojustify
 func (e *Edge) SetNoJustify(v bool) *Edge {
 	e.SafeSet(string(noJustifyAttr), toBoolString(v), falseStr)
@@ -1798,8 +1856,9 @@ func (g *Graph) SetOutputOrder(v OutputMode) *Graph {
 // which can remove a significant portion of the overlap.
 // The prism option also accepts an optional non-negative integer suffix.
 // This can be used to control the number of attempts made at overlap removal.
-// By default, overlap="prism" is equivalent to overlap="prism1000". Setting overlap="prism0" causes only the scaling phase to be run.
-// If Prism is not available, or the version of Graphviz is earlier than 2.28, "overlap=false" uses a Voronoi-based technique.
+// By default, overlap="prism" is equivalent to overlap="prism1000". Setting overlap="prism0" causes only the scaling
+// phase to be run. If Prism is not available, or the version of Graphviz is earlier than 2.28, "overlap=false" uses a
+// Voronoi-based technique.
 // This can always be invoked explicitly with "overlap=voronoi".
 //
 // If the value is "scalexy", x and y are separately scaled to remove overlaps.
@@ -1810,11 +1869,14 @@ func (g *Graph) SetOutputOrder(v OutputMode) *Graph {
 // N.B.The remaining allowed values of overlap correspond to algorithms which, at present,
 // can produce bad aspect ratios. In addition, we deprecate the use of the "ortho*" and "portho*".
 //
-// If the value is "vpsc", overlap removal is done as a quadratic optimization to minimize node displacement while removing node overlaps.
+// If the value is "vpsc", overlap removal is done as a quadratic optimization to minimize node displacement while
+// removing node overlaps.
 //
-// If the value is "orthoxy" or "orthoyx", overlaps are moved by optimizing two constraint problems, one for the x axis and one for the y.
+// If the value is "orthoxy" or "orthoyx", overlaps are moved by optimizing two constraint problems, one for the x axis
+// and one for the y.
 // The suffix indicates which axis is processed first.
-// If the value is "ortho", the technique is similar to "orthoxy" except a heuristic is used to reduce the bias between the two passes.
+// If the value is "ortho", the technique is similar to "orthoxy" except a heuristic is used to reduce the bias between
+// the two passes.
 // If the value is "ortho_yx", the technique is the same as "ortho", except the roles of x and y are reversed.
 // The values "portho", "porthoxy", "porthoxy", and "portho_yx" are similar to the previous four,
 // except only pseudo-orthogonal ordering is enforced.
@@ -1828,11 +1890,13 @@ func (g *Graph) SetOutputOrder(v OutputMode) *Graph {
 // Thus, fdp accepts overlap with an integer prefix followed by a colon, specifying the number of tries.
 // If there is no prefix, no initial tries will be performed.
 // If there is nothing following a colon, none of the above methods will be attempted.
-// By default, fdp uses overlap="9:prism". Note that overlap="true", overlap="0:true" and overlap="0:" all turn off all overlap removal.
+// By default, fdp uses overlap="9:prism". Note that overlap="true", overlap="0:true" and overlap="0:" all turn off all
+// overlap removal.
 //
 // By default, sfdp uses overlap="prism0".
 //
-// Except for the Voronoi and prism methods, all of these transforms preserve the orthogonal ordering of the original layout.
+// Except for the Voronoi and prism methods, all of these transforms preserve the orthogonal ordering of the original
+// layout.
 // That is, if the x coordinates of two nodes are originally the same, they will remain the same,
 // and if the x coordinate of one node is originally less than the x coordinate of another,
 // this relation will still hold in the transformed layout.
@@ -2002,7 +2066,8 @@ func (n *Node) SetPeripheries(v int) *Node {
 // neato or fdp prevents the node from moving from the input position.
 // This property can also be specified in the pos attribute itself (cf. the point type).
 //
-// Note: Due to an artifact of the implementation, previous to 27 Feb 2014, final coordinates are translated to the origin.
+// Note: Due to an artifact of the implementation, previous to 27 Feb 2014, final coordinates are translated to the
+// origin.
 // Thus, if you look at the output coordinates given in the (x)dot or plain format,
 // pinned nodes will not have the same output coordinates as were given on input.
 // If this is important, a simple workaround is to maintain the coordinates of a pinned node.
@@ -2025,7 +2090,8 @@ func (n *Node) SetPin(v bool) *Node {
 // By default, the coordinates are assumed to be in inches.
 // However, the -s command line flag can be used to specify different units.
 // As the output coordinates are in points,
-// feeding the output of a graph laid out by a Graphviz program into neato or fdp will almost always require the -s flag.
+// feeding the output of a graph laid out by a Graphviz program into neato or fdp will almost always require the -s
+// flag.
 //
 // When the -n command line flag is used with neato,
 // it is assumed the positions have been set by one of the layout programs, and are therefore in points.
@@ -2044,7 +2110,8 @@ func (n *Node) SetPos(x, y float64) *Node {
 // By default, the coordinates are assumed to be in inches.
 // However, the -s command line flag can be used to specify different units.
 // As the output coordinates are in points,
-// feeding the output of a graph laid out by a Graphviz program into neato or fdp will almost always require the -s flag.
+// feeding the output of a graph laid out by a Graphviz program into neato or fdp will almost always require the -s
+// flag.
 //
 // When the -n command line flag is used with neato,
 // it is assumed the positions have been set by one of the layout programs, and are therefore in points.
@@ -2227,7 +2294,8 @@ func (g *Graph) SetResolution(v float64) *Graph {
 // In circo, the block containing the node will be central in the drawing of its connected component.
 // If not defined, twopi will pick a most central node, and circo will pick a random node.
 //
-// If the root attribute is defined as the empty string, twopi will reset it to name of the node picked as the root node.
+// If the root attribute is defined as the empty string, twopi will reset it to name of the node picked as the root
+// node.
 //
 // For twopi, it is possible to have multiple roots, presumably one for each component.
 // If more than one node in a component is marked as the root, twopi will pick one.
@@ -2245,7 +2313,8 @@ func (g *Graph) SetRoot(v bool) *Graph {
 // In circo, the block containing the node will be central in the drawing of its connected component.
 // If not defined, twopi will pick a most central node, and circo will pick a random node.
 //
-// If the root attribute is defined as the empty string, twopi will reset it to name of the node picked as the root node.
+// If the root attribute is defined as the empty string, twopi will reset it to name of the node picked as the root
+// node.
 //
 // For twopi, it is possible to have multiple roots, presumably one for each component.
 // If more than one node in a component is marked as the root, twopi will pick one.
@@ -2550,7 +2619,8 @@ const (
 
 // SetStart
 // Parameter used to determine the initial layout of nodes.
-// If unset, the nodes are randomly placed in a unit square with the same seed is always used for the random number generator,
+// If unset, the nodes are randomly placed in a unit square with the same seed is always used for the random number
+// generator,
 // so the initial placement is repeatable.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:start
 func (g *Graph) SetStart(v StartType) *Graph {
@@ -2782,7 +2852,8 @@ func (e *Edge) SetTooltip(v string) *Edge {
 
 // SetTrueColor
 // If set explicitly to true or false,
-// the value determines whether or not internal bitmap rendering relies on a truecolor color model or uses a color palette.
+// the value determines whether or not internal bitmap rendering relies on a truecolor color model or uses a color
+// palette.
 // If the attribute is unset, truecolor is not used unless there is a shapefile property for some node in the graph.
 // The output model will use the input model when possible.
 //
@@ -2832,7 +2903,8 @@ func (g *Graph) SetVoroMargin(v float64) *Graph {
 // In dot, the heavier the weight, the shorter, straighter and more vertical the edge is.
 // N.B. Weights in dot must be integers.
 // For twopi, a weight of 0 indicates the edge should not be used in constructing a spanning tree from the root.
-// For other layouts, a larger weight encourages the layout to make the edge length closer to that specified by the len attribute.
+// For other layouts, a larger weight encourages the layout to make the edge length closer to that specified by the len
+// attribute.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:weight
 func (e *Edge) SetWeight(v float64) *Edge {
 	e.SafeSet(string(weightAttr), fmt.Sprint(v), "1")
@@ -2926,7 +2998,8 @@ func (e *Edge) SetXLabelPosition(x, y float64) *Edge {
 //
 // Even if no z values are specified in the input,
 // it is necessary to declare a z attribute for nodes, e.g, using node[z=""] in order to get z values on output.
-// Thus, setting dim=3 but not declaring z will cause neato -Tvrml to layout the graph in 3D but project the layout onto the xy-plane for the rendering.
+// Thus, setting dim=3 but not declaring z will cause neato -Tvrml to layout the graph in 3D but project the layout onto
+// the xy-plane for the rendering.
 // If the z attribute is declared, the final rendering will be in 3D.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:z
 func (n *Node) SetZ(v float64) *Node {

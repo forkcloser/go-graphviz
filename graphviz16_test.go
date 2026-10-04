@@ -19,31 +19,37 @@ import (
 // release that does not.
 func TestSFDPRepeatedRender(t *testing.T) {
 	ctx := context.Background()
+
 	g, err := graphviz.New(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer g.Close()
+
 	g.SetLayout(graphviz.SFDP)
 
 	data, err := os.ReadFile(filepath.Join("testdata", "directed", "KW91.gv"))
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for i := range 30 {
 		graph, err := graphviz.ParseBytes(data)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		var buf bytes.Buffer
 		if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
 			graph.Close()
 			t.Fatalf("iteration %d: %v", i, err)
 		}
+
 		if buf.Len() == 0 {
 			graph.Close()
 			t.Fatalf("iteration %d: empty render", i)
 		}
+
 		graph.Close()
 	}
 }
@@ -53,6 +59,7 @@ func TestSFDPRepeatedRender(t *testing.T) {
 // produces an HTML-like label (the <...> form in DOT output).
 func TestHTMLLabel(t *testing.T) {
 	ctx := context.Background()
+
 	g, err := graphviz.New(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -66,25 +73,31 @@ func TestHTMLLabel(t *testing.T) {
 	defer graph.Close()
 
 	const markup = "<b>bold</b>"
+
 	plain, err := graph.CreateNodeByName("plain")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	plain.SetLabel(markup)
+
 	html, err := graph.CreateNodeByName("html")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	html.SetLabelHTML(markup)
 
 	var buf bytes.Buffer
 	if err := g.Render(ctx, graph, graphviz.XDOT, &buf); err != nil {
 		t.Fatal(err)
 	}
+
 	out := buf.String()
 	if !strings.Contains(out, `label="<b>bold</b>"`) {
 		t.Errorf("SetLabel did not keep the markup as a quoted string:\n%s", out)
 	}
+
 	if !strings.Contains(out, `label=<<b>bold</b>>`) {
 		t.Errorf("SetLabelHTML did not produce an HTML-like label:\n%s", out)
 	}
@@ -103,14 +116,17 @@ func TestCanon(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if got != tc.want {
 			t.Errorf("CanonStr(%q) = %q, want %q", tc.in, got, tc.want)
 		}
 	}
+
 	got, err := cgraph.Canon("<b>x</b>", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if got != "<<b>x</b>>" {
 		t.Errorf("Canon(html) = %q", got)
 	}

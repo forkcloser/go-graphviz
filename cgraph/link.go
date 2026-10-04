@@ -23,5 +23,6 @@ func toGraphWasm(v *Graph) *wasm.Graph {
 	if v == nil {
 		return nil
 	}
+
 	return v.wasm
 }

@@ -27,6 +27,7 @@ func setGlobalVars(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	directed.SetDirected(1)
 	directed.SetMaingraph(1)
 
@@ -34,6 +35,7 @@ func setGlobalVars(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	strictDirected.SetDirected(1)
 	strictDirected.SetStrict(1)
 	strictDirected.SetMaingraph(1)
@@ -42,12 +44,14 @@ func setGlobalVars(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	undirected.SetMaingraph(1)
 
 	strictUndirected, err := wasm.NewGraphDescriptor(ctx)
 	if err != nil {
 		return err
 	}
+
 	strictUndirected.SetStrict(1)
 	strictUndirected.SetMaingraph(1)
 
