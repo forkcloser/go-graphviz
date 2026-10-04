@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/flopp/go-findfont"
 	"github.com/fogleman/gg"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 	"github.com/golang/freetype/truetype"
@@ -188,7 +187,7 @@ func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, font 
 }
 
 func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *PointFloat) (font.Face, error) {
-	fontPath, err := findfont.Find(fontName)
+	fontPath, err := findFont(fontName)
 	if err == nil {
 		return r.lookupFontFromTTFFile(fontName, fontSize, dpi, fontPath)
 	}
@@ -229,7 +228,7 @@ func (r *ImageRenderer) lookupFontFromTTFFile(fontName string, fontSize float64,
 
 func (r *ImageRenderer) lookupFontFromTTCFile(fontName string, fontSize float64, dpi *PointFloat, fontPath string) (font.Face, error) {
 	parts := strings.Split(fontName, "-")
-	fontPath, err := findfont.Find(fontPath)
+	fontPath, err := findFont(fontPath)
 	if err != nil {
 		return nil, nil
 	}
