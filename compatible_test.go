@@ -46,6 +46,10 @@ func generateTestData() error {
 
 	for _, path := range testPaths {
 		if err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
 			if info.IsDir() {
 				return nil
 			}
