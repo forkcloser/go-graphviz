@@ -7,15 +7,16 @@ import (
 	"image"
 	"image/jpeg"
 	"io"
+	"math"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/disintegration/imaging"
 	"github.com/flopp/go-findfont"
 	"github.com/fogleman/gg"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/opentype"
@@ -395,7 +396,7 @@ func (r *ImageRenderer) LoadImage(ctx context.Context, job *Job, shape *UserShap
 			bottomRightY := bf.UR().Y()
 			width := bottomRightX - topLeftX
 			height := bottomRightY - topLeftY
-			img = imaging.Resize(img, int(width), int(height), imaging.Lanczos)
+			img = resizeLanczos(img, int(width), int(height))
 			xPAD := defaultXPAD / 2.0
 			yPAD := defaultYPAD / 2.0
 			posX := (topLeftX + xPAD) * job.Scale().X()
@@ -421,4 +422,36 @@ func SetFontLoader(loader FontLoader) {
 	fontLoaderMu.Lock()
 	defer fontLoaderMu.Unlock()
 	fontLoader = loader
+}
+
+// lanczos3 is the Lanczos kernel with a support of three pixels, the filter
+// the renderer has always used for node images; x/image/draw ships only the
+// box, bilinear and Catmull-Rom interpolators, so the kernel is spelled out.
+var lanczos3 = &draw.Kernel{
+	Support: 3.0,
+	At: func(t float64) float64 {
+		if t < 0 {
+			t = -t
+		}
+		if t >= 3.0 {
+			return 0
+		}
+		if t == 0 {
+			return 1
+		}
+		x := math.Pi * t
+		return 3.0 * math.Sin(x) * math.Sin(x/3.0) / (x * x)
+	},
+}
+
+// resizeLanczos scales img to width×height with Lanczos resampling and no
+// aspect-ratio preservation, as the previous imaging.Resize call did. A
+// non-positive dimension yields an empty image, as it did before.
+func resizeLanczos(img image.Image, width, height int) image.Image {
+	if width <= 0 || height <= 0 {
+		return image.NewNRGBA(image.Rect(0, 0, 0, 0))
+	}
+	dst := image.NewNRGBA(image.Rect(0, 0, width, height))
+	lanczos3.Scale(dst, dst.Bounds(), img, img.Bounds(), draw.Over, nil)
+	return dst
 }
