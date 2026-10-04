@@ -8,16 +8,16 @@ import (
 )
 
 func DefaultSymList(ctx context.Context) ([]*SymList, error) {
-	p, err := mod.NewPtr(ctx)
+	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_SymList_default").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_SymList_default").Call(ctx, slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_SymList_default: %w", err)
 	}
 
-	ptr, err := mod.readU32(p)
+	ptr, err := mod.readU32(slot)
 	if err != nil {
 		return nil, err
 	}
@@ -31,16 +31,16 @@ func DefaultSymList(ctx context.Context) ([]*SymList, error) {
 }
 
 func PluginAPIZero(ctx context.Context) (*PluginAPI, error) {
-	p, err := mod.NewPtr(ctx)
+	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_PluginAPI_zero").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_PluginAPI_zero").Call(ctx, slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_PluginAPI_zero: %w", err)
 	}
 
-	ptr, err := mod.readU32(p)
+	ptr, err := mod.readU32(slot)
 	if err != nil {
 		return nil, err
 	}
@@ -49,16 +49,16 @@ func PluginAPIZero(ctx context.Context) (*PluginAPI, error) {
 }
 
 func PluginInstalledZero(ctx context.Context) (*PluginInstalled, error) {
-	p, err := mod.NewPtr(ctx)
+	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_PluginInstalled_zero").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_PluginInstalled_zero").Call(ctx, slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_PluginInstalled_zero: %w", err)
 	}
 
-	ptr, err := mod.readU32(p)
+	ptr, err := mod.readU32(slot)
 	if err != nil {
 		return nil, err
 	}
@@ -67,16 +67,16 @@ func PluginInstalledZero(ctx context.Context) (*PluginInstalled, error) {
 }
 
 func SymListZero(ctx context.Context) (*SymList, error) {
-	p, err := mod.NewPtr(ctx)
+	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_SymList_zero").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_SymList_zero").Call(ctx, slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_SymList_zero: %w", err)
 	}
 
-	ptr, err := mod.readU32(p)
+	ptr, err := mod.readU32(slot)
 	if err != nil {
 		return nil, err
 	}

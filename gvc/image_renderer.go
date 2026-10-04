@@ -102,7 +102,7 @@ func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 	return nil
 }
 
-func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, span *TextSpan) error {
+func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat, span *TextSpan) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
@@ -121,44 +121,44 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, s
 		face = defaultFont
 	}
 
-	p.SetX(r.toX(job, p.X()))
+	pos.SetX(r.toX(job, pos.X()))
 
 	switch span.Just() {
 	case 'r':
-		p.SetX(p.X() - r.toX(job, span.Size().X()))
+		pos.SetX(pos.X() - r.toX(job, span.Size().X()))
 	case 'l':
 		// skip
 	case 'n':
-		p.SetX(p.X() - r.toX(job, span.Size().X()/half))
+		pos.SetX(pos.X() - r.toX(job, span.Size().X()/half))
 	}
 
 	r.ctx.SetFontFace(face)
-	y := r.toY(job, p.Y()+span.YOffsetCenterLine()+span.YOffsetLayout())
-	r.ctx.DrawStringAnchored(span.Text(), p.X(), -y, 0, 0)
+	y := r.toY(job, pos.Y()+span.YOffsetCenterLine()+span.YOffsetLayout())
+	r.ctx.DrawStringAnchored(span.Text(), pos.X(), -y, 0, 0)
 
 	return nil
 }
 
-func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, p []*PointFloat, filled bool) error {
+func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, points []*PointFloat, filled bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
 	r.setPenStyle(job)
-	rx := r.toX(job, p[1].X()-p[0].X())
-	ry := r.toY(job, p[1].Y()-p[0].Y())
+	radiusX := r.toX(job, points[1].X()-points[0].X())
+	radiusY := r.toY(job, points[1].Y()-points[0].Y())
 
-	var c *Color
+	var paint *Color
 	if filled {
-		c = job.Object().FillColor()
+		paint = job.Object().FillColor()
 
 		r.ctx.FillPreserve()
 	} else {
-		c = job.Object().PenColor()
+		paint = job.Object().PenColor()
 	}
 
-	rgba := c.RGBAUint()
+	rgba := paint.RGBAUint()
 	r.setRGB(rgba)
-	r.ctx.DrawEllipse(r.toX(job, p[0].X()), r.toY(job, -p[0].Y()), rx, ry)
+	r.ctx.DrawEllipse(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()), radiusX, radiusY)
 
 	if filled {
 		r.ctx.Fill()
@@ -169,25 +169,25 @@ func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, p []*PointFloat, fi
 	return nil
 }
 
-func (r *ImageRenderer) Polygon(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
+func (r *ImageRenderer) Polygon(_ context.Context, job *Job, points []*PointFloat, filled bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
 	r.setPenStyle(job)
 
-	var c *Color
+	var paint *Color
 	if filled {
-		c = job.Object().FillColor()
+		paint = job.Object().FillColor()
 	} else {
-		c = job.Object().PenColor()
+		paint = job.Object().PenColor()
 	}
 
-	rgba := c.RGBAUint()
+	rgba := paint.RGBAUint()
 	r.setRGB(rgba)
-	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
+	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
-	for i := 1; i < len(a); i++ {
-		r.ctx.LineTo(r.toX(job, a[i].X()), r.toY(job, -a[i].Y()))
+	for i := 1; i < len(points); i++ {
+		r.ctx.LineTo(r.toX(job, points[i].X()), r.toY(job, -points[i].Y()))
 	}
 
 	r.ctx.ClosePath()
@@ -201,17 +201,17 @@ func (r *ImageRenderer) Polygon(_ context.Context, job *Job, a []*PointFloat, fi
 	return nil
 }
 
-func (r *ImageRenderer) Polyline(_ context.Context, job *Job, a []*PointFloat) error {
+func (r *ImageRenderer) Polyline(_ context.Context, job *Job, points []*PointFloat) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
 	r.setPenStyle(job)
 	rgba := job.Object().PenColor().RGBAUint()
 	r.setRGB(rgba)
-	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
+	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
-	for i := 1; i < len(a); i++ {
-		r.ctx.LineTo(r.toX(job, a[i].X()), r.toY(job, -a[i].Y()))
+	for i := 1; i < len(points); i++ {
+		r.ctx.LineTo(r.toX(job, points[i].X()), r.toY(job, -points[i].Y()))
 	}
 
 	r.ctx.Stroke()
@@ -219,33 +219,33 @@ func (r *ImageRenderer) Polyline(_ context.Context, job *Job, a []*PointFloat) e
 	return nil
 }
 
-func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
+func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, points []*PointFloat, filled bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
 	r.setPenStyle(job)
 
-	var c *Color
+	var paint *Color
 	if filled {
-		c = job.Object().FillColor()
+		paint = job.Object().FillColor()
 
 		r.ctx.FillPreserve()
 	} else {
-		c = job.Object().PenColor()
+		paint = job.Object().PenColor()
 	}
 
-	rgba := c.RGBAUint()
+	rgba := paint.RGBAUint()
 	r.setRGB(rgba)
-	r.ctx.MoveTo(r.toX(job, a[0].X()), r.toY(job, -a[0].Y()))
+	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
-	for i := 1; i < len(a); i += 3 {
+	for i := 1; i < len(points); i += 3 {
 		r.ctx.CubicTo(
-			r.toX(job, a[i].X()),
-			r.toY(job, -a[i].Y()),
-			r.toX(job, a[i+1].X()),
-			r.toY(job, -a[i+1].Y()),
-			r.toX(job, a[i+2].X()),
-			r.toY(job, -a[i+2].Y()),
+			r.toX(job, points[i].X()),
+			r.toY(job, -points[i].Y()),
+			r.toX(job, points[i+1].X()),
+			r.toY(job, -points[i+1].Y()),
+			r.toX(job, points[i+2].X()),
+			r.toY(job, -points[i+2].Y()),
 		)
 	}
 
@@ -258,33 +258,33 @@ func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, a []*PointFloat
 	return nil
 }
 
-func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, bf *BoxFloat, _ bool) error {
+func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, box *BoxFloat, _ bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
 	fs := wasm.FileSystem()
 
-	f, err := fs.Open(shape.Name())
+	file, err := fs.Open(shape.Name())
 	if err != nil {
 		return fmt.Errorf("opening image %s: %w", shape.Name(), err)
 	}
 
 	var buf bytes.Buffer
-	io.Copy(&buf, f)
+	io.Copy(&buf, file)
 
 	img, _, err := image.Decode(&buf)
 	if err != nil {
 		return fmt.Errorf("decoding image %s: %w", shape.Name(), err)
 	}
 
-	topLeftX := bf.LL().X()
-	topLeftY := bf.LL().Y()
+	topLeftX := box.LL().X()
+	topLeftY := box.LL().Y()
 
 	node := job.Object().Node()
 	if node != nil {
 		if node.FixedSize() || node.ImageScale() != cgraph.ImageScaleDefault {
-			bottomRightX := bf.UR().X()
-			bottomRightY := bf.UR().Y()
+			bottomRightX := box.UR().X()
+			bottomRightY := box.UR().Y()
 			width := bottomRightX - topLeftX
 			height := bottomRightY - topLeftY
 			img = resizeLanczos(img, int(width), int(height))
@@ -350,8 +350,8 @@ func (r *ImageRenderer) saveJPG(path string) error {
 }
 
 func (r *ImageRenderer) setPenStyle(job *Job) {
-	o := job.Object()
-	switch o.Pen() {
+	object := job.Object()
+	switch object.Pen() {
 	case PenDashed:
 		r.ctx.SetDash(dashLength)
 	case PenDotted:
@@ -359,7 +359,7 @@ func (r *ImageRenderer) setPenStyle(job *Job) {
 	case PenSolid, PenNone:
 	}
 
-	r.ctx.SetLineWidth(o.PenWidth())
+	r.ctx.SetLineWidth(object.PenWidth())
 }
 
 func (r *ImageRenderer) getFontFace(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
@@ -394,16 +394,16 @@ func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, textF
 		}
 	}
 
-	ft, err := r.lookupFont(fontName, fontSize, job.DPI())
+	face, err := r.lookupFont(fontName, fontSize, job.DPI())
 	if err != nil {
 		return nil, err
 	}
 
 	fontMu.Lock()
-	fontCache[cacheKey] = ft
+	fontCache[cacheKey] = face
 	fontMu.Unlock()
 
-	return ft, nil
+	return face, nil
 }
 
 func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *PointFloat) (font.Face, error) {
@@ -474,26 +474,26 @@ func (*ImageRenderer) lookupFontFromTTCFile(
 		return nil, fmt.Errorf("reading font collection %s: %w", fontPath, err)
 	}
 
-	c, err := opentype.ParseCollection(fontData)
+	collection, err := opentype.ParseCollection(fontData)
 	if err != nil {
 		return nil, fmt.Errorf("parsing font collection %s: %w", fontPath, err)
 	}
 
-	for j := range c.NumFonts() {
-		ft, err := c.Font(j)
+	for index := range collection.NumFonts() {
+		member, err := collection.Font(index)
 		if err != nil {
-			return nil, fmt.Errorf("font %d of collection %s: %w", j, fontPath, err)
+			return nil, fmt.Errorf("font %d of collection %s: %w", index, fontPath, err)
 		}
 
 		var buf sfnt.Buffer
 
-		name, err := ft.Name(&buf, sfnt.NameIDFull)
+		name, err := member.Name(&buf, sfnt.NameIDFull)
 		if err != nil {
-			return nil, fmt.Errorf("name of font %d of collection %s: %w", j, fontPath, err)
+			return nil, fmt.Errorf("name of font %d of collection %s: %w", index, fontPath, err)
 		}
 
 		if strings.Join(parts, " ") == name {
-			face, err := opentype.NewFace(ft, &opentype.FaceOptions{
+			face, err := opentype.NewFace(member, &opentype.FaceOptions{
 				Size: fontSize,
 				DPI:  dpi.X(),
 			})
@@ -544,20 +544,20 @@ func SetFontLoader(loader FontLoader) {
 // box, bilinear and Catmull-Rom interpolators, so the kernel is spelled out.
 var lanczos3 = &draw.Kernel{
 	Support: lanczosLobes,
-	At: func(t float64) float64 {
-		if t < 0 {
-			t = -t
+	At: func(offset float64) float64 {
+		if offset < 0 {
+			offset = -offset
 		}
 
-		if t >= lanczosLobes {
+		if offset >= lanczosLobes {
 			return 0
 		}
 
-		if t == 0 {
+		if offset == 0 {
 			return 1
 		}
 
-		x := math.Pi * t
+		x := math.Pi * offset
 
 		return lanczosLobes * math.Sin(x) * math.Sin(x/lanczosLobes) / (x * x)
 	},

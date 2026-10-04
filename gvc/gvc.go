@@ -69,14 +69,14 @@ func (c *Context) Layout(ctx context.Context, g *cgraph.Graph, engine string) er
 
 func (c *Context) RenderData(ctx context.Context, g *cgraph.Graph, format string, w io.Writer) error {
 	var (
-		s           string
+		rendered    string
 		renderedLen uint
 	)
-	if _, err := c.gvc.RenderData(ctx, toGraphWasm(g), format, &s, &renderedLen); err != nil {
+	if _, err := c.gvc.RenderData(ctx, toGraphWasm(g), format, &rendered, &renderedLen); err != nil {
 		return err
 	}
 
-	if _, err := w.Write([]byte(s)); err != nil {
+	if _, err := w.Write([]byte(rendered)); err != nil {
 		return fmt.Errorf("writing the rendered %s: %w", format, err)
 	}
 
@@ -97,7 +97,7 @@ func (c *Context) RenderImage(ctx context.Context, g *cgraph.Graph, format strin
 	return img, nil
 }
 
-func (c *Context) RenderFilename(ctx context.Context, g *cgraph.Graph, format, filename string) error {
+func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, format, filename string) error {
 	if _, err := os.Stat(filename); err != nil {
 		// file does not exist.
 		// Since gvc.RenderFilename fails if the file doesn't exist, we create it beforehand.
@@ -107,7 +107,7 @@ func (c *Context) RenderFilename(ctx context.Context, g *cgraph.Graph, format, f
 		}
 	}
 
-	res, err := c.gvc.RenderFilename(ctx, toGraphWasm(g), format, filename)
+	res, err := c.gvc.RenderFilename(ctx, toGraphWasm(graph), format, filename)
 	if err != nil {
 		return err
 	}

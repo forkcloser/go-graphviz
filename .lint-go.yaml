@@ -117,7 +117,6 @@ golangci:
           linters: # 280 findings
             - errcheck # 49
             - gochecknoglobals # 5
-            - varnamelen # 3
         - path: ^cgraph/init\.go$
           linters: # 23 findings
             - errcheck # 9
@@ -129,9 +128,6 @@ golangci:
             - gochecknoglobals # 2
             - staticcheck # 2
             - noctx # 1
-        - path: ^graphviz\.go$
-          linters: # 30 findings
-            - varnamelen # 2
         - path: ^graphviz16_test\.go$
           linters: # 11 findings
             - errcheck # 6
@@ -148,15 +144,8 @@ golangci:
             - gochecknoglobals # 1
             - gocognit # 1
             - modernize # 1
-        - path: ^gvc/gvc\.go$
-          linters: # 25 findings
-            - varnamelen # 2
-        - path: ^gvc/image_plugin\.go$
-          linters: # 13 findings
-            - varnamelen # 1
         - path: ^gvc/image_renderer\.go$
           linters: # 124 findings
-            - varnamelen # 17
             - gochecknoglobals # 5
             - errcheck # 2
             - nilerr # 2
@@ -169,13 +158,11 @@ golangci:
           linters: # 440 findings
             - errcheck # 69
             - gochecknoglobals # 47
-            - varnamelen # 2
             - gocognit # 1
             - interfacebloat # 1
             - unconvert # 1
         - path: ^internal/wasm/ext\.go$
           linters: # 20 findings
-            - varnamelen # 4
             - gochecknoglobals # 1
         - path: ^alias\.go$
           linters: [revive]
