@@ -4,4 +4,4 @@
 *.jpg
 .DS_Store
 bin
-internal/wasm/build/graphviz
+internal/wasm/build/work/

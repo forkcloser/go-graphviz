@@ -1,7 +1,5 @@
 export
 
-CONTAINER_NAME := graphviz-wasm
-IMAGE_NAME := graphviz-wasm
 GOBIN := $(PWD)/bin
 PATH := $(GOBIN):internal/tools/nori/bin:$(PATH)
 
@@ -12,15 +10,11 @@ tools: nori
 fmt/buf:
 	buf format --write
 
-generate/wasm: container/build
-	$(eval CONTAINER_ID := $(shell docker create graphviz-wasm))
-	docker cp "$(CONTAINER_ID):/work/graphviz.wasm" ./internal/wasm/graphviz.wasm
-
-container/build:
-	docker build ./internal/wasm/build -t $(IMAGE_NAME) --build-arg GRAPHVIZ_VERSION=$(shell cat graphviz.version)
-
-container/prune:
-	docker container prune
+# Graphviz, expat and the C bridge, compiled to wasm32-wasip1 with the pinned
+# toolchain in internal/wasm/build/pins.sh; no container involved.
+.PHONY: generate/wasm
+generate/wasm:
+	./internal/wasm/build/build.sh
 
 .PHONY: generate/buf
 generate/buf:

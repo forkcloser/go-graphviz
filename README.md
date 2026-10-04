@@ -121,8 +121,13 @@ if err := g.RenderFilename(ctx, graph, graphviz.PNG, "/path/to/graph.png"); err 
 # How it works
 
 1. Generates bindings between Go and C from [Protocol Buffers file](./internal/wasm/bind.proto).
-2. Builds graphviz.wasm on the [docker container](./internal/wasm/build/Dockerfile).
-3. Uses Graphviz functionality from a sub-packages ( `cdt` `cgraph` `gvc` ) via the `internal/wasm` package. 
+2. Builds `graphviz.wasm` with [internal/wasm/build/build.sh](./internal/wasm/build/build.sh):
+   Graphviz, expat and the C bridge compiled to `wasm32-wasip1` by a pinned
+   wasi-sdk and shrunk by a pinned binaryen, every input fetched by version and
+   checked against the digests in [pins.sh](./internal/wasm/build/pins.sh).
+   No container and no `configure` run: the build is reproducible, and the CI
+   check rebuilds the committed blob and compares the bytes.
+3. Uses Graphviz functionality from a sub-packages ( `cdt` `cgraph` `gvc` ) via the `internal/wasm` package.
 4. `graphviz` package provides facade interface for all sub packages.
 
 # License
