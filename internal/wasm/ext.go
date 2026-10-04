@@ -2,6 +2,7 @@ package wasm
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"sync"
 )
@@ -13,7 +14,7 @@ func DefaultSymList(ctx context.Context) ([]*SymList, error) {
 	}
 
 	if _, err = mod.ExportedFunction("wasm_bridge_SymList_default").Call(ctx, p); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("wasm_bridge_SymList_default: %w", err)
 	}
 
 	ptr, err := mod.readU32(p)
@@ -36,7 +37,7 @@ func PluginAPIZero(ctx context.Context) (*PluginAPI, error) {
 	}
 
 	if _, err = mod.ExportedFunction("wasm_bridge_PluginAPI_zero").Call(ctx, p); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("wasm_bridge_PluginAPI_zero: %w", err)
 	}
 
 	ptr, err := mod.readU32(p)
@@ -54,7 +55,7 @@ func PluginInstalledZero(ctx context.Context) (*PluginInstalled, error) {
 	}
 
 	if _, err = mod.ExportedFunction("wasm_bridge_PluginInstalled_zero").Call(ctx, p); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("wasm_bridge_PluginInstalled_zero: %w", err)
 	}
 
 	ptr, err := mod.readU32(p)
@@ -72,7 +73,7 @@ func SymListZero(ctx context.Context) (*SymList, error) {
 	}
 
 	if _, err = mod.ExportedFunction("wasm_bridge_SymList_zero").Call(ctx, p); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("wasm_bridge_SymList_zero: %w", err)
 	}
 
 	ptr, err := mod.readU32(p)

@@ -77,7 +77,7 @@ func (c *Context) RenderData(ctx context.Context, g *cgraph.Graph, format string
 	}
 
 	if _, err := w.Write([]byte(s)); err != nil {
-		return err
+		return fmt.Errorf("writing the rendered %s: %w", format, err)
 	}
 
 	return nil
@@ -91,7 +91,7 @@ func (c *Context) RenderImage(ctx context.Context, g *cgraph.Graph, format strin
 
 	img, _, err := image.Decode(&buf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decoding the rendered %s: %w", format, err)
 	}
 
 	return img, nil

@@ -308,7 +308,7 @@ func ParseFile(path string) (*Graph, error) {
 	// #nosec G304 -- reading the file the caller names is this function's purpose
 	file, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}
 
 	return ParseBytes(file)

@@ -94,16 +94,18 @@ func (*ImageRenderer) isJPG(job *Job) bool {
 }
 
 func (r *ImageRenderer) encodeJPG(w io.Writer) error {
-	return jpeg.Encode(w, r.ctx.Image(), &jpeg.Options{
-		Quality: jpeg.DefaultQuality,
-	})
+	if err := jpeg.Encode(w, r.ctx.Image(), &jpeg.Options{Quality: jpeg.DefaultQuality}); err != nil {
+		return fmt.Errorf("encoding the page as JPEG: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ImageRenderer) saveJPG(path string) error {
 	// #nosec G304 -- the output file is the one the render job names
 	file, err := os.Create(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating %s: %w", path, err)
 	}
 	defer file.Close()
 
@@ -129,7 +131,7 @@ func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 	switch {
 	case r.isPNG(job):
 		if err := r.ctx.EncodePNG(&buf); err != nil {
-			return err
+			return fmt.Errorf("encoding the page as PNG: %w", err)
 		}
 	case r.isJPG(job):
 		if err := r.encodeJPG(&buf); err != nil {
@@ -145,7 +147,7 @@ func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 		switch {
 		case r.isPNG(job):
 			if err := r.ctx.SavePNG(filename); err != nil {
-				return err
+				return fmt.Errorf("writing %s: %w", filename, err)
 			}
 		case r.isJPG(job):
 			if err := r.saveJPG(filename); err != nil {
@@ -279,7 +281,7 @@ func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (
 
 	ft, err := truetype.Parse(fontData)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing TrueType font %s: %w", fontPath, err)
 	}
 
 	return truetype.NewFace(ft, &truetype.Options{
@@ -303,32 +305,37 @@ func (*ImageRenderer) lookupFontFromTTCFile(
 	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
 	fontData, err := os.ReadFile(fontPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading font collection %s: %w", fontPath, err)
 	}
 
 	c, err := opentype.ParseCollection(fontData)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing font collection %s: %w", fontPath, err)
 	}
 
 	for j := range c.NumFonts() {
 		ft, err := c.Font(j)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("font %d of collection %s: %w", j, fontPath, err)
 		}
 
 		var buf sfnt.Buffer
 
 		name, err := ft.Name(&buf, sfnt.NameIDFull)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("name of font %d of collection %s: %w", j, fontPath, err)
 		}
 
 		if strings.Join(parts, " ") == name {
-			return opentype.NewFace(ft, &opentype.FaceOptions{
+			face, err := opentype.NewFace(ft, &opentype.FaceOptions{
 				Size: fontSize,
 				DPI:  dpi.X(),
 			})
+			if err != nil {
+				return nil, fmt.Errorf("face for %s from collection %s: %w", fontName, fontPath, err)
+			}
+
+			return face, nil
 		}
 	}
 
@@ -338,7 +345,7 @@ func (*ImageRenderer) lookupFontFromTTCFile(
 func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, error) {
 	ft, err := truetype.Parse(goregular.TTF)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing the embedded Go Regular font: %w", err)
 	}
 
 	return truetype.NewFace(ft, &truetype.Options{
@@ -479,7 +486,7 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 
 	f, err := fs.Open(shape.Name())
 	if err != nil {
-		return err
+		return fmt.Errorf("opening image %s: %w", shape.Name(), err)
 	}
 
 	var buf bytes.Buffer
@@ -487,7 +494,7 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 
 	img, _, err := image.Decode(&buf)
 	if err != nil {
-		return err
+		return fmt.Errorf("decoding image %s: %w", shape.Name(), err)
 	}
 
 	topLeftX := bf.LL().X()

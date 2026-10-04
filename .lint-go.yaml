@@ -120,7 +120,6 @@ golangci:
             - funcorder # 11
             - gochecknoglobals # 5
             - varnamelen # 3
-            - wrapcheck # 1
         - path: ^cgraph/init\.go$
           linters: # 23 findings
             - errcheck # 9
@@ -135,7 +134,6 @@ golangci:
             - noctx # 1
         - path: ^graphviz\.go$
           linters: # 30 findings
-            - wrapcheck # 10
             - varnamelen # 2
         - path: ^graphviz16_test\.go$
           linters: # 11 findings
@@ -157,7 +155,6 @@ golangci:
         - path: ^gvc/gvc\.go$
           linters: # 25 findings
             - varnamelen # 2
-            - wrapcheck # 2
         - path: ^gvc/image_plugin\.go$
           linters: # 13 findings
             - funcorder # 1
@@ -166,7 +163,6 @@ golangci:
           linters: # 124 findings
             - varnamelen # 17
             - funcorder # 13
-            - wrapcheck # 13
             - gochecknoglobals # 5
             - errcheck # 2
             - nilerr # 2
@@ -187,7 +183,6 @@ golangci:
         - path: ^internal/wasm/ext\.go$
           linters: # 20 findings
             - varnamelen # 4
-            - wrapcheck # 4
             - gochecknoglobals # 1
         - path: ^alias\.go$
           linters: [revive]
@@ -260,11 +255,16 @@ golangci:
               - golang.org/x/image
       # internal/wasm is this module's own binding, generated from bind.proto;
       # an error it returns is already the module's own, and cgraph, cdt and
-      # gvc are the thin typed layer over it. Wrapping at that boundary would
-      # add a second, identical message to every call.
+      # gvc are the thin typed layer over it, as the root package is over them.
+      # Wrapping at those boundaries would add a second, identical message to
+      # every call; errors from other modules and the standard library are
+      # wrapped where they arise.
       wrapcheck:
         ignore-package-globs:
           - github.com/forkcloser/go-graphviz/internal/wasm
+          - github.com/forkcloser/go-graphviz/cdt
+          - github.com/forkcloser/go-graphviz/cgraph
+          - github.com/forkcloser/go-graphviz/gvc
       revive:
         rules:
           # revive counts public type declarations per file. The root package
