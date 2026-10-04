@@ -417,21 +417,21 @@ func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *Point
 		baseName := strings.Join(parts[:len(parts)-1], "-")
 
 		ttfFace, err := r.lookupFontFromTTFFile(fontSize, baseName+".ttf")
-		if err != nil {
-			return nil, err
-		}
-
-		if ttfFace != nil {
+		if err == nil {
 			return ttfFace, nil
 		}
 
-		ttcFace, err := r.lookupFontFromTTCFile(fontName, fontSize, dpi, baseName+".ttc")
-		if err != nil {
+		if !errors.Is(err, ErrFontNotFound) {
 			return nil, err
 		}
 
-		if ttcFace != nil {
+		ttcFace, err := r.lookupFontFromTTCFile(fontName, fontSize, dpi, baseName+".ttc")
+		if err == nil {
 			return ttcFace, nil
+		}
+
+		if !errors.Is(err, ErrFontNotFound) {
+			return nil, err
 		}
 	}
 
@@ -442,7 +442,7 @@ func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (
 	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
 	fontData, err := os.ReadFile(fontPath)
 	if err != nil {
-		return nil, nil
+		return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontPath)
 	}
 
 	ft, err := truetype.Parse(fontData)
@@ -465,7 +465,7 @@ func (*ImageRenderer) lookupFontFromTTCFile(
 
 	fontPath, err := findFont(fontPath)
 	if err != nil {
-		return nil, nil
+		return nil, err // already ErrFontNotFound with the name
 	}
 
 	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
