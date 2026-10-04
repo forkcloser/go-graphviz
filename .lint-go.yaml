@@ -118,7 +118,6 @@ golangci:
             - gosec # 5
             - varnamelen # 3
             - err113 # 1
-            - govet # 1
             - wrapcheck # 1
         - path: ^cgraph/init\.go$
           linters: # 23 findings
@@ -137,7 +136,6 @@ golangci:
             - gochecknoglobals # 2
             - paralleltest # 2
             - staticcheck # 2
-            - govet # 1
             - noctx # 1
             - perfsprint # 1
             - usetesting # 1
@@ -163,7 +161,6 @@ golangci:
             - revive # 12
             - gochecknoglobals # 7
             - errcheck # 4
-            - govet # 4
             - mnd # 2
             - funcorder # 1
         - path: ^gvc/fontfind\.go$
@@ -175,7 +172,6 @@ golangci:
         - path: ^gvc/gvc\.go$
           linters: # 25 findings
             - revive # 13
-            - govet # 4
             - err113 # 2
             - varnamelen # 2
             - wrapcheck # 2
@@ -184,7 +180,6 @@ golangci:
         - path: ^gvc/image_plugin\.go$
           linters: # 13 findings
             - revive # 7
-            - govet # 4
             - funcorder # 1
             - varnamelen # 1
         - path: ^gvc/image_renderer\.go$
@@ -218,7 +213,6 @@ golangci:
             - errcheck # 69
             - gochecknoglobals # 47
             - funcorder # 13
-            - govet # 5
             - varnamelen # 2
             - gocognit # 1
             - interfacebloat # 1
@@ -226,7 +220,6 @@ golangci:
         - path: ^internal/wasm/ext\.go$
           linters: # 20 findings
             - revive # 7
-            - govet # 4
             - varnamelen # 4
             - wrapcheck # 4
             - gochecknoglobals # 1

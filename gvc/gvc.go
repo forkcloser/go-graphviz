@@ -148,7 +148,7 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error)
 		return nil, err
 	}
 
-	if err := sym.SetName("gvplugin_go_LTX_library"); err != nil {
+	if err = sym.SetName("gvplugin_go_LTX_library"); err != nil {
 		return nil, err
 	}
 
@@ -157,7 +157,7 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error)
 		return nil, err
 	}
 
-	if err := lib.SetPackageName("go"); err != nil {
+	if err = lib.SetPackageName("go"); err != nil {
 		return nil, err
 	}
 
@@ -173,11 +173,11 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error)
 
 	apis = append(apis, term)
 
-	if err := lib.SetApis(apis); err != nil {
+	if err = lib.SetApis(apis); err != nil {
 		return nil, err
 	}
 
-	if err := sym.SetAddress(lib); err != nil {
+	if err = sym.SetAddress(lib); err != nil {
 		return nil, err
 	}
 

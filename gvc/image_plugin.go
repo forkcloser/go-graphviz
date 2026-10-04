@@ -47,7 +47,7 @@ func newLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImagePl
 		return nil, err
 	}
 
-	if err := plg.SetApi(wasm.API_LOADIMAGE); err != nil {
+	if err = plg.SetApi(wasm.API_LOADIMAGE); err != nil {
 		return nil, err
 	}
 
@@ -56,11 +56,11 @@ func newLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImagePl
 		return nil, err
 	}
 
-	if err := types.SetType(cfg.Type); err != nil {
+	if err = types.SetType(cfg.Type); err != nil {
 		return nil, err
 	}
 
-	if err := types.SetQuality(1); err != nil {
+	if err = types.SetQuality(1); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func newLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImagePl
 		return nil, err
 	}
 
-	if err := types.SetEngine(engine); err != nil {
+	if err = types.SetEngine(engine); err != nil {
 		return nil, err
 	}
 

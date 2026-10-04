@@ -295,7 +295,7 @@ func newRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, err
 		return nil, err
 	}
 
-	if err := plg.SetApi(wasm.API_RENDER); err != nil {
+	if err = plg.SetApi(wasm.API_RENDER); err != nil {
 		return nil, err
 	}
 
@@ -304,11 +304,11 @@ func newRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, err
 		return nil, err
 	}
 
-	if err := types.SetType(cfg.Type); err != nil {
+	if err = types.SetType(cfg.Type); err != nil {
 		return nil, err
 	}
 
-	if err := types.SetQuality(cfg.Quality); err != nil {
+	if err = types.SetQuality(cfg.Quality); err != nil {
 		return nil, err
 	}
 
@@ -326,7 +326,7 @@ func newRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, err
 	features.SetDefaultPad(cfg.PAD)
 	features.SetColorType(wasm.ColorType(cfg.ColorType))
 
-	if err := types.SetFeatures(features); err != nil {
+	if err = types.SetFeatures(features); err != nil {
 		return nil, err
 	}
 
@@ -335,7 +335,7 @@ func newRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, err
 		return nil, err
 	}
 
-	if err := types.SetEngine(engine); err != nil {
+	if err = types.SetEngine(engine); err != nil {
 		return nil, err
 	}
 
