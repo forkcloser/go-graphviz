@@ -3,6 +3,7 @@ package cgraph
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -1610,9 +1611,14 @@ func toError(result int) error {
 	return lastError()
 }
 
+// ErrGraphviz is the error every failed Graphviz call wraps; the message
+// Graphviz left in its error buffer follows it, so errors.Is tells a Graphviz
+// failure from any other and the text is still there to read.
+var ErrGraphviz = errors.New("graphviz")
+
 func lastError() error {
 	if e, _ := wasm.LastError(context.Background()); e != "" {
-		return errors.New(e)
+		return fmt.Errorf("%w: %s", ErrGraphviz, e)
 	}
 
 	return nil

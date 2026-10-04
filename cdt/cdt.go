@@ -3,6 +3,7 @@ package cdt
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
@@ -238,13 +239,17 @@ func (l *Link) SetHash(v uint32) {
 	l.wasm.SetHash(v)
 }
 
+// ErrDict is the error every failed libcdt call wraps; the message Graphviz
+// left in its error buffer follows it.
+var ErrDict = errors.New("cdt")
+
 func toError(result int) error {
 	if result == 0 {
 		return nil
 	}
 
 	if e, _ := wasm.LastError(context.Background()); e != "" {
-		return errors.New(e)
+		return fmt.Errorf("%w: %s", ErrDict, e)
 	}
 
 	return nil

@@ -3,6 +3,7 @@ package gvc
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -44,6 +45,10 @@ const (
 	lanczosLobes = 3.0
 )
 
+// ErrPageTooLarge is returned by the raster renderer for a page whose width
+// or height does not fit the drawing context's int coordinates.
+var ErrPageTooLarge = errors.New("page too large for the raster renderer")
+
 type ImageRenderer struct {
 	*DefaultRenderEngine
 	ctx *gg.Context
@@ -69,7 +74,7 @@ func (r *ImageRenderer) setRGB(rgba [4]uint) {
 func (r *ImageRenderer) BeginPage(ctx context.Context, job *Job) error {
 	width, height := job.Width(), job.Height()
 	if width > math.MaxInt32 || height > math.MaxInt32 {
-		return fmt.Errorf("page of %d by %d points is beyond the raster renderer's bounds", width, height)
+		return fmt.Errorf("%w: %d by %d points", ErrPageTooLarge, width, height)
 	}
 
 	gctx := gg.NewContext(int(width), int(height))
@@ -262,7 +267,7 @@ func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *Point
 		}
 	}
 
-	return nil, fmt.Errorf("failed to find font by %s", fontName)
+	return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontName)
 }
 
 func (r *ImageRenderer) lookupFontFromTTFFile(
@@ -332,7 +337,7 @@ func (r *ImageRenderer) lookupFontFromTTCFile(
 		}
 	}
 
-	return nil, fmt.Errorf("failed to find %s font from %s file", fontName, fontPath)
+	return nil, fmt.Errorf("%w: %s in %s", ErrFontNotFound, fontName, fontPath)
 }
 
 func (r *ImageRenderer) defaultFontFace(ctx context.Context, job *Job, font *TextFont) (font.Face, error) {
