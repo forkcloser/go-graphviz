@@ -40,7 +40,7 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 	}
 
 	if gvc == nil {
-		return nil, fmt.Errorf("failed to create graphviz context")
+		return nil, errors.New("failed to create graphviz context")
 	}
 
 	return &Context{gvc: gvc}, nil

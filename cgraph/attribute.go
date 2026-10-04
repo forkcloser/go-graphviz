@@ -1,6 +1,9 @@
 package cgraph
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type attribute string
 
@@ -184,7 +187,7 @@ var (
 )
 
 func toBoolString(v bool) string {
-	return fmt.Sprintf("%t", v)
+	return strconv.FormatBool(v)
 }
 
 // SetDamping
@@ -570,7 +573,7 @@ func (g *Graph) SetDefaultDist(v float64) *Graph {
 // The maximum value allowed is 10.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:dim
 func (g *Graph) SetDim(v int) *Graph {
-	g.SafeSet(string(dimAttr), fmt.Sprint(v), "2")
+	g.SafeSet(string(dimAttr), strconv.Itoa(v), "2")
 	return g
 }
 
@@ -586,7 +589,7 @@ func (g *Graph) SetDim(v int) *Graph {
 // plane.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:dimen
 func (g *Graph) SetDimen(v int) *Graph {
-	g.SafeSet(string(dimAttr), fmt.Sprint(v), "2")
+	g.SafeSet(string(dimAttr), strconv.Itoa(v), "2")
 	return g
 }
 
@@ -827,7 +830,7 @@ func (g *Graph) SetForceLabels(v bool) *Graph {
 // If unset, the default angle is 0.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:gradientangle
 func (g *Graph) SetGradientAngle(v int) *Graph {
-	g.SafeSet(string(gradientAngleAttr), fmt.Sprint(v), "")
+	g.SafeSet(string(gradientAngleAttr), strconv.Itoa(v), "")
 	return g
 }
 
@@ -839,7 +842,7 @@ func (g *Graph) SetGradientAngle(v int) *Graph {
 // If unset, the default angle is 0.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:gradientangle
 func (n *Node) SetGradientAngle(v int) *Node {
-	n.SafeSet(string(gradientAngleAttr), fmt.Sprint(v), "")
+	n.SafeSet(string(gradientAngleAttr), strconv.Itoa(v), "")
 	return n
 }
 
@@ -1226,7 +1229,7 @@ func (e *Edge) SetLabelURL(v string) *Edge {
 // Finally, a value of 3 invokes a two-step process of overlap removal and straightening.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:label_scheme
 func (g *Graph) SetLabelScheme(v int) *Graph {
-	g.SafeSet(string(labelSchemeAttr), fmt.Sprint(v), "0")
+	g.SafeSet(string(labelSchemeAttr), strconv.Itoa(v), "0")
 	return g
 }
 
@@ -1459,7 +1462,7 @@ const (
 // Number of levels allowed in the multilevel scheme.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:levels
 func (g *Graph) SetLevels(v int) *Graph {
-	g.SafeSet(string(levelsAttr), fmt.Sprint(v), fmt.Sprint(maxInt))
+	g.SafeSet(string(levelsAttr), strconv.Itoa(v), strconv.Itoa(maxInt))
 	return g
 }
 
@@ -1567,7 +1570,7 @@ func (n *Node) SetMargin(v float64) *Node {
 // Sets the number of iterations used.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:maxiter
 func (g *Graph) SetMaxIterator(v int) *Graph {
-	g.SafeSet(string(maxIterAttr), fmt.Sprint(v), "200")
+	g.SafeSet(string(maxIterAttr), strconv.Itoa(v), "200")
 	return g
 }
 
@@ -1593,7 +1596,7 @@ func (g *Graph) SetMinDist(v float64) *Graph {
 // Minimum edge length (rank difference between head and tail).
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:minlen
 func (e *Edge) SetMinLen(v int) *Edge {
-	e.SafeSet(string(minLenAttr), fmt.Sprint(v), "1")
+	e.SafeSet(string(minLenAttr), strconv.Itoa(v), "1")
 	return e
 }
 
@@ -2057,7 +2060,7 @@ func (e *Edge) SetPenWidth(v float64) *Edge {
 // Also, 1 is the maximum peripheries value for clusters.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:peripheries
 func (n *Node) SetPeripheries(v int) *Node {
-	n.SafeSet(string(peripheriesAttr), fmt.Sprint(v), "1")
+	n.SafeSet(string(peripheriesAttr), strconv.Itoa(v), "1")
 	return n
 }
 
@@ -2328,7 +2331,7 @@ func (n *Node) SetRoot(v bool) *Node {
 // If 90, set drawing orientation to landscape.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:rotate
 func (g *Graph) SetRotate(v int) *Graph {
-	g.SafeSet(string(rotateAttr), fmt.Sprint(v), "0")
+	g.SafeSet(string(rotateAttr), strconv.Itoa(v), "0")
 	return g
 }
 
@@ -2368,7 +2371,7 @@ func (e *Edge) SetSameTail(v string) *Edge {
 // when adjusting the layout to avoid overlapping nodes, and in image maps.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:samplepoints
 func (n *Node) SetSamplePoints(v int) *Node {
-	n.SafeSet(string(samplePointsAttr), fmt.Sprint(v), "8")
+	n.SafeSet(string(samplePointsAttr), strconv.Itoa(v), "8")
 	return n
 }
 
@@ -2386,7 +2389,7 @@ func (g *Graph) SetScale(x, y float64) *Graph {
 // maximum number of edges with negative cut values to search when looking for one with minimum cut value.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:searchsize
 func (g *Graph) SetSearchSize(v int) *Graph {
-	g.SafeSet(string(searchSizeAttr), fmt.Sprint(v), "30")
+	g.SafeSet(string(searchSizeAttr), strconv.Itoa(v), "30")
 	return g
 }
 
@@ -2503,7 +2506,7 @@ func (n *Node) SetShapeFile(v string) *Node {
 // Print guide boxes in PostScript at the beginning of routesplines if 1, or at the end if 2. (Debugging)
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:showboxes
 func (g *Graph) SetShowBoxes(v int) *Graph {
-	g.SafeSet(string(showBoxesAttr), fmt.Sprint(v), "0")
+	g.SafeSet(string(showBoxesAttr), strconv.Itoa(v), "0")
 	return g
 }
 
@@ -2511,7 +2514,7 @@ func (g *Graph) SetShowBoxes(v int) *Graph {
 // Print guide boxes in PostScript at the beginning of routesplines if 1, or at the end if 2. (Debugging)
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:showboxes
 func (n *Node) SetShowBoxes(v int) *Node {
-	n.SafeSet(string(showBoxesAttr), fmt.Sprint(v), "0")
+	n.SafeSet(string(showBoxesAttr), strconv.Itoa(v), "0")
 	return n
 }
 
@@ -2519,7 +2522,7 @@ func (n *Node) SetShowBoxes(v int) *Node {
 // Print guide boxes in PostScript at the beginning of routesplines if 1, or at the end if 2. (Debugging)
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:showboxes
 func (e *Edge) SetShowBoxes(v int) *Edge {
-	e.SafeSet(string(showBoxesAttr), fmt.Sprint(v), "0")
+	e.SafeSet(string(showBoxesAttr), strconv.Itoa(v), "0")
 	return e
 }
 
@@ -2527,7 +2530,7 @@ func (e *Edge) SetShowBoxes(v int) *Edge {
 // Number of sides if shape=polygon.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:sides
 func (n *Node) SetSides(v int) *Node {
-	n.SafeSet(string(sidesAttr), fmt.Sprint(v), "4")
+	n.SafeSet(string(sidesAttr), strconv.Itoa(v), "4")
 	return n
 }
 
@@ -2584,7 +2587,7 @@ func (g *Graph) SetSmoothing(v SmoothType) *Graph {
 // with smaller values inserted first.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:sortv
 func (g *Graph) SetSortv(v int) *Graph {
-	g.SafeSet(string(sortvAttr), fmt.Sprint(v), "0")
+	g.SafeSet(string(sortvAttr), strconv.Itoa(v), "0")
 	return g
 }
 
@@ -2594,7 +2597,7 @@ func (g *Graph) SetSortv(v int) *Graph {
 // with smaller values inserted first.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:sortv
 func (n *Node) SetSortv(v int) *Node {
-	n.SafeSet(string(sortvAttr), fmt.Sprint(v), "0")
+	n.SafeSet(string(sortvAttr), strconv.Itoa(v), "0")
 	return n
 }
 

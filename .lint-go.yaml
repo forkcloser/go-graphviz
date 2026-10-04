@@ -106,7 +106,6 @@ golangci:
           linters: # 487 findings
             - revive # 254
             - errcheck # 210
-            - perfsprint # 20
             - gochecknoglobals # 2
             - misspell # 1
         - path: ^cgraph/cgraph\.go$
@@ -137,7 +136,6 @@ golangci:
             - paralleltest # 2
             - staticcheck # 2
             - noctx # 1
-            - perfsprint # 1
             - usetesting # 1
         - path: ^graphviz\.go$
           linters: # 30 findings
@@ -176,7 +174,6 @@ golangci:
             - varnamelen # 2
             - wrapcheck # 2
             - gosec # 1
-            - perfsprint # 1
         - path: ^gvc/image_plugin\.go$
           linters: # 13 findings
             - revive # 7
