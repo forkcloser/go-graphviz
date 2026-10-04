@@ -1,17 +1,18 @@
 /* Graphviz build configuration for the wasm32-wasip1 target. Hand-written in
  * place of the configure-generated config.h so the build does not depend on
  * the host that ran configure: no zlib, no pango/cairo, no gd, no ltdl, no
- * dlopen; the layout engines and the core renderers only. */
+ * dlopen; the layout engines and the core renderers only. build.sh fills in
+ * the version from pins.yaml where configure would have. */
 #ifndef GRAPHVIZ_WASM_CONFIG_H
 #define GRAPHVIZ_WASM_CONFIG_H
 
 #define PACKAGE_NAME "graphviz"
 #define PACKAGE_TARNAME "graphviz"
-#define PACKAGE_VERSION "16.1.0"
-#define PACKAGE_STRING "graphviz 16.1.0"
+#define PACKAGE_VERSION "@GRAPHVIZ_VERSION@"
+#define PACKAGE_STRING "graphviz @GRAPHVIZ_VERSION@"
 #define PACKAGE_BUGREPORT "https://gitlab.com/graphviz/graphviz/-/issues"
 #define PACKAGE_URL ""
-#define VERSION "16.1.0"
+#define VERSION "@GRAPHVIZ_VERSION@"
 
 #define DEFAULT_DPI 96
 #define GVPLUGIN_VERSION 8

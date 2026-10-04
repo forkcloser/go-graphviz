@@ -1,5 +1,6 @@
 /* expat build configuration for the wasm32-wasip1 target, hand-written in
- * place of configure's output. Entropy comes from wasi-libc's getentropy. */
+ * place of configure's output; build.sh fills in the version from pins.yaml.
+ * Entropy comes from wasi-libc's getentropy. */
 #ifndef EXPAT_CONFIG_H
 #define EXPAT_CONFIG_H 1
 #define BYTEORDER 1234
@@ -17,11 +18,11 @@
 #define PACKAGE "expat"
 #define PACKAGE_NAME "expat"
 #define PACKAGE_TARNAME "expat"
-#define PACKAGE_VERSION "2.8.5"
-#define PACKAGE_STRING "expat 2.8.5"
+#define PACKAGE_VERSION "@EXPAT_VERSION@"
+#define PACKAGE_STRING "expat @EXPAT_VERSION@"
 #define PACKAGE_BUGREPORT "https://github.com/libexpat/libexpat/issues"
 #define PACKAGE_URL ""
-#define VERSION "2.8.5"
+#define VERSION "@EXPAT_VERSION@"
 #define XML_CONTEXT_BYTES 1024
 #define XML_DTD 1
 #define XML_GE 1
