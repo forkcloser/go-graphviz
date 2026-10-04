@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"image"
 	"os"
 	"os/exec"
@@ -58,7 +57,7 @@ func generateTestData() error {
 			}
 			defer os.Remove(tmpfile.Name())
 
-			if err = exec.Command("dot", "-Tpng", fmt.Sprintf("-o%s", tmpfile.Name()), p).Run(); err != nil {
+			if err = exec.Command("dot", "-Tpng", "-o"+tmpfile.Name(), p).Run(); err != nil {
 				return err
 			}
 
