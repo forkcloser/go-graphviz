@@ -190,7 +190,7 @@ func toBoolString(v bool) string {
 // SetDamping
 // Factor damping force motions.
 // On each iteration, a nodes movement is limited to this factor of its potential motion.
-// By being less than 1.0, the system tends to ``cool'', thereby preventing cycling.
+// By being less than 1.0, the system tends to “cool”, thereby preventing cycling.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:Damping
 func (g *Graph) SetDamping(v float64) *Graph {
 	g.SafeSet(string(dampingAttr), fmt.Sprint(v), "0.99")
@@ -1111,6 +1111,13 @@ func (g *Graph) SetLabel(v string) *Graph {
 	return g
 }
 
+// SetLabelHTML sets an HTML-like label (Graphviz's <...> form). Since
+// Graphviz 13 a label set with SetLabel is plain text; markup needs this.
+func (g *Graph) SetLabelHTML(v string) *Graph {
+	g.SafeSetHTML(string(labelAttr), v, "\\G")
+	return g
+}
+
 // Label returns label attribute.
 func (n *Node) Label() string {
 	return n.GetStr(string(labelAttr))
@@ -1129,6 +1136,13 @@ func (n *Node) SetLabel(v string) *Node {
 	return n
 }
 
+// SetLabelHTML sets an HTML-like label (Graphviz's <...> form). Since
+// Graphviz 13 a label set with SetLabel is plain text; markup needs this.
+func (n *Node) SetLabelHTML(v string) *Node {
+	n.SafeSetHTML(string(labelAttr), v, "\\N")
+	return n
+}
+
 // Label returns label attribute.
 func (e *Edge) Label() string {
 	return e.GetStr(string(labelAttr))
@@ -1144,6 +1158,13 @@ func (e *Edge) Label() string {
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:label
 func (e *Edge) SetLabel(v string) *Edge {
 	e.SafeSet(string(labelAttr), v, "\\E")
+	return e
+}
+
+// SetLabelHTML sets an HTML-like label (Graphviz's <...> form). Since
+// Graphviz 13 a label set with SetLabel is plain text; markup needs this.
+func (e *Edge) SetLabelHTML(v string) *Edge {
+	e.SafeSetHTML(string(labelAttr), v, "\\E")
 	return e
 }
 
@@ -2145,7 +2166,7 @@ const (
 // as here the drawing is expanded before edges are generated and all node and text sizes remain unchanged.
 //
 // If ratio = "auto", the page attribute is set and the graph cannot be drawn on a single page,
-// then size is set to an ``ideal'' value.
+// then size is set to an “ideal” value.
 // In particular, the size in a given dimension will be the smallest integral multiple of the page size in
 // that dimension which is at least half the current size.
 // The two dimensions are then scaled independently to the new size.

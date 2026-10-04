@@ -1,0 +1,45 @@
+# The committed internal/wasm/graphviz.wasm is what internal/wasm/build/build.sh
+# produces from the pinned inputs in pins.sh, byte for byte, on any host. This
+# job proves it: it rebuilds the blob twice, from two work directories, on
+# Linux x86_64 and on macOS arm64, and fails if either run differs from the
+# committed file. A change to the blob therefore arrives with the pin that
+# produced it, or not at all.
+name: wasm
+on:
+  push:
+    branches: [master]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build once
+        run: WORK="${RUNNER_TEMP}/wasm-a" ./internal/wasm/build/build.sh
+      - name: Digests, for the log
+        # The compiler's output and the optimized blob, so a mismatch below
+        # can be attributed without downloading anything.
+        run: shasum -a 256 "${RUNNER_TEMP}/wasm-a/out/graphviz.raw.wasm" internal/wasm/graphviz.wasm
+      - name: Keep what was built, for a diff when the check fails
+        # The optimized blob as built here, and the compiler's output before
+        # wasm-opt: the pair says whether a difference comes from clang or
+        # from binaryen.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: graphviz-wasm-${{ matrix.os }}
+          path: |
+            internal/wasm/graphviz.wasm
+            ${{ runner.temp }}/wasm-a/out/graphviz.raw.wasm
+          retention-days: 7
+      - name: The build matches the committed blob
+        run: git diff --exit-code --stat -- internal/wasm/graphviz.wasm
+      - name: Build again, elsewhere
+        run: WORK="${RUNNER_TEMP}/wasm-b" ./internal/wasm/build/build.sh
+      - name: The second build matches too
+        run: git diff --exit-code --stat -- internal/wasm/graphviz.wasm

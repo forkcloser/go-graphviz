@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strconv"
 
 	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
@@ -860,6 +861,17 @@ func (g *Graph) SafeSet(name, value, def string) error {
 	return toError(res)
 }
 
+// SafeSetHTML is SafeSet for an HTML-like value. Since Graphviz 13 a value
+// set through SafeSet is plain text and an HTML label set that way renders
+// as escaped markup; this is the call for a label such as <table>...</table>.
+func (g *Graph) SafeSetHTML(name, value, def string) error {
+	res, err := wasm.SafeSetStrHTML(context.Background(), g.wasm, name, value, def)
+	if err != nil {
+		return err
+	}
+	return toError(res)
+}
+
 func (g *Graph) Close() error {
 	res, err := g.wasm.Close(context.Background())
 	if err != nil {
@@ -1112,12 +1124,40 @@ func (g *Graph) StrdupHTML(s string) (string, error) {
 	return g.wasm.StrdupHTML(context.Background(), s)
 }
 
+// StrdupText is Strdup for a value that is plain text, never HTML-like, in a
+// graph where the two kinds are told apart (Graphviz 13 and later).
+func (g *Graph) StrdupText(s string) (string, error) {
+	return g.wasm.StrdupText(context.Background(), s)
+}
+
 func (g *Graph) StrBind(s string) (string, error) {
 	return g.wasm.StrBind(context.Background(), s)
 }
 
+// StrBindText looks a plain-text string up in the graph's string pool.
+func (g *Graph) StrBindText(s string) (string, error) {
+	return g.wasm.StrBindText(context.Background(), s)
+}
+
+// StrBindHTML looks an HTML-like string up in the graph's string pool.
+func (g *Graph) StrBindHTML(s string) (string, error) {
+	return g.wasm.StrBindHTML(context.Background(), s)
+}
+
+// StrFree releases a plain-text string obtained from Strdup, StrdupText or
+// the StrBind family. Graphviz 13 keeps text and HTML-like strings in
+// separate pools; a string from StrdupHTML is released with StrFreeHTML.
 func (g *Graph) StrFree(s string) error {
-	res, err := g.wasm.StrFree(context.Background(), s)
+	res, err := g.wasm.StrFree(context.Background(), s, false)
+	if err != nil {
+		return err
+	}
+	return toError(res)
+}
+
+// StrFreeHTML releases an HTML-like string obtained from StrdupHTML.
+func (g *Graph) StrFreeHTML(s string) error {
+	res, err := g.wasm.StrFree(context.Background(), s, true)
 	if err != nil {
 		return err
 	}
@@ -1164,16 +1204,27 @@ func (g *Graph) SubGraphByName(name string) (*Graph, error) {
 	return toGraph(res), nil
 }
 
+// CreateSubGraphByID returns the subgraph with the given ID, creating it when
+// it does not exist. Graphviz 13 made agidsubg a pure lookup, so creation
+// goes through agsubg under the ID's decimal name; the subgraph's ID is then
+// allocated by the graph's ID discipline, not forced to id.
 func (g *Graph) CreateSubGraphByID(id ID) (*Graph, error) {
-	res, err := g.wasm.IdSubGraph(context.Background(), uint64(id), 1)
+	res, err := g.wasm.IdSubGraph(context.Background(), uint64(id))
 	if err != nil {
 		return nil, err
 	}
-	return toGraph(res), nil
+	if res != nil {
+		return toGraph(res), nil
+	}
+	created, err := g.wasm.SubGraph(context.Background(), strconv.FormatUint(uint64(id), 10), 1)
+	if err != nil {
+		return nil, err
+	}
+	return toGraph(created), nil
 }
 
 func (g *Graph) SubGraphByID(id ID) (*Graph, error) {
-	res, err := g.wasm.IdSubGraph(context.Background(), uint64(id), 0)
+	res, err := g.wasm.IdSubGraph(context.Background(), uint64(id))
 	if err != nil {
 		return nil, err
 	}
@@ -1320,6 +1371,17 @@ func (n *Node) SafeSet(name, value, def string) error {
 	return toError(res)
 }
 
+// SafeSetHTML is SafeSet for an HTML-like value. Since Graphviz 13 a value
+// set through SafeSet is plain text and an HTML label set that way renders
+// as escaped markup; this is the call for a label such as <table>...</table>.
+func (n *Node) SafeSetHTML(name, value, def string) error {
+	res, err := wasm.SafeSetStrHTML(context.Background(), n.wasm, name, value, def)
+	if err != nil {
+		return err
+	}
+	return toError(res)
+}
+
 func (n *Node) ReLabel(newname string) error {
 	res, err := n.wasm.ReLabel(context.Background(), newname)
 	if err != nil {
@@ -1404,20 +1466,42 @@ func (e *Edge) SafeSet(name, value, def string) error {
 	return toError(res)
 }
 
+// SafeSetHTML is SafeSet for an HTML-like value. Since Graphviz 13 a value
+// set through SafeSet is plain text and an HTML label set that way renders
+// as escaped markup; this is the call for a label such as <table>...</table>.
+func (e *Edge) SafeSetHTML(name, value, def string) error {
+	res, err := wasm.SafeSetStrHTML(context.Background(), e.wasm, name, value, def)
+	if err != nil {
+		return err
+	}
+	return toError(res)
+}
+
 func HTMLStr(s string) (bool, error) {
 	return wasm.HtmlStr(context.Background(), s)
 }
 
-func Canon(s string, i int) (string, error) {
-	return wasm.Canon(context.Background(), s, i)
+// Canon returns s in the form the DOT writer would print it: quoted and
+// escaped as needed, or wrapped in angle brackets when html is non-zero.
+// Graphviz 13 removed agcanon; this is what it did, over agstrcanon.
+func Canon(s string, html int) (string, error) {
+	if html != 0 {
+		return "<" + s + ">", nil
+	}
+	return CanonStr(s)
 }
 
-func StrCanon(a0 string, a1 string) (string, error) {
-	return wasm.StrCanon(context.Background(), a0, a1)
+// StrCanon canonicalizes s into buf, which must hold at least 2*len(s)+3
+// bytes (agstrcanon's own bound); CanonStr sizes the buffer itself.
+func StrCanon(s string, buf string) (string, error) {
+	return wasm.StrCanon(context.Background(), s, buf)
 }
 
-func CanonStr(str string) (string, error) {
-	return wasm.CanonStr(context.Background(), str)
+// CanonStr returns s quoted and escaped as the DOT writer would print it.
+// Graphviz 14 removed agcanonStr in favour of agstrcanon with a caller-owned
+// buffer; the buffer is sized here.
+func CanonStr(s string) (string, error) {
+	return wasm.StrCanon(context.Background(), s, string(make([]byte, 2*len(s)+3)))
 }
 
 func AttrSym(obj *Object, name string) (*Symbol, error) {
