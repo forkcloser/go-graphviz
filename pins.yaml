@@ -1,0 +1,101 @@
+# The inputs of internal/wasm/graphviz.wasm, pinned by version and digest
+# (book/tooling.md, "Pinned artifacts beyond aqua"). internal/wasm/build/build.sh
+# reads each entry back with `limen pins get <name> url|sha256`, Renovate
+# proposes the bumps from the renovate: lines, and `limen pins refresh`
+# recomputes a digest a bump left behind. None of these projects signs its
+# assets in a form limen verifies, so the method is the download itself: TLS
+# at refresh time, the digest at every build after.
+#
+# wasi-sdk and binaryen come as one archive per host; the four hosts the
+# build runs on (CI's Linux x86_64, the Linux arm64 and macOS arm64 of
+# laptops and microVMs, macOS x86_64) are four entries each, moved together.
+pins:
+  - name: graphviz
+    renovate: gitlab-releases graphviz/graphviz
+    version: 16.1.0
+    url: https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/${version}/graphviz-${version}.tar.gz
+    verify: download
+    digest:
+      version: 16.1.0
+      sha256: beea483ab130f456c1c3905f4f2e40778a9c493c3d73ae8012367d552d71ca84
+  - name: expat
+    renovate: github-tags libexpat/libexpat
+    versioning: regex:^R_(?<major>\d+)_(?<minor>\d+)_(?<patch>\d+)$
+    version: R_2_8_5
+    url: https://github.com/libexpat/libexpat/archive/refs/tags/${version}.tar.gz
+    verify: download
+    digest:
+      version: R_2_8_5
+      sha256: fd022c541a189bd5bee042a22188351b31e39b9389c2525fa98c28bd05c9ef21
+  - name: wasi-sdk-linux-amd64
+    renovate: github-releases WebAssembly/wasi-sdk
+    extract-version: ^wasi-sdk-(?<version>\d+)$
+    version: 34
+    url: https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${version}/wasi-sdk-${version}.0-x86_64-linux.tar.gz
+    verify: download
+    digest:
+      version: 34
+      sha256: b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4
+  - name: wasi-sdk-linux-arm64
+    renovate: github-releases WebAssembly/wasi-sdk
+    extract-version: ^wasi-sdk-(?<version>\d+)$
+    version: 34
+    url: https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${version}/wasi-sdk-${version}.0-arm64-linux.tar.gz
+    verify: download
+    digest:
+      version: 34
+      sha256: f7e243dff54d60bcc576e94d6166b69f410f2500ae4a9ceef34315be10e77971
+  - name: wasi-sdk-macos-arm64
+    renovate: github-releases WebAssembly/wasi-sdk
+    extract-version: ^wasi-sdk-(?<version>\d+)$
+    version: 34
+    url: https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${version}/wasi-sdk-${version}.0-arm64-macos.tar.gz
+    verify: download
+    digest:
+      version: 34
+      sha256: 9c59398106b417f8f14913380fdf0097a8cc0ff4af9eb3ce0065a859e88d49e9
+  - name: wasi-sdk-macos-amd64
+    renovate: github-releases WebAssembly/wasi-sdk
+    extract-version: ^wasi-sdk-(?<version>\d+)$
+    version: 34
+    url: https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${version}/wasi-sdk-${version}.0-x86_64-macos.tar.gz
+    verify: download
+    digest:
+      version: 34
+      sha256: 87d27fa8adc68dee59bfbf2e22a6d34ef717c34d6bf1d8af2a56fc929d9ce0eb
+  - name: binaryen-linux-amd64
+    renovate: github-releases WebAssembly/binaryen
+    extract-version: ^version_(?<version>\d+)$
+    version: 133
+    url: https://github.com/WebAssembly/binaryen/releases/download/version_${version}/binaryen-version_${version}-x86_64-linux.tar.gz
+    verify: download
+    digest:
+      version: 133
+      sha256: 2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489
+  - name: binaryen-linux-arm64
+    renovate: github-releases WebAssembly/binaryen
+    extract-version: ^version_(?<version>\d+)$
+    version: 133
+    url: https://github.com/WebAssembly/binaryen/releases/download/version_${version}/binaryen-version_${version}-aarch64-linux.tar.gz
+    verify: download
+    digest:
+      version: 133
+      sha256: 89c07ea56faf38d0fbecf36ca8ec0721756716185f265b568e133d427f299bf8
+  - name: binaryen-macos-arm64
+    renovate: github-releases WebAssembly/binaryen
+    extract-version: ^version_(?<version>\d+)$
+    version: 133
+    url: https://github.com/WebAssembly/binaryen/releases/download/version_${version}/binaryen-version_${version}-arm64-macos.tar.gz
+    verify: download
+    digest:
+      version: 133
+      sha256: ad66da82ac13f163e424b1643f16c6dfcccc98b5966296b43e52d3cab04f84a8
+  - name: binaryen-macos-amd64
+    renovate: github-releases WebAssembly/binaryen
+    extract-version: ^version_(?<version>\d+)$
+    version: 133
+    url: https://github.com/WebAssembly/binaryen/releases/download/version_${version}/binaryen-version_${version}-x86_64-macos.tar.gz
+    verify: download
+    digest:
+      version: 133
+      sha256: 13a9b90be775c6389ce3d1f879cb8627bea56708ba8c122983941d53a8199b95

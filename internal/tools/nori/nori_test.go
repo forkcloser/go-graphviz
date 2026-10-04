@@ -5,9 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"google.golang.org/protobuf/types/pluginpb"
-
 	"github.com/goccy/nori"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func TestNori(t *testing.T) {

@@ -1,0 +1,289 @@
+# This project's carve-outs from the Go lint baseline (.limen/lint-go.yaml):
+# the baseline's sections, in its shape, holding only what this project adds,
+# changes or takes out. `just do lint go` renders the two on every run
+# (book/per-language.md, "one baseline, per-project carve-outs"). Seeded once;
+# the file is the project's own. Every key the overlay accepts is below, with
+# what it does to the baseline; anything else is refused as baseline policy.
+#
+# golangci:
+#   linters:
+#     disable:                       # takes a linter out of the baseline's set
+#       - zerologlint
+#     enable:                        # adds one the baseline turns off
+#       - godox
+#     exclusions:
+#       paths:                       # appends: files golangci-lint skips entirely
+#         - third_party/
+#       presets:                     # appends golangci-lint's exclusion presets
+#         - comments
+#       rules:                       # appends: linters, or a finding text, off under a path.
+#         # The baseline exempts tests from gocognit, goconst, gosec,
+#         # varnamelen and wrapcheck; anything else a project tolerates there
+#         # is its own. The reviewed shape, to tailor: tests are black-box
+#         # consumers, so the rules about API hygiene and production
+#         # robustness do not apply to them, while the rules about correctness
+#         # do (errcheck stays on: a test that ignores an error can pass for
+#         # the wrong reason).
+#         - path: _test\.go
+#           linters:
+#             - dupl # test cases are meant to look alike
+#             - dupword # test data
+#             - err113 # dynamic errors are fine in fixtures
+#             - dogsled # multiple-return helpers are exercised for one value at a time
+#             - noctx # no cancellation to propagate
+#             - perfsprint # readability over allocations
+#             - mnd # fixture values
+#     settings:                      # per linter, merged key by key into the baseline's:
+#       wrapcheck:                   #   a scalar overrides, a mapping recurses, a list appends,
+#         ignore-package-globs:      #   a named entry (a revive rule) overrides its namesake
+#           - github.com/example/project/*
+#   formatters:
+#     enable:                        # adds a formatter (the baseline runs gci, gofumpt, golines, goimports)
+#       - swaggo
+#     exclusions:
+#       paths:                       # appends: files the formatters skip
+#         - internal/generated/
+#     settings:                      # per formatter, merged like the linters'
+#       golines:
+#         max-len: 100
+#       gci:
+#         sections:                  # go in before the module's own group: a sibling
+#           - prefix(github.com/example-sibling)  # organization's imports group next to this one's
+# licenses:
+#   allowed:                         # replaces the baseline's list of accepted dependency licenses
+#     - Apache-2.0
+#     - MIT
+#   ignore:                          # appends modules go-licenses skips (its known false positives)
+#     - gotest.tools/v3
+# nilaway:
+#   blocking: false                  # findings print without failing the lane, while a backlog is worked off
+#   exclude-pkgs:                    # appends package prefixes NilAway leaves out
+#     - github.com/example/project/internal/generated
+#   exclude-errors-in-files:         # appends file prefixes: NilAway has no per-line suppression
+#     - internal/legacy/
+
+golangci:
+  linters:
+    exclusions:
+      paths:
+        # Generated: bind.go by `just bindings` from internal/wasm/bind.proto,
+        # nori.pb.go by protoc from the generator's own schema. The generator,
+        # not its output, is what review reads.
+        - internal/wasm/bind.go
+        - internal/tools/nori/nori/nori.pb.go
+      rules:
+        # Every call into the WebAssembly module takes a context because wazero
+        # requires one per call, field reads included; the gvc accessors (Job,
+        # PointFloat, Object...) read fields and have no context parameter by
+        # design, so they pass Background. contextcheck reads that as a dropped
+        # cancellation; nothing is cancelled by a memory read, and threading a
+        # context through every accessor would change the public API for no
+        # observable effect.
+        - path: ^gvc/
+          linters:
+            - contextcheck
+        # ---------------------------------------------------------------------------
+        # ONBOARDING BACKLOG. Not a judgment: these are the findings the baseline
+        # raised on code that predates it, exempted so the enrolment lands green
+        # (book/mandatory-files.md, "Onboarding an existing repository"). Nobody has
+        # read them yet. Alignment empties this block one linter or one package per
+        # pull request, each finding fixed, silenced inline with its reason, or
+        # raised as a rule; the last alignment pull request deletes the block.
+        # Counts are the measurement at enrolment, per file and linter.
+        # ---------------------------------------------------------------------------
+        - path: ^alias\.go$
+          linters: # 111 findings
+            - revive # 90
+            - gochecknoglobals # 21
+        - path: ^cdt/cdt\.go$
+          linters: # 48 findings
+            - revive # 34
+            - unused # 7
+            - errcheck # 3
+            - funcorder # 2
+            - err113 # 1
+            - gosec # 1
+        - path: ^cdt/link\.go$
+          linters: # 2 findings
+            - unused # 2
+        - path: ^cgraph/attribute\.go$
+          linters: # 487 findings
+            - revive # 254
+            - errcheck # 210
+            - perfsprint # 20
+            - gochecknoglobals # 2
+            - misspell # 1
+        - path: ^cgraph/cgraph\.go$
+          linters: # 280 findings
+            - revive # 200
+            - errcheck # 49
+            - funcorder # 11
+            - gochecknoglobals # 5
+            - gosec # 5
+            - unused # 4
+            - varnamelen # 3
+            - err113 # 1
+            - govet # 1
+            - wrapcheck # 1
+        - path: ^cgraph/init\.go$
+          linters: # 23 findings
+            - errcheck # 9
+            - contextcheck # 8
+            - gochecknoglobals # 4
+            - gochecknoinits # 1
+            - revive # 1
+        - path: ^cgraph/link\.go$
+          linters: # 2 findings
+            - revive # 1
+            - unused # 1
+        - path: ^compatible_test\.go$
+          linters: # 19 findings
+            - errcheck # 4
+            - revive # 4
+            - gochecknoglobals # 2
+            - paralleltest # 2
+            - staticcheck # 2
+            - govet # 1
+            - noctx # 1
+            - perfsprint # 1
+            - unused # 1
+            - usetesting # 1
+        - path: ^graphviz\.go$
+          linters: # 30 findings
+            - revive # 18
+            - wrapcheck # 10
+            - varnamelen # 2
+        - path: ^graphviz16_test\.go$
+          linters: # 11 findings
+            - errcheck # 6
+            - paralleltest # 3
+            - usetesting # 2
+        - path: ^graphviz_test\.go$
+          linters: # 28 findings
+            - paralleltest # 14
+            - errcheck # 5
+            - revive # 4
+            - usetesting # 4
+            - thelper # 1
+        - path: ^gvc/device_plugin\.go$
+          linters: # 30 findings
+            - revive # 12
+            - gochecknoglobals # 7
+            - errcheck # 4
+            - govet # 4
+            - mnd # 2
+            - funcorder # 1
+        - path: ^gvc/fontfind\.go$
+          linters: # 4 findings
+            - err113 # 1
+            - gochecknoglobals # 1
+            - gocognit # 1
+            - modernize # 1
+        - path: ^gvc/gvc\.go$
+          linters: # 25 findings
+            - revive # 13
+            - govet # 4
+            - err113 # 2
+            - varnamelen # 2
+            - wrapcheck # 2
+            - gosec # 1
+            - perfsprint # 1
+        - path: ^gvc/image_plugin\.go$
+          linters: # 13 findings
+            - revive # 7
+            - govet # 4
+            - funcorder # 1
+            - varnamelen # 1
+        - path: ^gvc/image_renderer\.go$
+          linters: # 124 findings
+            - revive # 35
+            - mnd # 24
+            - varnamelen # 17
+            - funcorder # 13
+            - wrapcheck # 13
+            - gochecknoglobals # 5
+            - gosec # 5
+            - unparam # 3
+            - err113 # 2
+            - errcheck # 2
+            - nilerr # 2
+            - nilnil # 2
+            - embeddedstructfieldcheck # 1
+        - path: ^gvc/init\.go$
+          linters: # 6 findings
+            - revive # 5
+            - gochecknoinits # 1
+        - path: ^gvc/link\.go$
+          linters: # 1 findings
+            - revive # 1
+        - path: ^gvc/plugin\.go$
+          linters: # 2 findings
+            - revive # 2
+        - path: ^gvc/render_plugin\.go$
+          linters: # 440 findings
+            - revive # 294
+            - errcheck # 69
+            - gochecknoglobals # 47
+            - funcorder # 13
+            - unused # 7
+            - govet # 5
+            - varnamelen # 2
+            - gocognit # 1
+            - interfacebloat # 1
+            - unconvert # 1
+        - path: ^internal/wasm/ext\.go$
+          linters: # 20 findings
+            - revive # 7
+            - govet # 4
+            - varnamelen # 4
+            - wrapcheck # 4
+            - gochecknoglobals # 1
+        - path: ^option\.go$
+          linters: # 3 findings
+            - revive # 3
+    settings:
+      depguard:
+        rules:
+          main:
+            allow:
+              # The module's declared dependencies: the WebAssembly runtime the
+              # embedded Graphviz runs on, and the raster renderer's drawing,
+              # font and image libraries.
+              - github.com/tetratelabs/wazero
+              - github.com/fogleman/gg
+              - github.com/golang/freetype
+              - golang.org/x/image
+      # internal/wasm is this module's own binding, generated from bind.proto;
+      # an error it returns is already the module's own, and cgraph, cdt and
+      # gvc are the thin typed layer over it. Wrapping at that boundary would
+      # add a second, identical message to every call.
+      wrapcheck:
+        ignore-package-globs:
+          - github.com/forkcloser/go-graphviz/internal/wasm
+      revive:
+        rules:
+          # cgraph and gvc mirror libcgraph's and libgvc's structs one to one
+          # (Graph, Node, Edge, Sym, Job, Device, Render...); the count is the
+          # C API's, not a design choice to shrink.
+          - name: max-public-structs
+            arguments: [20]
+  formatters:
+    exclusions:
+      paths:
+        - internal/wasm/bind.go
+        - internal/tools/nori/nori/nori.pb.go
+licenses:
+  ignore:
+    # golang/freetype is BSD-3-Clause or FTL at the user's choice, both on
+    # the baseline's allowed list; go-licenses cannot classify the dual text
+    # and reports the module as unlicensed. A classifier limitation, judged.
+    - github.com/golang/freetype
+    # ONBOARDING BACKLOG, not a judgment: nfnt/resize is ISC, which the
+    # baseline does not carry, and a project cannot admit a licence through a
+    # carve-out. It is a test-only transitive of goimagehash; alignment
+    # replaces the hash in the tests and this line goes with it.
+    - github.com/nfnt/resize
+nilaway:
+  # ONBOARDING BACKLOG, not a judgment: NilAway's findings print without
+  # failing the lane until alignment reaches them.
+  blocking: false

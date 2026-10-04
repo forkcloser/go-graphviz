@@ -54,6 +54,7 @@ func NewDevicePlugin(ctx context.Context, typ string, opts ...DevicePluginOption
 	for _, opt := range opts {
 		opt(cfg)
 	}
+
 	return newDevicePlugin(ctx, cfg)
 }
 
@@ -97,45 +98,58 @@ func newDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, err
 	if err != nil {
 		return nil, err
 	}
+
 	if err := plg.SetApi(wasm.API_DEVICE); err != nil {
 		return nil, err
 	}
+
 	types, err := wasm.NewPluginInstalled(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	if err := types.SetType(cfg.Type); err != nil {
 		return nil, err
 	}
+
 	if err := types.SetQuality(cfg.Quality); err != nil {
 		return nil, err
 	}
+
 	features, err := wasm.NewDeviceFeatures(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	var flags int64
 	for _, feature := range cfg.Features {
 		flags |= int64(feature)
 	}
+
 	features.SetFlags(flags)
+
 	dpi, err := wasm.NewPointFloat(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	dpi.SetX(cfg.DPI.X)
 	dpi.SetY(cfg.DPI.Y)
 	features.SetDefaultDpi(dpi)
+
 	if err := types.SetFeatures(features); err != nil {
 		return nil, err
 	}
+
 	term, err := wasm.PluginInstalledZero(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	if err := plg.SetTypes([]*wasm.PluginInstalled{types, term}); err != nil {
 		return nil, err
 	}
+
 	return &DevicePlugin{
 		plugin: plg,
 	}, nil

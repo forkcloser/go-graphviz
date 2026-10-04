@@ -3,52 +3,52 @@
 # bridge compiled to wasm32-wasip1 with a pinned wasi-sdk, then shrunk with a
 # pinned binaryen.
 #
-# Every input is fetched by version and verified against the sha256 recorded
-# in pins.sh before it is unpacked. No container, no system compiler and no
-# configure run: the two configuration headers next to this script stand in
-# for configure's output, so the result does not depend on the host that
-# built it. Two runs on one machine yield the same bytes, and the CI check
-# rebuilds the committed blob and compares.
+# Every input is a pins.yaml entry, read back with `limen pins get` and
+# verified against its recorded sha256 before it is unpacked. No container,
+# no system compiler and no configure run: the two configuration headers
+# next to this script stand in for configure's output, so the result does not
+# depend on the host that built it. Graphviz's asserts embed __FILE__, so the
+# paths of the unpacked sources and of this directory are mapped to fixed
+# names, and the shell globs that order the sources are expanded under the C
+# locale; without either, two builders produce different bytes. With both,
+# Linux x86_64 and macOS arm64 produce the same blob, which the ci workflow
+# proves on every change.
 #
-#   internal/wasm/build/build.sh            # writes internal/wasm/graphviz.wasm
-#   WORK=/some/dir internal/wasm/build/build.sh   # keep downloads elsewhere
-#
-# The version of Graphviz comes from graphviz.version at the repository root;
-# its sha256, and every other pin, from pins.sh.
-#
-# Graphviz's asserts embed __FILE__, so the paths of the unpacked sources and
-# of this directory are mapped to fixed names, and the shell globs are
-# expanded under the C locale; without either, two builders produce
-# different bytes.
+#   just build wasm                 # the recipe; limen on the hermetic PATH
+#   WORK=/some/dir just build wasm  # keep downloads elsewhere
 set -euo pipefail
-
-# Glob expansion sorts by the current collation, so the order of the source
-# files handed to clang, and with it the link order and the bytes of the
-# output, would follow the builder's locale. The C locale makes it the same
-# everywhere.
 export LC_ALL=C
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$(cd "${here}/../../.." && pwd)"
-work="${WORK:-${here}/work}"
+work="${WORK:-${root}/build/wasm}"
 out="${root}/internal/wasm/graphviz.wasm"
 
-# shellcheck source-path=SCRIPTDIR
-. "${here}/pins.sh"
-
-graphviz_version="$(tr -d '[:space:]' < "${root}/graphviz.version")"
-[ "${graphviz_version}" = "${GRAPHVIZ_VERSION}" ] || {
-  echo "graphviz.version says ${graphviz_version}, pins.sh says ${GRAPHVIZ_VERSION}: update both" >&2
-  exit 1
-}
-
+# The pins name hosts the Go way; the archives name them their own way.
 case "$(uname -s)-$(uname -m)" in
-  Darwin-arm64) sdk_os=macos; sdk_arch=arm64; binaryen_arch=arm64-macos ;;
-  Darwin-x86_64) sdk_os=macos; sdk_arch=x86_64; binaryen_arch=x86_64-macos ;;
-  Linux-aarch64) sdk_os=linux; sdk_arch=arm64; binaryen_arch=aarch64-linux ;;
-  Linux-x86_64) sdk_os=linux; sdk_arch=x86_64; binaryen_arch=x86_64-linux ;;
+  Darwin-arm64) host=macos-arm64; sdk_host=arm64-macos; binaryen_host=arm64-macos ;;
+  Darwin-x86_64) host=macos-amd64; sdk_host=x86_64-macos; binaryen_host=x86_64-macos ;;
+  Linux-aarch64) host=linux-arm64; sdk_host=arm64-linux; binaryen_host=aarch64-linux ;;
+  Linux-x86_64) host=linux-amd64; sdk_host=x86_64-linux; binaryen_host=x86_64-linux ;;
   *) echo "unsupported host $(uname -s)-$(uname -m)" >&2; exit 1 ;;
 esac
+
+# pin <name> <field>: one value of a pins.yaml entry (version, url, sha256).
+pin() {
+  (cd "${root}" && limen pins get "$1" "$2")
+}
+
+graphviz_version="$(pin graphviz version)"
+recorded="$(tr -d '[:space:]' < "${root}/graphviz.version")"
+[ "${graphviz_version}" = "${recorded}" ] || {
+  echo "graphviz.version says ${recorded}, pins.yaml says ${graphviz_version}: move both" >&2
+  exit 1
+}
+expat_tag="$(pin expat version)"      # R_2_8_5, the tag libexpat releases under
+expat_version="${expat_tag#R_}"
+expat_version="${expat_version//_/.}" # 2.8.5
+wasi_sdk_version="$(pin "wasi-sdk-${host}" version)"
+binaryen_version="$(pin "binaryen-${host}" version)"
 
 # sha256 [-c -]: the host's checksum tool under one name; coreutils calls it
 # sha256sum, macOS ships it as shasum -a 256.
@@ -60,10 +60,13 @@ sha256() {
   fi
 }
 
-# fetch <name> <url> <sha256>: download once into the work dir, verify always.
+# fetch <pin> <file>: download the pin's url once into the work dir, verify
+# against the pin's sha256 always.
 fetch() {
-  local name="$1" url="$2" sum="$3"
-  local file="${work}/dl/${name}"
+  local name="$1" url sum
+  local file="${work}/dl/$2"
+  url="$(pin "${name}" url)"
+  sum="$(pin "${name}" sha256)"
   mkdir -p "${work}/dl"
   if [ ! -f "${file}" ]; then
     echo "fetching ${name}"
@@ -71,13 +74,13 @@ fetch() {
     mv "${file}.part" "${file}"
   fi
   echo "${sum}  ${file}" | sha256 -c - > /dev/null || {
-    echo "${name}: sha256 mismatch against pins.sh" >&2
+    echo "${name}: sha256 mismatch against pins.yaml" >&2
     rm -f "${file}"
     exit 1
   }
 }
 
-# unpack <archive-name> <dir>: extract once; a present dir is a finished one.
+# unpack <file> <dir>: extract once; a present dir is a finished one.
 unpack() {
   local file="${work}/dl/$1" dir="${work}/src/$2"
   [ -d "${dir}" ] && return
@@ -86,44 +89,36 @@ unpack() {
   [ -d "${dir}" ] || { echo "$1 did not unpack to $2" >&2; exit 1; }
 }
 
-sdk_sum_var="WASI_SDK_SHA256_${sdk_arch}_${sdk_os}"
-binaryen_sum_var="BINARYEN_SHA256_${binaryen_arch//-/_}"
-sdk_tar="wasi-sdk-${WASI_SDK_VERSION}.0-${sdk_arch}-${sdk_os}.tar.gz"
-binaryen_tar="binaryen-version_${BINARYEN_VERSION}-${binaryen_arch}.tar.gz"
+sdk_dir="wasi-sdk-${wasi_sdk_version}.0-${sdk_host}"
+binaryen_dir="binaryen-version_${binaryen_version}"
+expat_dir="libexpat-${expat_tag}"
+gv_dir="graphviz-${graphviz_version}"
 
-fetch "${sdk_tar}" \
-  "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/${sdk_tar}" \
-  "${!sdk_sum_var}"
-fetch "${binaryen_tar}" \
-  "https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/${binaryen_tar}" \
-  "${!binaryen_sum_var}"
-fetch "expat-${EXPAT_VERSION}.tar.gz" \
-  "https://github.com/libexpat/libexpat/releases/download/R_${EXPAT_VERSION//./_}/expat-${EXPAT_VERSION}.tar.gz" \
-  "${EXPAT_SHA256}"
-fetch "graphviz-${GRAPHVIZ_VERSION}.tar.gz" \
-  "https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/${GRAPHVIZ_VERSION}/graphviz-${GRAPHVIZ_VERSION}.tar.gz" \
-  "${GRAPHVIZ_SHA256}"
+fetch "wasi-sdk-${host}" "${sdk_dir}.tar.gz"
+fetch "binaryen-${host}" "${binaryen_dir}-${binaryen_host}.tar.gz"
+fetch expat "${expat_dir}.tar.gz"
+fetch graphviz "${gv_dir}.tar.gz"
+unpack "${sdk_dir}.tar.gz" "${sdk_dir}"
+unpack "${binaryen_dir}-${binaryen_host}.tar.gz" "${binaryen_dir}"
+unpack "${expat_dir}.tar.gz" "${expat_dir}"
+unpack "${gv_dir}.tar.gz" "${gv_dir}"
 
-unpack "${sdk_tar}" "wasi-sdk-${WASI_SDK_VERSION}.0-${sdk_arch}-${sdk_os}"
-unpack "${binaryen_tar}" "binaryen-version_${BINARYEN_VERSION}"
-unpack "expat-${EXPAT_VERSION}.tar.gz" "expat-${EXPAT_VERSION}"
-unpack "graphviz-${GRAPHVIZ_VERSION}.tar.gz" "graphviz-${GRAPHVIZ_VERSION}"
-
-sdk="${work}/src/wasi-sdk-${WASI_SDK_VERSION}.0-${sdk_arch}-${sdk_os}"
-wasm_opt="${work}/src/binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt"
-gv="${work}/src/graphviz-${GRAPHVIZ_VERSION}"
-expat="${work}/src/expat-${EXPAT_VERSION}"
+sdk="${work}/src/${sdk_dir}"
+wasm_opt="${work}/src/${binaryen_dir}/bin/wasm-opt"
+gv="${work}/src/${gv_dir}"
+expat="${work}/src/${expat_dir}/expat"
 
 # The sources are built as they ship, with three exceptions, each applied to
 # the unpacked copy: configure's two outputs are replaced by the checked-in
-# headers, and the one file under lib/ that defines main() is dropped.
-cp "${here}/config.h" "${gv}/config.h"
-cp "${here}/expat_config.h" "${expat}/expat_config.h"
+# headers, with the versions filled in from the pins where configure would
+# have put them, and the one file under lib/ that defines main() is dropped.
+sed "s/@GRAPHVIZ_VERSION@/${graphviz_version}/g" "${here}/config.h" > "${gv}/config.h"
+sed "s/@EXPAT_VERSION@/${expat_version}/g" "${here}/expat_config.h" > "${expat}/expat_config.h"
 rm -f "${gv}/lib/rbtree/test_red_black_tree.c"
 
 # Graphviz's lib/neatogen has sources for optional engines (ipsep, the vpsc
 # constraint solver) that the configure flags upstream used excluded; the
-# list below is the engine set the Dockerfile compiled, moved to 16.x.
+# list below is the engine set the original container build compiled.
 neatogen=(
   adjust bfs call_tri circuit closest compute_hierarchy conjgrad
   constrained_majorization constraint delaunay dijkstra edges embed_graph
@@ -137,7 +132,7 @@ for f in "${neatogen[@]}"; do neatogen_sources+=("${gv}/lib/neatogen/${f}.c"); d
 mkdir -p "${work}/out"
 raw="${work}/out/graphviz.raw.wasm"
 
-echo "compiling graphviz ${GRAPHVIZ_VERSION} for wasm32-wasip1 with wasi-sdk ${WASI_SDK_VERSION}"
+echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm32-wasip1 with wasi-sdk ${wasi_sdk_version}"
 "${sdk}/bin/clang" \
   -g0 -Os \
   -ffile-prefix-map="${work}=/work" \
@@ -239,6 +234,6 @@ echo "compiling graphviz ${GRAPHVIZ_VERSION} for wasm32-wasip1 with wasi-sdk ${W
   "${here}/bind.c" \
   -o "${raw}"
 
-echo "optimizing with binaryen ${BINARYEN_VERSION}"
+echo "optimizing with binaryen ${binaryen_version}"
 "${wasm_opt}" -g --strip --strip-producers -c -Os "${raw}" -o "${out}"
 sha256 "${out}"

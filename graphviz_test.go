@@ -14,30 +14,37 @@ import (
 
 func TestGraphviz_Image(t *testing.T) {
 	ctx := context.Background()
+
 	g, err := graphviz.New(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	graph, err := g.Graph()
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	defer func() {
 		graph.Close()
 		g.Close()
 	}()
+
 	n, err := graph.CreateNodeByName("n")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	m, err := graph.CreateNodeByName("m")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	e, err := graph.CreateEdgeByName("e", n, m)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	e.SetLabel("e")
 
 	t.Run("png", func(t *testing.T) {
@@ -46,6 +53,7 @@ func TestGraphviz_Image(t *testing.T) {
 			if err := g.Render(ctx, graph, graphviz.PNG, &buf); err != nil {
 				t.Fatalf("failed to render: %+v", err)
 			}
+
 			if len(buf.Bytes()) == 0 {
 				t.Fatal("failed to encode png")
 			}
@@ -55,10 +63,12 @@ func TestGraphviz_Image(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%+v", err)
 			}
+
 			bounds := image.Bounds()
 			if bounds.Max.X != 83 {
 				t.Fatalf("expected bounds x is %d. but got %d", 83, bounds.Max.X)
 			}
+
 			if bounds.Max.Y != 177 {
 				t.Fatalf("expected bounds y is %d. but got %d", 177, bounds.Max.Y)
 			}
@@ -70,6 +80,7 @@ func TestGraphviz_Image(t *testing.T) {
 			if err := g.Render(ctx, graph, graphviz.JPG, &buf); err != nil {
 				t.Fatalf("%+v", err)
 			}
+
 			if len(buf.Bytes()) == 0 {
 				t.Fatal("failed to encode jpg")
 			}
@@ -79,10 +90,12 @@ func TestGraphviz_Image(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%+v", err)
 			}
+
 			bounds := image.Bounds()
 			if bounds.Max.X != 83 {
 				t.Fatal("failed to get image")
 			}
+
 			if bounds.Max.Y != 177 {
 				t.Fatal("failed to get image")
 			}
@@ -140,11 +153,13 @@ func TestParseFile(t *testing.T) {
 			t.Fatalf("There was an error creating a temporary file. Error: %+v", err)
 			return nil
 		}
+
 		_, err = file.WriteString(content)
 		if err != nil {
 			t.Fatalf("There was an error writing '%s' to a temporary file. Error: %+v", content, err)
 			return nil
 		}
+
 		return file
 	}
 
@@ -174,42 +189,52 @@ func (fs *imageFS) Open(name string) (fs.File, error) {
 
 func TestImageRender(t *testing.T) {
 	ctx := context.Background()
+
 	graphviz.SetFileSystem(new(imageFS))
 
 	g, err := graphviz.New(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	graph, err := g.Graph()
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	defer func() {
 		graph.Close()
 		g.Close()
 	}()
+
 	n, err := graph.CreateNodeByName("n")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	n.SetLabel("")
 
 	// specify dummy image path.
 	// Normally, a path to `testdata` would be required before `logo.png`,
-	// but we confirm that the image can be loaded by appending the path to `testdata` within the `imageFS` specified by graphviz.SetFileSystem function.
+	// but we confirm that the image can be loaded by appending the path to `testdata` within the `imageFS` specified by
+	// graphviz.SetFileSystem function.
 	// This test is to verify that images can be loaded relative to the specified FileSystem.
 	n.SetImage("logo.png")
+
 	m, err := graph.CreateNodeByName("m")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	if _, err := graph.CreateEdgeByName("e", n, m); err != nil {
 		t.Fatalf("%+v", err)
 	}
+
 	var buf bytes.Buffer
 	if err := g.Render(ctx, graph, "png", &buf); err != nil {
 		t.Fatal(err)
 	}
+
 	if len(buf.Bytes()) == 0 {
 		t.Fatal("failed to render image")
 	}
@@ -252,6 +277,7 @@ func TestNodeDegree(t *testing.T) {
 
 	for _, graphtest := range graphtests {
 		input := graphtest.input
+
 		graph, err := graphviz.ParseBytes([]byte(input))
 		if err != nil {
 			t.Fatalf("Input: %s. Error: %+v", input, err)
@@ -259,6 +285,7 @@ func TestNodeDegree(t *testing.T) {
 
 		for _, test := range graphtest.tests {
 			nodeName := test.nodeName
+
 			node, err := graph.NodeByName(nodeName)
 			if err != nil || node == nil {
 				t.Fatalf("Unable to retrieve node '%s'. Input: %s. Error: %+v", nodeName, input, err)
@@ -268,22 +295,45 @@ func TestNodeDegree(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if test.expectedIndegree != indegree {
-				t.Errorf("Unexpected indegree for node '%s'. Input: %s. Expected: %d. Actual: %d.", nodeName, input, test.expectedIndegree, indegree)
+				t.Errorf(
+					"Unexpected indegree for node '%s'. Input: %s. Expected: %d. Actual: %d.",
+					nodeName,
+					input,
+					test.expectedIndegree,
+					indegree,
+				)
 			}
+
 			outdegree, err := graph.Outdegree(node)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if test.expectedOutdegree != outdegree {
-				t.Errorf("Unexpected outdegree for node '%s'. Input: %s. Expected: %d. Actual: %d.", nodeName, input, test.expectedOutdegree, outdegree)
+				t.Errorf(
+					"Unexpected outdegree for node '%s'. Input: %s. Expected: %d. Actual: %d.",
+					nodeName,
+					input,
+					test.expectedOutdegree,
+					outdegree,
+				)
 			}
+
 			totalDegree, err := graph.TotalDegree(node)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if test.expectedTotalDegree != totalDegree {
-				t.Errorf("Unexpected total degree for node '%s'. Input: %s. Expected: %d. Actual: %d.", nodeName, input, test.expectedTotalDegree, totalDegree)
+				t.Errorf(
+					"Unexpected total degree for node '%s'. Input: %s. Expected: %d. Actual: %d.",
+					nodeName,
+					input,
+					test.expectedTotalDegree,
+					totalDegree,
+				)
 			}
 		}
 	}
@@ -291,6 +341,7 @@ func TestNodeDegree(t *testing.T) {
 
 func TestEdgeSourceAndTarget(t *testing.T) {
 	ctx := context.Background()
+
 	graph, err := graphviz.New(ctx)
 	if err != nil {
 		t.Fatalf("Error: %+v", err)
@@ -320,6 +371,7 @@ func TestEdgeSourceAndTarget(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error: %+v", err)
 	}
+
 	if head == nil {
 		t.Fatalf("Source is nil")
 	}
@@ -337,6 +389,7 @@ func TestEdgeSourceAndTarget(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error: %+v", err)
 	}
+
 	if target == nil {
 		t.Fatalf("Target is nil")
 	}

@@ -1,4 +1,4 @@
-# go-graphviz [![Go](https://github.com/forkcloser/go-graphviz/workflows/Go/badge.svg)](https://github.com/forkcloser/go-graphviz/actions) [![GoDoc](https://godoc.org/github.com/forkcloser/go-graphviz?status.svg)](https://pkg.go.dev/github.com/forkcloser/go-graphviz) 
+# go-graphviz [![ci](https://github.com/forkcloser/go-graphviz/actions/workflows/ci.yaml/badge.svg)](https://github.com/forkcloser/go-graphviz/actions/workflows/ci.yaml)
 
 Go bindings for Graphviz
 
@@ -118,15 +118,22 @@ if err != nil { panic(err) }
 if err := g.RenderFilename(ctx, graph, graphviz.PNG, "/path/to/graph.png"); err != nil { panic(err) }
 ```
 
+# Development
+
+Every task runs through [`just`](https://just.systems): `just lint`, `just test`,
+`just fix`, `just wasm`, `just bindings`; `just --list` shows the rest. Tools are
+pinned by [aqua](https://aquaproj.github.io/) and the shared conventions come
+from [limen](https://github.com/farcloser/limen) (see `AGENTS.md`).
+
 # How it works
 
-1. Generates bindings between Go and C from [Protocol Buffers file](./internal/wasm/bind.proto).
-2. Builds `graphviz.wasm` with [internal/wasm/build/build.sh](./internal/wasm/build/build.sh):
+1. Generates bindings between Go and C from [Protocol Buffers file](./internal/wasm/bind.proto) with `just bindings`.
+2. Builds `graphviz.wasm` with `just wasm` ([internal/wasm/build/build.sh](./internal/wasm/build/build.sh)):
    Graphviz, expat and the C bridge compiled to `wasm32-wasip1` by a pinned
    wasi-sdk and shrunk by a pinned binaryen, every input fetched by version and
-   checked against the digests in [pins.sh](./internal/wasm/build/pins.sh).
-   No container and no `configure` run: the build is reproducible, and the CI
-   check rebuilds the committed blob and compares the bytes.
+   checked against the digests in [pins.yaml](./pins.yaml). No container and no
+   `configure` run: the build is reproducible, and CI rebuilds the committed
+   blob on Linux and macOS and compares the bytes.
 3. Uses Graphviz functionality from a sub-packages ( `cdt` `cgraph` `gvc` ) via the `internal/wasm` package.
 4. `graphviz` package provides facade interface for all sub packages.
 

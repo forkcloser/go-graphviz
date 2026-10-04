@@ -48,6 +48,7 @@ func New(ctx context.Context) (*Graphviz, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Graphviz{
 		ctx:    c,
 		dir:    Directed,
@@ -60,6 +61,7 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Graphviz, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Graphviz{
 		ctx:    c,
 		dir:    Directed,
@@ -86,9 +88,11 @@ func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io
 	if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
 		return err
 	}
+
 	if err := g.ctx.RenderData(ctx, graph, string(format), w); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -102,10 +106,12 @@ func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (img image.Ima
 	if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
 		return nil, err
 	}
+
 	image, err := g.ctx.RenderImage(ctx, graph, string(PNG))
 	if err != nil {
 		return nil, err
 	}
+
 	return image, nil
 }
 
@@ -119,9 +125,11 @@ func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Form
 	if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
 		return err
 	}
+
 	if err := g.ctx.RenderFilename(ctx, graph, string(format), path); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -129,10 +137,12 @@ func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
 	for _, opt := range option {
 		opt(g)
 	}
+
 	graph, err := cgraph.Open(g.name, g.dir, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	return graph, nil
 }
 
