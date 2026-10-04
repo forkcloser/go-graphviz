@@ -222,11 +222,10 @@ golangci:
           main:
             allow:
               # The module's declared dependencies: the WebAssembly runtime the
-              # embedded Graphviz runs on, and the raster renderer's drawing,
-              # font and image libraries.
+              # embedded Graphviz runs on, the raster renderer's drawing library,
+              # and the Go team's image, font and draw packages.
               - github.com/tetratelabs/wazero
               - github.com/fogleman/gg
-              - github.com/golang/freetype
               - golang.org/x/image
       # internal/wasm is this module's own binding, generated from bind.proto;
       # an error it returns is already the module's own, and cgraph, cdt and
