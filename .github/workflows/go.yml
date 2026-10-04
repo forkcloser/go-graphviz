@@ -19,8 +19,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      - name: build dot command
-        run: cd ./cmd/dot && go build -v .
       - name: test
         if: ${{ matrix.os != 'windows-latest' }}
         run: go test -race -v ./...

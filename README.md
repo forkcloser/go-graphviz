@@ -2,6 +2,15 @@
 
 Go bindings for Graphviz
 
+## About this fork
+
+A fork of [github.com/goccy/go-graphviz](https://github.com/goccy/go-graphviz),
+maintained by forkcloser. The library is the same: Graphviz compiled to
+WebAssembly, run on wazero, no C toolchain and no system Graphviz. The
+upstream `dot` command is not part of this module; forkcloser ships its own,
+[github.com/forkcloser/dot](https://github.com/forkcloser/dot), as a static
+binary with every layout and format of the library.
+
 <img src="https://user-images.githubusercontent.com/209884/90976476-64e84000-e578-11ea-9596-fb4a7d3b11a6.png" width="400px"></img>
 
 # Features
@@ -107,31 +116,6 @@ if err != nil { panic(err) }
 
 // 3. write to file directly
 if err := g.RenderFilename(ctx, graph, graphviz.PNG, "/path/to/graph.png"); err != nil { panic(err) }
-```
-
-# Tool
-
-## `dot`
-
-### Installation
-
-```bash
-$ go install github.com/forkcloser/go-graphviz/cmd/dot@latest
-```
-
-### Usage
-
-```
-Usage:
-  dot [OPTIONS]
-
-Application Options:
-  -T=         specify output format ( currently supported: dot svg png jpg ) (default: dot)
-  -K=         specify layout engine ( currently supported: circo dot fdp neato nop nop1 nop2 osage patchwork sfdp twopi )
-  -o=         specify output file name
-
-Help Options:
-  -h, --help  Show this help message
 ```
 
 # How it works
