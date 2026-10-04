@@ -2,7 +2,6 @@ package graphviz_test
 
 import (
 	"bytes"
-	"context"
 	"embed"
 	"io/fs"
 	"os"
@@ -13,7 +12,7 @@ import (
 )
 
 func TestGraphviz_Image(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	g, err := graphviz.New(ctx)
 	if err != nil {
@@ -147,28 +146,30 @@ func TestParseFile(t *testing.T) {
 		{input: "graph test7 { d -- e }"},
 	}
 
-	createTempFile := func(t *testing.T, content string) *os.File {
-		file, err := os.CreateTemp("", "*")
+	// The file is written and closed before it is parsed: Windows refuses to
+	// remove an open file, and t.TempDir removes the directory at test end.
+	createTempFile := func(t *testing.T, content string) string {
+		file, err := os.CreateTemp(t.TempDir(), "*")
 		if err != nil {
 			t.Fatalf("There was an error creating a temporary file. Error: %+v", err)
-			return nil
 		}
 
-		_, err = file.WriteString(content)
-		if err != nil {
+		if _, err = file.WriteString(content); err != nil {
 			t.Fatalf("There was an error writing '%s' to a temporary file. Error: %+v", content, err)
-			return nil
 		}
 
-		return file
+		if err = file.Close(); err != nil {
+			t.Fatalf("There was an error closing the temporary file. Error: %+v", err)
+		}
+
+		return file.Name()
 	}
 
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			tmpfile := createTempFile(t, test.input)
-			defer os.Remove(tmpfile.Name())
+			path := createTempFile(t, test.input)
 
-			_, err := graphviz.ParseFile(tmpfile.Name())
+			_, err := graphviz.ParseFile(path)
 			if test.expectedErr && err == nil {
 				t.Fatal("expected parsing error")
 			} else if !test.expectedErr && err != nil {
@@ -188,7 +189,7 @@ func (fs *imageFS) Open(name string) (fs.File, error) {
 }
 
 func TestImageRender(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	graphviz.SetFileSystem(new(imageFS))
 
@@ -340,7 +341,7 @@ func TestNodeDegree(t *testing.T) {
 }
 
 func TestEdgeSourceAndTarget(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	graph, err := graphviz.New(ctx)
 	if err != nil {

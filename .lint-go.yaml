@@ -132,7 +132,6 @@ golangci:
             - paralleltest # 2
             - staticcheck # 2
             - noctx # 1
-            - usetesting # 1
         - path: ^graphviz\.go$
           linters: # 30 findings
             - revive # 18
@@ -142,13 +141,11 @@ golangci:
           linters: # 11 findings
             - errcheck # 6
             - paralleltest # 3
-            - usetesting # 2
         - path: ^graphviz_test\.go$
           linters: # 28 findings
             - paralleltest # 14
             - errcheck # 5
             - revive # 4
-            - usetesting # 4
             - thelper # 1
         - path: ^gvc/device_plugin\.go$
           linters: # 30 findings

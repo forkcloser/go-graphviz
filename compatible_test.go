@@ -2,7 +2,6 @@ package graphviz_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"image"
@@ -130,7 +129,7 @@ func TestGraphviz_Compatible(t *testing.T) {
 				}
 				defer graph.Close()
 
-				ctx := context.Background()
+				ctx := t.Context()
 
 				g, err := graphviz.New(ctx)
 				if err != nil {

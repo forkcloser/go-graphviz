@@ -2,7 +2,6 @@ package graphviz_test
 
 import (
 	"bytes"
-	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +17,7 @@ import (
 // 16.1.0 carries the fix, and this keeps the fork from regressing to a
 // release that does not.
 func TestSFDPRepeatedRender(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	g, err := graphviz.New(ctx)
 	if err != nil {
@@ -58,7 +57,7 @@ func TestSFDPRepeatedRender(t *testing.T) {
 // given to SetLabel is printed quoted and escaped, and only SetLabelHTML
 // produces an HTML-like label (the <...> form in DOT output).
 func TestHTMLLabel(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	g, err := graphviz.New(ctx)
 	if err != nil {
