@@ -14,12 +14,17 @@ var (
 )
 
 func init() {
-	if err := setGlobalVars(context.Background()); err != nil {
+	if err := setGlobalVars(); err != nil {
 		panic(err)
 	}
 }
 
-func setGlobalVars(ctx context.Context) error {
+// setGlobalVars builds the four graph descriptors in the module's memory.
+// It runs once, at package init, so the context is the background one; the
+// descriptor setters it calls are generated field writes and take none.
+func setGlobalVars() error {
+	ctx := context.Background()
+
 	// Set MAX to prevent outputting internally generated errors or warnings with agerr to the stderr.
 	wasm.SetError(ctx, wasm.MAX)
 
