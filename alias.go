@@ -9,10 +9,8 @@ import (
 // types from cdt package.
 type (
 	Dict       = cdt.Dict
-	DictHold   = cdt.Hold
 	DictLink   = cdt.Link
 	DictMethod = cdt.Method
-	DictData   = cdt.Data
 	DictDisc   = cdt.Disc
 	DictStat   = cdt.Stat
 )

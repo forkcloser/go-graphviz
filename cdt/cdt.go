@@ -23,22 +23,6 @@ func (d *Dict) getWasm() *wasm.Dict {
 	return d.wasm
 }
 
-type Hold struct {
-	wasm *wasm.DictHold
-}
-
-func toHold(v *wasm.DictHold) *Hold {
-	if v == nil {
-		return nil
-	}
-
-	return &Hold{wasm: v}
-}
-
-func (h *Hold) getWasm() *wasm.DictHold {
-	return h.wasm
-}
-
 type Link struct {
 	wasm *wasm.DictLink
 }
@@ -71,22 +55,6 @@ func (m *Method) getWasm() *wasm.DictMethod {
 	return m.wasm
 }
 
-type Data struct {
-	wasm *wasm.DictData
-}
-
-func toData(v *wasm.DictData) *Data {
-	if v == nil {
-		return nil
-	}
-
-	return &Data{wasm: v}
-}
-
-func (d *Data) getWasm() *wasm.DictData {
-	return d.wasm
-}
-
 type Disc struct {
 	wasm *wasm.DictDisc
 }
@@ -105,14 +73,6 @@ func (d *Disc) getWasm() *wasm.DictDisc {
 
 type Stat struct {
 	wasm *wasm.DictStat
-}
-
-func toStat(v *wasm.DictStat) *Stat {
-	if v == nil {
-		return nil
-	}
-
-	return &Stat{wasm: v}
 }
 
 func (s *Stat) getWasm() *wasm.DictStat {

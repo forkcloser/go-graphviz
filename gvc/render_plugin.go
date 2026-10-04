@@ -633,14 +633,6 @@ func toJob(v *wasm.Job) *Job {
 	return &Job{wasm: v}
 }
 
-func (j *Job) getWasm() *wasm.Job {
-	if j == nil {
-		return nil
-	}
-
-	return j.wasm
-}
-
 type Point struct {
 	wasm *wasm.Point
 }
@@ -723,14 +715,6 @@ func toTextSpan(v *wasm.Textspan) *TextSpan {
 	}
 
 	return &TextSpan{wasm: v}
-}
-
-func (s *TextSpan) getWasm() *wasm.Textspan {
-	if s == nil {
-		return nil
-	}
-
-	return s.wasm
 }
 
 func (s *TextSpan) Text() string {
@@ -1045,14 +1029,6 @@ func toObjectState(v *wasm.ObjectState) *ObjectState {
 	return &ObjectState{wasm: v}
 }
 
-func (s *ObjectState) getWasm() *wasm.ObjectState {
-	if s == nil {
-		return nil
-	}
-
-	return s.wasm
-}
-
 type FillType int64
 
 var (
@@ -1240,14 +1216,6 @@ func toUserShape(v *wasm.UserShape) *UserShape {
 	return &UserShape{wasm: v}
 }
 
-func (s *UserShape) getWasm() *wasm.UserShape {
-	if s == nil {
-		return nil
-	}
-
-	return s.wasm
-}
-
 func (s *UserShape) Link() *cdt.Link {
 	return toDictLink(s.wasm.GetLink())
 }
@@ -1383,22 +1351,6 @@ type Box struct {
 	wasm *wasm.Box
 }
 
-func toBox(v *wasm.Box) *Box {
-	if v == nil {
-		return nil
-	}
-
-	return &Box{wasm: v}
-}
-
-func (b *Box) getWasm() *wasm.Box {
-	if b == nil {
-		return nil
-	}
-
-	return b.wasm
-}
-
 func (b *Box) LL() *Point {
 	return toPoint(b.wasm.GetLl())
 }
@@ -1425,14 +1377,6 @@ func toBoxFloat(v *wasm.BoxFloat) *BoxFloat {
 	}
 
 	return &BoxFloat{wasm: v}
-}
-
-func (f *BoxFloat) getWasm() *wasm.BoxFloat {
-	if f == nil {
-		return nil
-	}
-
-	return f.wasm
 }
 
 func (f *BoxFloat) LL() *PointFloat {

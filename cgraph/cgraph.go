@@ -276,40 +276,8 @@ type Attr struct {
 	wasm *wasm.Attr
 }
 
-func toAttr(v *wasm.Attr) *Attr {
-	if v == nil {
-		return nil
-	}
-
-	return &Attr{wasm: v}
-}
-
-func (a *Attr) getWasm() *wasm.Attr {
-	if a == nil {
-		return nil
-	}
-
-	return a.wasm
-}
-
 type DataDict struct {
 	wasm *wasm.DataDict
-}
-
-func toDataDict(v *wasm.DataDict) *DataDict {
-	if v == nil {
-		return nil
-	}
-
-	return &DataDict{wasm: v}
-}
-
-func (d *DataDict) getWasm() *wasm.DataDict {
-	if d == nil {
-		return nil
-	}
-
-	return d.wasm
 }
 
 type ID uint64

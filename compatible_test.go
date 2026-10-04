@@ -29,6 +29,20 @@ const (
 	imageThreshold = 40
 )
 
+// TestGenerateHashes rewrites testdata/imagehash.json from the system `dot`,
+// the reference the compatibility test compares against. It runs only when
+// GO_GRAPHVIZ_UPDATE_HASHES is set, since it needs Graphviz installed and
+// changes the expected data; the ordinary run skips it.
+func TestGenerateHashes(t *testing.T) {
+	if os.Getenv("GO_GRAPHVIZ_UPDATE_HASHES") == "" {
+		t.Skip("set GO_GRAPHVIZ_UPDATE_HASHES=1 to regenerate testdata/imagehash.json with the system dot")
+	}
+
+	if err := generateTestData(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func generateTestData() error {
 	pathToHashDump := map[string]string{}
 

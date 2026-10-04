@@ -98,14 +98,10 @@ golangci:
         - path: ^cdt/cdt\.go$
           linters: # 48 findings
             - revive # 34
-            - unused # 7
             - errcheck # 3
             - funcorder # 2
             - err113 # 1
             - gosec # 1
-        - path: ^cdt/link\.go$
-          linters: # 2 findings
-            - unused # 2
         - path: ^cgraph/attribute\.go$
           linters: # 487 findings
             - revive # 254
@@ -120,7 +116,6 @@ golangci:
             - funcorder # 11
             - gochecknoglobals # 5
             - gosec # 5
-            - unused # 4
             - varnamelen # 3
             - err113 # 1
             - govet # 1
@@ -135,7 +130,6 @@ golangci:
         - path: ^cgraph/link\.go$
           linters: # 2 findings
             - revive # 1
-            - unused # 1
         - path: ^compatible_test\.go$
           linters: # 19 findings
             - errcheck # 4
@@ -146,7 +140,6 @@ golangci:
             - govet # 1
             - noctx # 1
             - perfsprint # 1
-            - unused # 1
             - usetesting # 1
         - path: ^graphviz\.go$
           linters: # 30 findings
@@ -225,7 +218,6 @@ golangci:
             - errcheck # 69
             - gochecknoglobals # 47
             - funcorder # 13
-            - unused # 7
             - govet # 5
             - varnamelen # 2
             - gocognit # 1
