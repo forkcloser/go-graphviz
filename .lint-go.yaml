@@ -183,7 +183,6 @@ golangci:
             - funcorder # 13
             - wrapcheck # 13
             - gochecknoglobals # 5
-            - unparam # 3
             - errcheck # 2
             - nilerr # 2
             - nilnil # 2

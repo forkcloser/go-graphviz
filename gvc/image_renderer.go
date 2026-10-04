@@ -168,7 +168,7 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, s
 
 	face, err := r.getFontFace(ctx, job, font)
 	if face == nil || err != nil {
-		defaultFont, err := r.defaultFontFace(ctx, job, font)
+		defaultFont, err := r.defaultFontFace(job, font)
 		if err != nil {
 			return err
 		}
@@ -241,14 +241,14 @@ func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, font 
 func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *PointFloat) (font.Face, error) {
 	fontPath, err := findFont(fontName)
 	if err == nil {
-		return r.lookupFontFromTTFFile(fontName, fontSize, dpi, fontPath)
+		return r.lookupFontFromTTFFile(fontSize, fontPath)
 	}
 
 	parts := strings.Split(fontName, "-")
 	for i := len(parts) - 1; i > 0; i-- {
 		baseName := strings.Join(parts[:len(parts)-1], "-")
 
-		ttfFace, err := r.lookupFontFromTTFFile(fontName, fontSize, dpi, baseName+".ttf")
+		ttfFace, err := r.lookupFontFromTTFFile(fontSize, baseName+".ttf")
 		if err != nil {
 			return nil, err
 		}
@@ -270,12 +270,7 @@ func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *Point
 	return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontName)
 }
 
-func (r *ImageRenderer) lookupFontFromTTFFile(
-	fontName string,
-	fontSize float64,
-	dpi *PointFloat,
-	fontPath string,
-) (font.Face, error) {
+func (r *ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (font.Face, error) {
 	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
 	fontData, err := os.ReadFile(fontPath)
 	if err != nil {
@@ -340,7 +335,7 @@ func (r *ImageRenderer) lookupFontFromTTCFile(
 	return nil, fmt.Errorf("%w: %s in %s", ErrFontNotFound, fontName, fontPath)
 }
 
-func (r *ImageRenderer) defaultFontFace(ctx context.Context, job *Job, font *TextFont) (font.Face, error) {
+func (r *ImageRenderer) defaultFontFace(job *Job, font *TextFont) (font.Face, error) {
 	ft, err := truetype.Parse(goregular.TTF)
 	if err != nil {
 		return nil, err
