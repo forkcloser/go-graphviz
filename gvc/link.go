@@ -1,7 +1,7 @@
 package gvc
 
 import (
-	_ "unsafe"
+	_ "unsafe" // for go:linkname
 
 	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/cgraph"

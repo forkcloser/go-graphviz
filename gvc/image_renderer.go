@@ -54,11 +54,11 @@ type ImageRenderer struct {
 	ctx *gg.Context
 }
 
-func (r *ImageRenderer) toX(job *Job, x float64) float64 {
+func (*ImageRenderer) toX(job *Job, x float64) float64 {
 	return job.Scale().X() * x
 }
 
-func (r *ImageRenderer) toY(job *Job, y float64) float64 {
+func (*ImageRenderer) toY(job *Job, y float64) float64 {
 	return job.Scale().Y() * y
 }
 
@@ -71,7 +71,7 @@ func (r *ImageRenderer) setRGB(rgba [4]uint) {
 	)
 }
 
-func (r *ImageRenderer) BeginPage(ctx context.Context, job *Job) error {
+func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	width, height := job.Width(), job.Height()
 	if width > math.MaxInt32 || height > math.MaxInt32 {
 		return fmt.Errorf("%w: %d by %d points", ErrPageTooLarge, width, height)
@@ -85,11 +85,11 @@ func (r *ImageRenderer) BeginPage(ctx context.Context, job *Job) error {
 	return nil
 }
 
-func (r *ImageRenderer) isPNG(job *Job) bool {
+func (*ImageRenderer) isPNG(job *Job) bool {
 	return job.OutputLangName() == "png"
 }
 
-func (r *ImageRenderer) isJPG(job *Job) bool {
+func (*ImageRenderer) isJPG(job *Job) bool {
 	return job.OutputLangName() == "jpg"
 }
 
@@ -123,7 +123,7 @@ func (r *ImageRenderer) setPenStyle(job *Job) {
 	r.ctx.SetLineWidth(o.PenWidth())
 }
 
-func (r *ImageRenderer) EndPage(ctx context.Context, job *Job) error {
+func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 	var buf bytes.Buffer
 
 	switch {
@@ -164,11 +164,11 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, s
 	rgba := job.Object().PenColor().RGBAUint()
 	r.setRGB(rgba)
 
-	font := span.Font()
+	textFont := span.Font()
 
-	face, err := r.getFontFace(ctx, job, font)
+	face, err := r.getFontFace(ctx, job, textFont)
 	if face == nil || err != nil {
-		defaultFont, err := r.defaultFontFace(job, font)
+		defaultFont, err := r.defaultFontFace(job, textFont)
 		if err != nil {
 			return err
 		}
@@ -194,20 +194,20 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, p *PointFloat, s
 	return nil
 }
 
-func (r *ImageRenderer) getFontFace(ctx context.Context, job *Job, font *TextFont) (font.Face, error) {
-	return r.lookupFontWithCache(ctx, job, font)
+func (r *ImageRenderer) getFontFace(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
+	return r.lookupFontWithCache(ctx, job, textFont)
 }
 
-func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, font *TextFont) (font.Face, error) {
-	fontSize := font.Size() * job.Zoom()
-	fontName := font.Name()
+func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
+	fontSize := textFont.Size() * job.Zoom()
+	fontName := textFont.Name()
 	cacheKey := fmt.Sprintf("%s:%f", fontName, fontSize)
 
 	fontMu.RLock()
 
-	if font, exists := fontCache[cacheKey]; exists {
+	if cached, exists := fontCache[cacheKey]; exists {
 		fontMu.RUnlock()
-		return font, nil
+		return cached, nil
 	}
 
 	fontMu.RUnlock()
@@ -216,7 +216,7 @@ func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, font 
 	defer fontLoaderMu.RUnlock()
 
 	if fontLoader != nil {
-		face, err := fontLoader(ctx, job, font)
+		face, err := fontLoader(ctx, job, textFont)
 		if err != nil {
 			return nil, err
 		}
@@ -270,7 +270,7 @@ func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *Point
 	return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontName)
 }
 
-func (r *ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (font.Face, error) {
+func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (font.Face, error) {
 	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
 	fontData, err := os.ReadFile(fontPath)
 	if err != nil {
@@ -287,7 +287,7 @@ func (r *ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string)
 	}), nil
 }
 
-func (r *ImageRenderer) lookupFontFromTTCFile(
+func (*ImageRenderer) lookupFontFromTTCFile(
 	fontName string,
 	fontSize float64,
 	dpi *PointFloat,
@@ -335,18 +335,18 @@ func (r *ImageRenderer) lookupFontFromTTCFile(
 	return nil, fmt.Errorf("%w: %s in %s", ErrFontNotFound, fontName, fontPath)
 }
 
-func (r *ImageRenderer) defaultFontFace(job *Job, font *TextFont) (font.Face, error) {
+func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, error) {
 	ft, err := truetype.Parse(goregular.TTF)
 	if err != nil {
 		return nil, err
 	}
 
 	return truetype.NewFace(ft, &truetype.Options{
-		Size: font.Size() * job.Zoom(),
+		Size: textFont.Size() * job.Zoom(),
 	}), nil
 }
 
-func (r *ImageRenderer) Ellipse(ctx context.Context, job *Job, p []*PointFloat, filled bool) error {
+func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, p []*PointFloat, filled bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
@@ -376,7 +376,7 @@ func (r *ImageRenderer) Ellipse(ctx context.Context, job *Job, p []*PointFloat, 
 	return nil
 }
 
-func (r *ImageRenderer) Polygon(ctx context.Context, job *Job, a []*PointFloat, filled bool) error {
+func (r *ImageRenderer) Polygon(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
@@ -408,7 +408,7 @@ func (r *ImageRenderer) Polygon(ctx context.Context, job *Job, a []*PointFloat, 
 	return nil
 }
 
-func (r *ImageRenderer) Polyline(ctx context.Context, job *Job, a []*PointFloat) error {
+func (r *ImageRenderer) Polyline(_ context.Context, job *Job, a []*PointFloat) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
@@ -426,7 +426,7 @@ func (r *ImageRenderer) Polyline(ctx context.Context, job *Job, a []*PointFloat)
 	return nil
 }
 
-func (r *ImageRenderer) BezierCurve(ctx context.Context, job *Job, a []*PointFloat, filled bool) error {
+func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, a []*PointFloat, filled bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
@@ -471,7 +471,7 @@ const (
 	defaultYPAD = 2 * defaultGAP
 )
 
-func (r *ImageRenderer) LoadImage(ctx context.Context, job *Job, shape *UserShape, bf *BoxFloat, filled bool) error {
+func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, bf *BoxFloat, _ bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
@@ -518,7 +518,7 @@ func (r *ImageRenderer) LoadImage(ctx context.Context, job *Job, shape *UserShap
 	return nil
 }
 
-type FontLoader func(ctx context.Context, job *Job, font *TextFont) (font.Face, error)
+type FontLoader func(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error)
 
 var (
 	fontLoaderMu sync.RWMutex

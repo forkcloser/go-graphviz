@@ -1,3 +1,7 @@
+// Package graphviz is the facade of the library: a Graphviz instance built
+// from the embedded WebAssembly module, the graph it lays out and renders, and
+// aliases for every type of the cgraph, cdt and gvc packages, so a program
+// imports this one package for the whole API.
 package graphviz
 
 import (
@@ -89,11 +93,7 @@ func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io
 		return err
 	}
 
-	if err := g.ctx.RenderData(ctx, graph, string(format), w); err != nil {
-		return err
-	}
-
-	return nil
+	return g.ctx.RenderData(ctx, graph, string(format), w)
 }
 
 func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (img image.Image, e error) {
@@ -107,12 +107,12 @@ func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (img image.Ima
 		return nil, err
 	}
 
-	image, err := g.ctx.RenderImage(ctx, graph, string(PNG))
+	rendered, err := g.ctx.RenderImage(ctx, graph, string(PNG))
 	if err != nil {
 		return nil, err
 	}
 
-	return image, nil
+	return rendered, nil
 }
 
 func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Format, path string) (e error) {
@@ -126,11 +126,7 @@ func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Form
 		return err
 	}
 
-	if err := g.ctx.RenderFilename(ctx, graph, string(format), path); err != nil {
-		return err
-	}
-
-	return nil
+	return g.ctx.RenderFilename(ctx, graph, string(format), path)
 }
 
 func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
@@ -146,6 +142,6 @@ func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
 	return graph, nil
 }
 
-func SetFileSystem(fs fs.FS) {
-	wasm.SetWasmFileSystem(fs)
+func SetFileSystem(fsys fs.FS) {
+	wasm.SetWasmFileSystem(fsys)
 }

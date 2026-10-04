@@ -59,15 +59,15 @@ func NewDevicePlugin(ctx context.Context, typ string, opts ...DevicePluginOption
 		opt(cfg)
 	}
 
-	return newDevicePlugin(ctx, cfg)
+	return buildDevicePlugin(ctx, cfg)
 }
 
 func PNGDevicePlugin(ctx context.Context) (*DevicePlugin, error) {
-	return newDevicePlugin(ctx, defaultDevicePluginConfig("png:png"))
+	return buildDevicePlugin(ctx, defaultDevicePluginConfig("png:png"))
 }
 
 func JPGDevicePlugin(ctx context.Context) (*DevicePlugin, error) {
-	return newDevicePlugin(ctx, defaultDevicePluginConfig("jpg:jpg"))
+	return buildDevicePlugin(ctx, defaultDevicePluginConfig("jpg:jpg"))
 }
 
 type deviceDPI struct {
@@ -97,7 +97,7 @@ func defaultDevicePluginConfig(typ string) *deviceConfig {
 	}
 }
 
-func newDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, error) {
+func buildDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, error) {
 	plg, err := wasm.NewPluginAPI(ctx)
 	if err != nil {
 		return nil, err

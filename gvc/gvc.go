@@ -1,3 +1,6 @@
+// Package gvc mirrors libgvc, Graphviz's layout and rendering context: the
+// plugin registry, the render, device and image-loading plugins, and the
+// raster renderer this module provides for PNG and JPEG output.
 package gvc
 
 import (
@@ -6,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	_ "image/jpeg"
-	_ "image/png"
+	_ "image/jpeg" // registers the decoder image.Decode needs
+	_ "image/png"  // registers the decoder image.Decode needs
 	"io"
 	"os"
 

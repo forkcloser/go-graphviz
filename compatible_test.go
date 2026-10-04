@@ -88,18 +88,10 @@ func generateTestData() error {
 		return err
 	}
 
-	if err := os.WriteFile(imageHashJSON, content, 0o644); err != nil {
-		return err
-	}
-
-	return nil
+	return os.WriteFile(imageHashJSON, content, 0o644)
 }
 
 func TestGraphviz_Compatible(t *testing.T) {
-	// generate testdata/imagehash.json
-	//if err := generateTestData(); err != nil {
-	//	t.Fatal(err)
-	//}
 	var pathToHashDump map[string]string
 
 	file, err := os.ReadFile(imageHashJSON)
@@ -112,7 +104,7 @@ func TestGraphviz_Compatible(t *testing.T) {
 	}
 
 	for _, path := range testPaths {
-		filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		filepath.Walk(path, func(path string, info os.FileInfo, _ error) error {
 			if info.IsDir() {
 				return nil
 			}

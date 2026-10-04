@@ -184,7 +184,7 @@ var logoFS embed.FS
 
 type imageFS struct{}
 
-func (fs *imageFS) Open(name string) (fs.File, error) {
+func (*imageFS) Open(name string) (fs.File, error) {
 	return logoFS.Open(filepath.Join("testdata", name))
 }
 
@@ -374,7 +374,7 @@ func TestEdgeSourceAndTarget(t *testing.T) {
 	}
 
 	if head == nil {
-		t.Fatalf("Source is nil")
+		t.Fatal("Source is nil")
 	}
 
 	headName, err := head.Name()
@@ -392,7 +392,7 @@ func TestEdgeSourceAndTarget(t *testing.T) {
 	}
 
 	if target == nil {
-		t.Fatalf("Target is nil")
+		t.Fatal("Target is nil")
 	}
 
 	tailName, err := target.Name()
