@@ -337,7 +337,7 @@ func setupNodeLabelIfEmpty(g *Graph) error {
 		return nil
 	}
 
-	if err := setLabelIfEmpty(n); err != nil {
+	if err = setLabelIfEmpty(n); err != nil {
 		return err
 	}
 

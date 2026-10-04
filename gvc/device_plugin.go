@@ -99,7 +99,7 @@ func newDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, err
 		return nil, err
 	}
 
-	if err := plg.SetApi(wasm.API_DEVICE); err != nil {
+	if err = plg.SetApi(wasm.API_DEVICE); err != nil {
 		return nil, err
 	}
 
@@ -108,11 +108,11 @@ func newDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, err
 		return nil, err
 	}
 
-	if err := types.SetType(cfg.Type); err != nil {
+	if err = types.SetType(cfg.Type); err != nil {
 		return nil, err
 	}
 
-	if err := types.SetQuality(cfg.Quality); err != nil {
+	if err = types.SetQuality(cfg.Quality); err != nil {
 		return nil, err
 	}
 
@@ -137,7 +137,7 @@ func newDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, err
 	dpi.SetY(cfg.DPI.Y)
 	features.SetDefaultDpi(dpi)
 
-	if err := types.SetFeatures(features); err != nil {
+	if err = types.SetFeatures(features); err != nil {
 		return nil, err
 	}
 

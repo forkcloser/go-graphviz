@@ -12,7 +12,7 @@ func DefaultSymList(ctx context.Context) ([]*SymList, error) {
 		return nil, err
 	}
 
-	if _, err := mod.ExportedFunction("wasm_bridge_SymList_default").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_SymList_default").Call(ctx, p); err != nil {
 		return nil, err
 	}
 
@@ -35,7 +35,7 @@ func PluginAPIZero(ctx context.Context) (*PluginAPI, error) {
 		return nil, err
 	}
 
-	if _, err := mod.ExportedFunction("wasm_bridge_PluginAPI_zero").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_PluginAPI_zero").Call(ctx, p); err != nil {
 		return nil, err
 	}
 
@@ -53,7 +53,7 @@ func PluginInstalledZero(ctx context.Context) (*PluginInstalled, error) {
 		return nil, err
 	}
 
-	if _, err := mod.ExportedFunction("wasm_bridge_PluginInstalled_zero").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_PluginInstalled_zero").Call(ctx, p); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func SymListZero(ctx context.Context) (*SymList, error) {
 		return nil, err
 	}
 
-	if _, err := mod.ExportedFunction("wasm_bridge_SymList_zero").Call(ctx, p); err != nil {
+	if _, err = mod.ExportedFunction("wasm_bridge_SymList_zero").Call(ctx, p); err != nil {
 		return nil, err
 	}
 
