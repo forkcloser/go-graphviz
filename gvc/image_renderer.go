@@ -267,9 +267,12 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 	if err != nil {
 		return fmt.Errorf("opening image %s: %w", shape.Name(), err)
 	}
+	defer file.Close()
 
 	var buf bytes.Buffer
-	io.Copy(&buf, file)
+	if _, copyErr := io.Copy(&buf, file); copyErr != nil {
+		return fmt.Errorf("reading image %s: %w", shape.Name(), copyErr)
+	}
 
 	img, _, err := image.Decode(&buf)
 	if err != nil {

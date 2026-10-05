@@ -49,13 +49,13 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 	return &Context{gvc: gvc}, nil
 }
 
+// Close frees the context. gvFreeContext returns the number of errors
+// Graphviz has reported since the process started, not a status for this
+// call, so that number is not an error here.
 func (c *Context) Close() error {
-	res, err := c.gvc.FreeContext(context.Background())
-	if err != nil {
-		return err
-	}
+	_, err := c.gvc.FreeContext(context.Background())
 
-	return toError(res)
+	return err
 }
 
 func (c *Context) Layout(ctx context.Context, g *cgraph.Graph, engine string) error {
