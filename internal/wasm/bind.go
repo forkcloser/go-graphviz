@@ -32,6 +32,10 @@ type WasmModule struct {
 	callbackFuncMap *CallbackFuncMap
 	// lock serializes every call into the module (see reentrantLock).
 	lock reentrantLock
+	// initErr is why the module could not be loaded, nil when it was. A
+	// failed load leaves mod without an instance; every call and memory
+	// access returns this error instead of panicking at import.
+	initErr error
 	// callbackErr is the first error a Go callback returned during the
 	// exported call in progress. A host function must not panic: the panic
 	// unwinds through Graphviz's C frames and leaves its state half-updated,
@@ -414,13 +418,103 @@ func CreateCallbackFunc[T any](cb T, funcID uint64) *CallbackFunc[T] {
 }
 
 func init() {
-	ctx := context.Background()
+	mod = newWasmModule()
+	if err := mod.load(context.Background(), wasmFile); err != nil {
+		mod.initErr = fmt.Errorf("loading the Graphviz WebAssembly module: %w", err)
+	}
+}
+
+// newWasmModule is a module with its registries and no instance yet.
+func newWasmModule() *WasmModule {
+	return &WasmModule{
+		fs:            &WasmFileSystem{},
+		lookupFuncMap: &LookupFuncMap{},
+		callbackFuncMap: &CallbackFuncMap{
+			IDAllocator_Open:                     make(map[uint64]func(context.Context, *Graph, *ClientDiscipline) (any, error)),
+			IDAllocator_Map:                      make(map[uint64]func(context.Context, any, int, string, *uint64, int) (int32, error)),
+			IDAllocator_Free:                     make(map[uint64]func(context.Context, any, int, uint64) error),
+			IDAllocator_Print:                    make(map[uint64]func(context.Context, any, int, uint64) (string, error)),
+			IDAllocator_Close:                    make(map[uint64]func(context.Context, any) error),
+			IDAllocator_IdRegister:               make(map[uint64]func(context.Context, any, int, any) error),
+			IOService_Afread:                     make(map[uint64]func(context.Context, any, string, int) (int, error)),
+			IOService_Putstr:                     make(map[uint64]func(context.Context, any, string) (int, error)),
+			IOService_Flush:                      make(map[uint64]func(context.Context, any) (int, error)),
+			ClientEventCallback_ObjectFunc:       make(map[uint64]func(context.Context, *Graph, *Object, any) error),
+			ClientEventCallback_ObjectUpdateFunc: make(map[uint64]func(context.Context, *Graph, *Object, any, *Sym) error),
+			UserRef:                              make(map[uint64]func(context.Context, string) (int, error)),
+			DictMemory:                           make(map[uint64]func(context.Context, *Dict, any, uint32, *DictDisc) (any, error)),
+			DictSearch:                           make(map[uint64]func(context.Context, *Dict, any, int) (any, error)),
+			DictMake:                             make(map[uint64]func(context.Context, any, *DictDisc) (any, error)),
+			DictFree:                             make(map[uint64]func(context.Context, any) error),
+			DictCompare:                          make(map[uint64]func(context.Context, any, any) (int, error)),
+			DictWalk:                             make(map[uint64]func(context.Context, any, any) (int, error)),
+			UserShape_DataFree:                   make(map[uint64]func(context.Context, *UserShape) error),
+			DeviceCallbacks_Refresh:              make(map[uint64]func(context.Context, *Job) error),
+			DeviceCallbacks_ButtonPress:          make(map[uint64]func(context.Context, *Job, int, *PointFloat) error),
+			DeviceCallbacks_ButtonRelease:        make(map[uint64]func(context.Context, *Job, int, *PointFloat) error),
+			DeviceCallbacks_Motion:               make(map[uint64]func(context.Context, *Job, *PointFloat) error),
+			DeviceCallbacks_Modify:               make(map[uint64]func(context.Context, *Job, string, string) error),
+			DeviceCallbacks_Delete:               make(map[uint64]func(context.Context, *Job) error),
+			DeviceCallbacks_Read:                 make(map[uint64]func(context.Context, *Job, string, string) error),
+			DeviceCallbacks_Layout:               make(map[uint64]func(context.Context, *Job, string) error),
+			DeviceCallbacks_Render:               make(map[uint64]func(context.Context, *Job, string, string) error),
+			DeviceEngine_Initialize:              make(map[uint64]func(context.Context, *Job) error),
+			DeviceEngine_Format:                  make(map[uint64]func(context.Context, *Job) error),
+			DeviceEngine_Finalize:                make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginJob:                make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndJob:                  make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginGraph:              make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndGraph:                make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginLayer:              make(map[uint64]func(context.Context, *Job, string, int, int) error),
+			RenderEngine_EndLayer:                make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginPage:               make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndPage:                 make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginCluster:            make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndCluster:              make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginNodes:              make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndNodes:                make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginEdges:              make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndEdges:                make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginNode:               make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndNode:                 make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginEdge:               make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_EndEdge:                 make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginAnchor:             make(map[uint64]func(context.Context, *Job, string, string, string, string) error),
+			RenderEngine_EndAnchor:               make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_BeginLabel:              make(map[uint64]func(context.Context, *Job, LabelType) error),
+			RenderEngine_EndLabel:                make(map[uint64]func(context.Context, *Job) error),
+			RenderEngine_Textspan:                make(map[uint64]func(context.Context, *Job, *PointFloat, *Textspan) error),
+			RenderEngine_ResolveColor:            make(map[uint64]func(context.Context, *Job, *Color) error),
+			RenderEngine_Ellipse:                 make(map[uint64]func(context.Context, *Job, []*PointFloat, int) error),
+			RenderEngine_Polygon:                 make(map[uint64]func(context.Context, *Job, []*PointFloat, uint32, int) error),
+			RenderEngine_Beziercurve:             make(map[uint64]func(context.Context, *Job, []*PointFloat, uint32, int) error),
+			RenderEngine_Polyline:                make(map[uint64]func(context.Context, *Job, []*PointFloat, uint32) error),
+			RenderEngine_Comment:                 make(map[uint64]func(context.Context, *Job, string) error),
+			RenderEngine_LibraryShape:            make(map[uint64]func(context.Context, *Job, string, []*PointFloat, uint32, int) error),
+			LayoutEngine_Layout:                  make(map[uint64]func(context.Context, *Graph) error),
+			LayoutEngine_Cleanup:                 make(map[uint64]func(context.Context, *Graph) error),
+			TextLayoutEngine_TextLayout:          make(map[uint64]func(context.Context, *Textspan, []string) (bool, error)),
+			LoadImageEngine_LoadImage:            make(map[uint64]func(context.Context, *Job, *UserShape, *BoxFloat, bool) error),
+		},
+	}
+}
+
+// load compiles and instantiates blob behind the host functions and binds
+// the enum values the bindings read. It returns an error where it used to
+// panic, and closes what it built when it fails.
+func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	cfg := wazero.NewRuntimeConfig()
 	if cache := getCompilationCache(); cache != nil {
 		cfg = cfg.WithCompilationCache(cache)
 	}
 
 	r := wazero.NewRuntimeWithConfig(ctx, cfg)
+	defer func() {
+		if err != nil {
+			m.mod = nil
+			_ = r.Close(ctx)
+		}
+	}()
 
 	env := r.NewHostModuleBuilder("env")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
@@ -3456,228 +3550,178 @@ func init() {
 		[]api.ValueType{},
 	).Export("wasm_bridge_LoadImageEngine_LoadImage")
 	if _, err := env.Instantiate(ctx); err != nil {
-		panic(err)
+		return err
 	}
-	wasi_snapshot_preview1.MustInstantiate(ctx, r)
+	if _, err := wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {
+		return err
+	}
 
-	compiled, err := r.CompileModule(ctx, wasmFile)
+	compiled, err := r.CompileModule(ctx, blob)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	fs := &WasmFileSystem{}
-	m, err := r.InstantiateModule(
+	instance, err := r.InstantiateModule(
 		ctx,
 		compiled,
 		wazero.NewModuleConfig().
-			WithFSConfig(wazero.NewFSConfig().WithFSMount(fs, "/")).
+			WithFSConfig(wazero.NewFSConfig().WithFSMount(m.fs, "/")).
 			WithName("wasi"),
 	)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	mod = &WasmModule{
-		mod:           m,
-		fs:            fs,
-		lookupFuncMap: &LookupFuncMap{},
-		callbackFuncMap: &CallbackFuncMap{
-			IDAllocator_Open:                     make(map[uint64]func(context.Context, *Graph, *ClientDiscipline) (any, error)),
-			IDAllocator_Map:                      make(map[uint64]func(context.Context, any, int, string, *uint64, int) (int32, error)),
-			IDAllocator_Free:                     make(map[uint64]func(context.Context, any, int, uint64) error),
-			IDAllocator_Print:                    make(map[uint64]func(context.Context, any, int, uint64) (string, error)),
-			IDAllocator_Close:                    make(map[uint64]func(context.Context, any) error),
-			IDAllocator_IdRegister:               make(map[uint64]func(context.Context, any, int, any) error),
-			IOService_Afread:                     make(map[uint64]func(context.Context, any, string, int) (int, error)),
-			IOService_Putstr:                     make(map[uint64]func(context.Context, any, string) (int, error)),
-			IOService_Flush:                      make(map[uint64]func(context.Context, any) (int, error)),
-			ClientEventCallback_ObjectFunc:       make(map[uint64]func(context.Context, *Graph, *Object, any) error),
-			ClientEventCallback_ObjectUpdateFunc: make(map[uint64]func(context.Context, *Graph, *Object, any, *Sym) error),
-			UserRef:                              make(map[uint64]func(context.Context, string) (int, error)),
-			DictMemory:                           make(map[uint64]func(context.Context, *Dict, any, uint32, *DictDisc) (any, error)),
-			DictSearch:                           make(map[uint64]func(context.Context, *Dict, any, int) (any, error)),
-			DictMake:                             make(map[uint64]func(context.Context, any, *DictDisc) (any, error)),
-			DictFree:                             make(map[uint64]func(context.Context, any) error),
-			DictCompare:                          make(map[uint64]func(context.Context, any, any) (int, error)),
-			DictWalk:                             make(map[uint64]func(context.Context, any, any) (int, error)),
-			UserShape_DataFree:                   make(map[uint64]func(context.Context, *UserShape) error),
-			DeviceCallbacks_Refresh:              make(map[uint64]func(context.Context, *Job) error),
-			DeviceCallbacks_ButtonPress:          make(map[uint64]func(context.Context, *Job, int, *PointFloat) error),
-			DeviceCallbacks_ButtonRelease:        make(map[uint64]func(context.Context, *Job, int, *PointFloat) error),
-			DeviceCallbacks_Motion:               make(map[uint64]func(context.Context, *Job, *PointFloat) error),
-			DeviceCallbacks_Modify:               make(map[uint64]func(context.Context, *Job, string, string) error),
-			DeviceCallbacks_Delete:               make(map[uint64]func(context.Context, *Job) error),
-			DeviceCallbacks_Read:                 make(map[uint64]func(context.Context, *Job, string, string) error),
-			DeviceCallbacks_Layout:               make(map[uint64]func(context.Context, *Job, string) error),
-			DeviceCallbacks_Render:               make(map[uint64]func(context.Context, *Job, string, string) error),
-			DeviceEngine_Initialize:              make(map[uint64]func(context.Context, *Job) error),
-			DeviceEngine_Format:                  make(map[uint64]func(context.Context, *Job) error),
-			DeviceEngine_Finalize:                make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginJob:                make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndJob:                  make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginGraph:              make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndGraph:                make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginLayer:              make(map[uint64]func(context.Context, *Job, string, int, int) error),
-			RenderEngine_EndLayer:                make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginPage:               make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndPage:                 make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginCluster:            make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndCluster:              make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginNodes:              make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndNodes:                make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginEdges:              make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndEdges:                make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginNode:               make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndNode:                 make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginEdge:               make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_EndEdge:                 make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginAnchor:             make(map[uint64]func(context.Context, *Job, string, string, string, string) error),
-			RenderEngine_EndAnchor:               make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_BeginLabel:              make(map[uint64]func(context.Context, *Job, LabelType) error),
-			RenderEngine_EndLabel:                make(map[uint64]func(context.Context, *Job) error),
-			RenderEngine_Textspan:                make(map[uint64]func(context.Context, *Job, *PointFloat, *Textspan) error),
-			RenderEngine_ResolveColor:            make(map[uint64]func(context.Context, *Job, *Color) error),
-			RenderEngine_Ellipse:                 make(map[uint64]func(context.Context, *Job, []*PointFloat, int) error),
-			RenderEngine_Polygon:                 make(map[uint64]func(context.Context, *Job, []*PointFloat, uint32, int) error),
-			RenderEngine_Beziercurve:             make(map[uint64]func(context.Context, *Job, []*PointFloat, uint32, int) error),
-			RenderEngine_Polyline:                make(map[uint64]func(context.Context, *Job, []*PointFloat, uint32) error),
-			RenderEngine_Comment:                 make(map[uint64]func(context.Context, *Job, string) error),
-			RenderEngine_LibraryShape:            make(map[uint64]func(context.Context, *Job, string, []*PointFloat, uint32, int) error),
-			LayoutEngine_Layout:                  make(map[uint64]func(context.Context, *Graph) error),
-			LayoutEngine_Cleanup:                 make(map[uint64]func(context.Context, *Graph) error),
-			TextLayoutEngine_TextLayout:          make(map[uint64]func(context.Context, *Textspan, []string) (bool, error)),
-			LoadImageEngine_LoadImage:            make(map[uint64]func(context.Context, *Job, *UserShape, *BoxFloat, bool) error),
-		},
+	m.mod = instance
+
+	// enum reads one bound value; the first failure is the load's error.
+	enum := func(name string) int {
+		v, enumErr := m.getEnumValue(ctx, name)
+		if enumErr != nil && err == nil {
+			err = enumErr
+		}
+		return v
 	}
 	// bind ObjectTag values.
-	GRAPH = ObjectTag(mod.getEnumValue(ctx, "AGRAPH"))
-	NODE = ObjectTag(mod.getEnumValue(ctx, "AGNODE"))
-	OUT_EDGE = ObjectTag(mod.getEnumValue(ctx, "AGOUTEDGE"))
-	IN_EDGE = ObjectTag(mod.getEnumValue(ctx, "AGINEDGE"))
-	EDGE = ObjectTag(mod.getEnumValue(ctx, "AGEDGE"))
+	GRAPH = ObjectTag(enum("AGRAPH"))
+	NODE = ObjectTag(enum("AGNODE"))
+	OUT_EDGE = ObjectTag(enum("AGOUTEDGE"))
+	IN_EDGE = ObjectTag(enum("AGINEDGE"))
+	EDGE = ObjectTag(enum("AGEDGE"))
 	// bind ErrorLevel values.
-	WARN = ErrorLevel(mod.getEnumValue(ctx, "AGWARN"))
-	ERR = ErrorLevel(mod.getEnumValue(ctx, "AGERR"))
-	MAX = ErrorLevel(mod.getEnumValue(ctx, "AGMAX"))
-	PREV = ErrorLevel(mod.getEnumValue(ctx, "AGPREV"))
+	WARN = ErrorLevel(enum("AGWARN"))
+	ERR = ErrorLevel(enum("AGERR"))
+	MAX = ErrorLevel(enum("AGMAX"))
+	PREV = ErrorLevel(enum("AGPREV"))
 	// bind ImageType values.
-	IMAGE_TYPE_NULL = ImageType(mod.getEnumValue(ctx, "FT_NULL"))
-	IMAGE_TYPE_BMP = ImageType(mod.getEnumValue(ctx, "FT_BMP"))
-	IMAGE_TYPE_GIF = ImageType(mod.getEnumValue(ctx, "FT_GIF"))
-	IMAGE_TYPE_PNG = ImageType(mod.getEnumValue(ctx, "FT_PNG"))
-	IMAGE_TYPE_JPEG = ImageType(mod.getEnumValue(ctx, "FT_JPEG"))
-	IMAGE_TYPE_PDF = ImageType(mod.getEnumValue(ctx, "FT_PDF"))
-	IMAGE_TYPE_PS = ImageType(mod.getEnumValue(ctx, "FT_PS"))
-	IMAGE_TYPE_EPS = ImageType(mod.getEnumValue(ctx, "FT_EPS"))
-	IMAGE_TYPE_SVG = ImageType(mod.getEnumValue(ctx, "FT_SVG"))
-	IMAGE_TYPE_XML = ImageType(mod.getEnumValue(ctx, "FT_XML"))
-	IMAGE_TYPE_RIFF = ImageType(mod.getEnumValue(ctx, "FT_RIFF"))
-	IMAGE_TYPE_WEBP = ImageType(mod.getEnumValue(ctx, "FT_WEBP"))
-	IMAGE_TYPE_ICO = ImageType(mod.getEnumValue(ctx, "FT_ICO"))
-	IMAGE_TYPE_TIFF = ImageType(mod.getEnumValue(ctx, "FT_TIFF"))
+	IMAGE_TYPE_NULL = ImageType(enum("FT_NULL"))
+	IMAGE_TYPE_BMP = ImageType(enum("FT_BMP"))
+	IMAGE_TYPE_GIF = ImageType(enum("FT_GIF"))
+	IMAGE_TYPE_PNG = ImageType(enum("FT_PNG"))
+	IMAGE_TYPE_JPEG = ImageType(enum("FT_JPEG"))
+	IMAGE_TYPE_PDF = ImageType(enum("FT_PDF"))
+	IMAGE_TYPE_PS = ImageType(enum("FT_PS"))
+	IMAGE_TYPE_EPS = ImageType(enum("FT_EPS"))
+	IMAGE_TYPE_SVG = ImageType(enum("FT_SVG"))
+	IMAGE_TYPE_XML = ImageType(enum("FT_XML"))
+	IMAGE_TYPE_RIFF = ImageType(enum("FT_RIFF"))
+	IMAGE_TYPE_WEBP = ImageType(enum("FT_WEBP"))
+	IMAGE_TYPE_ICO = ImageType(enum("FT_ICO"))
+	IMAGE_TYPE_TIFF = ImageType(enum("FT_TIFF"))
 	// bind ObjectType values.
-	ROOTGRAPH_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "ROOTGRAPH_OBJTYPE"))
-	CLUSTER_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "CLUSTER_OBJTYPE"))
-	NODE_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "NODE_OBJTYPE"))
-	EDGE_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "EDGE_OBJTYPE"))
+	ROOTGRAPH_OBJTYPE = ObjectType(enum("ROOTGRAPH_OBJTYPE"))
+	CLUSTER_OBJTYPE = ObjectType(enum("CLUSTER_OBJTYPE"))
+	NODE_OBJTYPE = ObjectType(enum("NODE_OBJTYPE"))
+	EDGE_OBJTYPE = ObjectType(enum("EDGE_OBJTYPE"))
 	// bind MapShapeType values.
-	MAP_RECTANGLE = MapShapeType(mod.getEnumValue(ctx, "MAP_RECTANGLE"))
-	MAP_CIRCLE = MapShapeType(mod.getEnumValue(ctx, "MAP_CIRCLE"))
-	MAP_POLYGON = MapShapeType(mod.getEnumValue(ctx, "MAP_POLYGON"))
+	MAP_RECTANGLE = MapShapeType(enum("MAP_RECTANGLE"))
+	MAP_CIRCLE = MapShapeType(enum("MAP_CIRCLE"))
+	MAP_POLYGON = MapShapeType(enum("MAP_POLYGON"))
 	// bind EmitState values.
-	EMIT_GDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_GDRAW"))
-	EMIT_CDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_CDRAW"))
-	EMIT_TDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_TDRAW"))
-	EMIT_HDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_HDRAW"))
-	EMIT_GLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_GLABEL"))
-	EMIT_CLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_CLABEL"))
-	EMIT_TLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_TLABEL"))
-	EMIT_HLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_HLABEL"))
-	EMIT_NDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_NDRAW"))
-	EMIT_EDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_EDRAW"))
-	EMIT_NLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_NLABEL"))
-	EMIT_ELABEL = EmitState(mod.getEnumValue(ctx, "EMIT_ELABEL"))
+	EMIT_GDRAW = EmitState(enum("EMIT_GDRAW"))
+	EMIT_CDRAW = EmitState(enum("EMIT_CDRAW"))
+	EMIT_TDRAW = EmitState(enum("EMIT_TDRAW"))
+	EMIT_HDRAW = EmitState(enum("EMIT_HDRAW"))
+	EMIT_GLABEL = EmitState(enum("EMIT_GLABEL"))
+	EMIT_CLABEL = EmitState(enum("EMIT_CLABEL"))
+	EMIT_TLABEL = EmitState(enum("EMIT_TLABEL"))
+	EMIT_HLABEL = EmitState(enum("EMIT_HLABEL"))
+	EMIT_NDRAW = EmitState(enum("EMIT_NDRAW"))
+	EMIT_EDRAW = EmitState(enum("EMIT_EDRAW"))
+	EMIT_NLABEL = EmitState(enum("EMIT_NLABEL"))
+	EMIT_ELABEL = EmitState(enum("EMIT_ELABEL"))
 	// bind EmitType values.
-	EMIT_SORTED = EmitType(mod.getEnumValue(ctx, "EMIT_SORTED"))
-	EMIT_COLORS = EmitType(mod.getEnumValue(ctx, "EMIT_COLORS"))
-	EMIT_CLUSTERS_LAST = EmitType(mod.getEnumValue(ctx, "EMIT_CLUSTERS_LAST"))
-	EMIT_PREORDER = EmitType(mod.getEnumValue(ctx, "EMIT_PREORDER"))
-	EMIT_EDGE_SORTED = EmitType(mod.getEnumValue(ctx, "EMIT_EDGE_SORTED"))
+	EMIT_SORTED = EmitType(enum("EMIT_SORTED"))
+	EMIT_COLORS = EmitType(enum("EMIT_COLORS"))
+	EMIT_CLUSTERS_LAST = EmitType(enum("EMIT_CLUSTERS_LAST"))
+	EMIT_PREORDER = EmitType(enum("EMIT_PREORDER"))
+	EMIT_EDGE_SORTED = EmitType(enum("EMIT_EDGE_SORTED"))
 	// bind DeviceType values.
-	DEVICE_DOES_PAGES = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_DOES_PAGES"))
-	DEVICE_DOES_LAYERS = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_DOES_LAYERS"))
-	DEVICE_EVENTS = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_EVENTS"))
-	DEVICE_DOES_TRUECOLOR = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_DOES_TRUECOLOR"))
-	DEVICE_BINARY_FORMAT = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_BINARY_FORMAT"))
-	DEVICE_COMPRESSED_FORMAT = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_COMPRESSED_FORMAT"))
-	DEVICE_NO_WRITER = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_NO_WRITER"))
+	DEVICE_DOES_PAGES = DeviceType(enum("GVDEVICE_DOES_PAGES"))
+	DEVICE_DOES_LAYERS = DeviceType(enum("GVDEVICE_DOES_LAYERS"))
+	DEVICE_EVENTS = DeviceType(enum("GVDEVICE_EVENTS"))
+	DEVICE_DOES_TRUECOLOR = DeviceType(enum("GVDEVICE_DOES_TRUECOLOR"))
+	DEVICE_BINARY_FORMAT = DeviceType(enum("GVDEVICE_BINARY_FORMAT"))
+	DEVICE_COMPRESSED_FORMAT = DeviceType(enum("GVDEVICE_COMPRESSED_FORMAT"))
+	DEVICE_NO_WRITER = DeviceType(enum("GVDEVICE_NO_WRITER"))
 	// bind RenderType values.
-	RENDER_Y_GOES_DOWN = RenderType(mod.getEnumValue(ctx, "GVRENDER_Y_GOES_DOWN"))
-	RENDER_DOES_TRANSFORM = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_TRANSFORM"))
-	RENDER_DOES_LABELS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_LABELS"))
-	RENDER_DOES_MAPS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAPS"))
-	RENDER_DOES_MAP_RECTANGLE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_RECTANGLE"))
-	RENDER_DOES_MAP_CIRCLE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_CIRCLE"))
-	RENDER_DOES_MAP_POLYGON = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_POLYGON"))
-	RENDER_DOES_MAP_ELLIPSE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_ELLIPSE"))
-	RENDER_DOES_MAP_BSPLINE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_BSPLINE"))
-	RENDER_DOES_TOOLTIPS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_TOOLTIPS"))
-	RENDER_DOES_TARGETS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_TARGETS"))
-	RENDER_DOES_Z = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_Z"))
-	RENDER_NO_WHITE_BG = RenderType(mod.getEnumValue(ctx, "GVRENDER_NO_WHITE_BG"))
+	RENDER_Y_GOES_DOWN = RenderType(enum("GVRENDER_Y_GOES_DOWN"))
+	RENDER_DOES_TRANSFORM = RenderType(enum("GVRENDER_DOES_TRANSFORM"))
+	RENDER_DOES_LABELS = RenderType(enum("GVRENDER_DOES_LABELS"))
+	RENDER_DOES_MAPS = RenderType(enum("GVRENDER_DOES_MAPS"))
+	RENDER_DOES_MAP_RECTANGLE = RenderType(enum("GVRENDER_DOES_MAP_RECTANGLE"))
+	RENDER_DOES_MAP_CIRCLE = RenderType(enum("GVRENDER_DOES_MAP_CIRCLE"))
+	RENDER_DOES_MAP_POLYGON = RenderType(enum("GVRENDER_DOES_MAP_POLYGON"))
+	RENDER_DOES_MAP_ELLIPSE = RenderType(enum("GVRENDER_DOES_MAP_ELLIPSE"))
+	RENDER_DOES_MAP_BSPLINE = RenderType(enum("GVRENDER_DOES_MAP_BSPLINE"))
+	RENDER_DOES_TOOLTIPS = RenderType(enum("GVRENDER_DOES_TOOLTIPS"))
+	RENDER_DOES_TARGETS = RenderType(enum("GVRENDER_DOES_TARGETS"))
+	RENDER_DOES_Z = RenderType(enum("GVRENDER_DOES_Z"))
+	RENDER_NO_WHITE_BG = RenderType(enum("GVRENDER_NO_WHITE_BG"))
 	// bind RequiredType values.
-	LAYOUT_NOT_REQUIRED = RequiredType(mod.getEnumValue(ctx, "LAYOUT_NOT_REQUIRED"))
-	OUTPUT_NOT_REQUIRED = RequiredType(mod.getEnumValue(ctx, "OUTPUT_NOT_REQUIRED"))
+	LAYOUT_NOT_REQUIRED = RequiredType(enum("LAYOUT_NOT_REQUIRED"))
+	OUTPUT_NOT_REQUIRED = RequiredType(enum("OUTPUT_NOT_REQUIRED"))
 	// bind PenType values.
-	PEN_NONE = PenType(mod.getEnumValue(ctx, "PEN_NONE"))
-	PEN_DASHED = PenType(mod.getEnumValue(ctx, "PEN_DASHED"))
-	PEN_DOTTED = PenType(mod.getEnumValue(ctx, "PEN_DOTTED"))
-	PEN_SOLID = PenType(mod.getEnumValue(ctx, "PEN_SOLID"))
+	PEN_NONE = PenType(enum("PEN_NONE"))
+	PEN_DASHED = PenType(enum("PEN_DASHED"))
+	PEN_DOTTED = PenType(enum("PEN_DOTTED"))
+	PEN_SOLID = PenType(enum("PEN_SOLID"))
 	// bind FillType values.
-	FILL_NONE = FillType(mod.getEnumValue(ctx, "FILL_NONE"))
-	FILL_SOLID = FillType(mod.getEnumValue(ctx, "FILL_SOLID"))
-	FILL_LINEAR = FillType(mod.getEnumValue(ctx, "FILL_LINEAR"))
-	FILL_RADIAL = FillType(mod.getEnumValue(ctx, "FILL_RADIAL"))
+	FILL_NONE = FillType(enum("FILL_NONE"))
+	FILL_SOLID = FillType(enum("FILL_SOLID"))
+	FILL_LINEAR = FillType(enum("FILL_LINEAR"))
+	FILL_RADIAL = FillType(enum("FILL_RADIAL"))
 	// bind FontType values.
-	FONT_REGULAR = FontType(mod.getEnumValue(ctx, "FONT_REGULAR"))
-	FONT_BOLD = FontType(mod.getEnumValue(ctx, "FONT_BOLD"))
-	FONT_ITALIC = FontType(mod.getEnumValue(ctx, "FONT_ITALIC"))
+	FONT_REGULAR = FontType(enum("FONT_REGULAR"))
+	FONT_BOLD = FontType(enum("FONT_BOLD"))
+	FONT_ITALIC = FontType(enum("FONT_ITALIC"))
 	// bind LabelType values.
-	LABEL_PLAIN = LabelType(mod.getEnumValue(ctx, "LABEL_PLAIN"))
-	LABEL_HTML = LabelType(mod.getEnumValue(ctx, "LABEL_HTML"))
+	LABEL_PLAIN = LabelType(enum("LABEL_PLAIN"))
+	LABEL_HTML = LabelType(enum("LABEL_HTML"))
 	// bind ColorType values.
-	HSVA_DOUBLE = ColorType(mod.getEnumValue(ctx, "HSVA_DOUBLE"))
-	RGBA_BYTE = ColorType(mod.getEnumValue(ctx, "RGBA_BYTE"))
-	RGBA_WORD = ColorType(mod.getEnumValue(ctx, "RGBA_WORD"))
-	RGBA_DOUBLE = ColorType(mod.getEnumValue(ctx, "RGBA_DOUBLE"))
-	COLOR_STRING = ColorType(mod.getEnumValue(ctx, "COLOR_STRING"))
-	COLOR_INDEX = ColorType(mod.getEnumValue(ctx, "COLOR_INDEX"))
+	HSVA_DOUBLE = ColorType(enum("HSVA_DOUBLE"))
+	RGBA_BYTE = ColorType(enum("RGBA_BYTE"))
+	RGBA_WORD = ColorType(enum("RGBA_WORD"))
+	RGBA_DOUBLE = ColorType(enum("RGBA_DOUBLE"))
+	COLOR_STRING = ColorType(enum("COLOR_STRING"))
+	COLOR_INDEX = ColorType(enum("COLOR_INDEX"))
 	// bind API values.
-	API_RENDER = API(mod.getEnumValue(ctx, "API_render"))
-	API_LAYOUT = API(mod.getEnumValue(ctx, "API_layout"))
-	API_TEXTLAYOUT = API(mod.getEnumValue(ctx, "API_textlayout"))
-	API_DEVICE = API(mod.getEnumValue(ctx, "API_device"))
-	API_LOADIMAGE = API(mod.getEnumValue(ctx, "API_loadimage"))
+	API_RENDER = API(enum("API_render"))
+	API_LAYOUT = API(enum("API_layout"))
+	API_TEXTLAYOUT = API(enum("API_textlayout"))
+	API_DEVICE = API(enum("API_device"))
+	API_LOADIMAGE = API(enum("API_loadimage"))
+	return err
 }
 
-func (m *WasmModule) getEnumValue(ctx context.Context, value string) int {
-	ret, err := mod.invoke(ctx, "wasm_bridge_get_"+value)
+func (m *WasmModule) getEnumValue(ctx context.Context, value string) (int, error) {
+	ret, err := m.invoke(ctx, "wasm_bridge_get_"+value)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
-	return mod.toInt(ret[0])
+	return m.toInt(ret[0]), nil
 }
 
 func WasmPtr(v wasmStruct) uint64 {
 	return v.getPtr()
 }
 
+// getCompilationCache is wazero's compiled-code cache in the user's own
+// cache directory, readable by that user alone: a cache wazero loads code
+// from must not be writable by anyone else. Without a usable directory the
+// module compiles on every start, which is slower and otherwise the same.
 func getCompilationCache() wazero.CompilationCache {
-	tmpDir := os.TempDir()
-	if tmpDir == "" {
+	base, err := os.UserCacheDir()
+	if err != nil {
 		return nil
 	}
-	cacheDir := filepath.Join(tmpDir, "go-graphviz")
-	if _, err := os.Stat(cacheDir); err != nil {
-		if err := os.Mkdir(cacheDir, 0o755); err != nil {
+	parent := filepath.Join(base, "go-graphviz")
+	cacheDir := filepath.Join(parent, "wazero")
+	if err := os.MkdirAll(cacheDir, 0o700); err != nil {
+		return nil
+	}
+	// MkdirAll sets the mode only on what it creates; directories left by
+	// an earlier version, or made by hand, are narrowed here too.
+	for _, dir := range []string{parent, cacheDir} {
+		if err := os.Chmod(dir, 0o700); err != nil {
 			return nil
 		}
 	}
@@ -3846,6 +3890,14 @@ func RegisteredCallbacks() int {
 	return n
 }
 
+// unavailable is the error for a call into a module that is not loaded.
+func (m *WasmModule) unavailable() error {
+	if m.initErr != nil {
+		return m.initErr
+	}
+	return errors.New("the Graphviz WebAssembly module is not loaded")
+}
+
 // registerCallback runs a write to the callback maps under the module's
 // lock, since host functions read them under it.
 func (m *WasmModule) registerCallback(write func()) {
@@ -3860,6 +3912,9 @@ func (m *WasmModule) registerCallback(write func()) {
 // it, which is how a host function (Go code Graphviz called) reaches back
 // into the module.
 func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([]uint64, error) {
+	if m.mod == nil {
+		return nil, m.unavailable()
+	}
 	ctx, leave, outermost := m.lock.enter(ctx)
 	defer leave()
 	ret, err := m.mod.ExportedFunction(name).Call(ctx, args...)
@@ -3969,6 +4024,9 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 // The memory helpers hold the lock too: another goroutine's call can grow
 // the memory, which moves it.
 func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, error) {
+	if m.mod == nil {
+		return nil, m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
@@ -3984,6 +4042,9 @@ func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, err
 }
 
 func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
+	if m.mod == nil {
+		return 0, m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
@@ -3997,6 +4058,9 @@ func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
 }
 
 func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
@@ -4009,6 +4073,9 @@ func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
 }
 
 func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
@@ -4021,6 +4088,9 @@ func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
 }
 
 func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
@@ -4033,6 +4103,9 @@ func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
 }
 
 func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {

@@ -208,6 +208,10 @@ func TakeLastError() string {
 
 // MemorySize is the module's memory size in bytes, for tests of growth.
 func MemorySize() uint32 {
+	if mod.mod == nil {
+		return 0
+	}
+
 	_, leave, _ := mod.lock.enter(context.Background())
 	defer leave()
 

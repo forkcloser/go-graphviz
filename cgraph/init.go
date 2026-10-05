@@ -13,10 +13,13 @@ var (
 	StrictUnDirected *Desc
 )
 
+// errInit is why the package could not set itself up at import, nil when it
+// could; Open and ParseBytes return it. It used to be a panic, which took the
+// importing program down before main ran.
+var errInit error
+
 func init() {
-	if err := setGlobalVars(); err != nil {
-		panic(err)
-	}
+	errInit = setGlobalVars()
 }
 
 // setGlobalVars builds the four graph descriptors in the module's memory.

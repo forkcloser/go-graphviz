@@ -32,6 +32,10 @@ type WasmModule struct {
 	callbackFuncMap *CallbackFuncMap
 	// lock serializes every call into the module (see reentrantLock).
 	lock reentrantLock
+	// initErr is why the module could not be loaded, nil when it was. A
+	// failed load leaves mod without an instance; every call and memory
+	// access returns this error instead of panicking at import.
+	initErr error
 	// callbackErr is the first error a Go callback returned during the
 	// exported call in progress. A host function must not panic: the panic
 	// unwinds through Graphviz's C frames and leaves its state half-updated,
@@ -104,13 +108,45 @@ func CreateCallbackFunc[T any](cb T, funcID uint64) *CallbackFunc[T] {
 }
 
 func init() {
-	ctx := context.Background()
+	mod = newWasmModule()
+	if err := mod.load(context.Background(), wasmFile); err != nil {
+		mod.initErr = fmt.Errorf("loading the Graphviz WebAssembly module: %w", err)
+	}
+}
+
+// newWasmModule is a module with its registries and no instance yet.
+func newWasmModule() *WasmModule {
+	return &WasmModule{
+		fs:            &WasmFileSystem{},
+		lookupFuncMap: &LookupFuncMap{},
+		callbackFuncMap: &CallbackFuncMap{
+			{{- range .ExportCallbackFunctions }}
+			{{- if .Return }}
+			{{ .Name }}: make(map[uint64]func(context.Context, {{- range .Args }}{{ .Value.GoType }},{{- end }}) ({{ .Return.Value.GoType }}, error)),
+			{{- else }}
+			{{ .Name }}: make(map[uint64]func(context.Context, {{- range .Args }}{{ .Value.GoType }},{{- end }}) error),
+			{{- end }}
+			{{- end }}
+		},
+	}
+}
+
+// load compiles and instantiates blob behind the host functions and binds
+// the enum values the bindings read. It returns an error where it used to
+// panic, and closes what it built when it fails.
+func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	cfg := wazero.NewRuntimeConfig()
 	if cache := getCompilationCache(); cache != nil {
 		cfg = cfg.WithCompilationCache(cache)
 	}
 
 	r := wazero.NewRuntimeWithConfig(ctx, cfg)
+	defer func() {
+		if err != nil {
+			m.mod = nil
+			_ = r.Close(ctx)
+		}
+	}()
 
 	env := r.NewHostModuleBuilder("env")
 	{{- range .ExportCallbackFunctions }}
@@ -181,68 +217,76 @@ func init() {
 	).Export("wasm_bridge_{{ .Name }}")
 	{{- end }}
 	if _, err := env.Instantiate(ctx); err != nil {
-		panic(err)
+		return err
 	}
-	wasi_snapshot_preview1.MustInstantiate(ctx, r)
+	if _, err := wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {
+		return err
+	}
 
-	compiled, err := r.CompileModule(ctx, wasmFile)
+	compiled, err := r.CompileModule(ctx, blob)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	fs := &WasmFileSystem{}
-	m, err := r.InstantiateModule(
+	instance, err := r.InstantiateModule(
 		ctx,
 		compiled,
 		wazero.NewModuleConfig().
-			WithFSConfig(wazero.NewFSConfig().WithFSMount(fs, "/")).
+			WithFSConfig(wazero.NewFSConfig().WithFSMount(m.fs, "/")).
 			WithName("wasi"),
 	)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	mod = &WasmModule{
-		mod: m,
-		fs: fs,
-		lookupFuncMap: &LookupFuncMap{},
-		callbackFuncMap: &CallbackFuncMap{
-			{{- range .ExportCallbackFunctions }}
-			{{- if .Return }}
-			{{ .Name }}: make(map[uint64]func(context.Context, {{- range .Args }}{{ .Value.GoType }},{{- end }}) ({{ .Return.Value.GoType }}, error)),
-			{{- else }}
-			{{ .Name }}: make(map[uint64]func(context.Context, {{- range .Args }}{{ .Value.GoType }},{{- end }}) error),
-			{{- end }}
-			{{- end }}
-		},
+	m.mod = instance
+
+	// enum reads one bound value; the first failure is the load's error.
+	enum := func(name string) int {
+		v, enumErr := m.getEnumValue(ctx, name)
+		if enumErr != nil && err == nil {
+			err = enumErr
+		}
+		return v
 	}
 	{{- range .ExportEnums }}
 	{{- $enumName := .Name }}
 	// bind {{ $enumName }} values.
 	{{- range .EnumValues }}
-	{{ .GoName }} = {{ $enumName }}(mod.getEnumValue(ctx, "{{ .WasmName }}"))
+	{{ .GoName }} = {{ $enumName }}(enum("{{ .WasmName }}"))
 	{{- end }}
 	{{- end }}
+	return err
 }
 
-func (m *WasmModule) getEnumValue(ctx context.Context, value string) int {
-	ret, err := mod.invoke(ctx, "wasm_bridge_get_" + value)
+func (m *WasmModule) getEnumValue(ctx context.Context, value string) (int, error) {
+	ret, err := m.invoke(ctx, "wasm_bridge_get_" + value)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
-	return mod.toInt(ret[0])
+	return m.toInt(ret[0]), nil
 }
 
 func WasmPtr(v wasmStruct) uint64 {
 	return v.getPtr()
 }
 
+// getCompilationCache is wazero's compiled-code cache in the user's own
+// cache directory, readable by that user alone: a cache wazero loads code
+// from must not be writable by anyone else. Without a usable directory the
+// module compiles on every start, which is slower and otherwise the same.
 func getCompilationCache() wazero.CompilationCache {
-	tmpDir := os.TempDir()
-	if tmpDir == "" {
+	base, err := os.UserCacheDir()
+	if err != nil {
 		return nil
 	}
-	cacheDir := filepath.Join(tmpDir, "go-graphviz")
-	if _, err := os.Stat(cacheDir); err != nil {
-		if err := os.Mkdir(cacheDir, 0o755); err != nil {
+	parent := filepath.Join(base, "go-graphviz")
+	cacheDir := filepath.Join(parent, "wazero")
+	if err := os.MkdirAll(cacheDir, 0o700); err != nil {
+		return nil
+	}
+	// MkdirAll sets the mode only on what it creates; directories left by
+	// an earlier version, or made by hand, are narrowed here too.
+	for _, dir := range []string{parent, cacheDir} {
+		if err := os.Chmod(dir, 0o700); err != nil {
 			return nil
 		}
 	}
@@ -287,6 +331,14 @@ func RegisteredCallbacks() int {
 	return n
 }
 
+// unavailable is the error for a call into a module that is not loaded.
+func (m *WasmModule) unavailable() error {
+	if m.initErr != nil {
+		return m.initErr
+	}
+	return errors.New("the Graphviz WebAssembly module is not loaded")
+}
+
 // registerCallback runs a write to the callback maps under the module's
 // lock, since host functions read them under it.
 func (m *WasmModule) registerCallback(write func()) {
@@ -301,6 +353,9 @@ func (m *WasmModule) registerCallback(write func()) {
 // it, which is how a host function (Go code Graphviz called) reaches back
 // into the module.
 func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([]uint64, error) {
+	if m.mod == nil {
+		return nil, m.unavailable()
+	}
 	ctx, leave, outermost := m.lock.enter(ctx)
 	defer leave()
 	ret, err := m.mod.ExportedFunction(name).Call(ctx, args...)
@@ -410,6 +465,9 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 // The memory helpers hold the lock too: another goroutine's call can grow
 // the memory, which moves it.
 func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, error) {
+	if m.mod == nil {
+		return nil, m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
@@ -425,6 +483,9 @@ func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, err
 }
 
 func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
+	if m.mod == nil {
+		return 0, m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
@@ -438,6 +499,9 @@ func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
 }
 
 func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
@@ -450,6 +514,9 @@ func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
 }
 
 func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
@@ -462,6 +529,9 @@ func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
 }
 
 func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
@@ -474,6 +544,9 @@ func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
 }
 
 func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
+	if m.mod == nil {
+		return m.unavailable()
+	}
 	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
