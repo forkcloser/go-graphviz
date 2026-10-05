@@ -2,6 +2,7 @@ package wasm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -204,6 +205,26 @@ func TakeLastError() string {
 	lastErrorText.Reset()
 
 	return text
+}
+
+// Exclusive runs calls with the module's lock held from start to end, so
+// that no other goroutine's call runs between the calls it makes; it makes
+// them through the context it is given, which carries the lock's token. An
+// error a callback parked meanwhile is returned with its own.
+func Exclusive(ctx context.Context, calls func(context.Context) error) error {
+	if mod.mod == nil {
+		return mod.unavailable()
+	}
+
+	ctx, leave, outermost := mod.lock.enter(ctx)
+	defer leave()
+
+	err := calls(ctx)
+	if !outermost {
+		return err
+	}
+
+	return errors.Join(err, mod.takeCallbackError())
 }
 
 // MemorySize is the module's memory size in bytes, for tests of growth.
