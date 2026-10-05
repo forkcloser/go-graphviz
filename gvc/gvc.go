@@ -104,22 +104,22 @@ func (c *Context) RenderImage(ctx context.Context, g *cgraph.Graph, format strin
 	return img, nil
 }
 
+// RenderFilename renders graph in format into the file at filename: a
+// RenderData into memory, then one write. Graphviz's own gvRenderFilename
+// opens the file inside the module, where the file system is read-only, so
+// it wrote nothing for any format and returned success.
 func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, format, filename string) error {
-	if _, err := os.Stat(filename); err != nil {
-		// file does not exist.
-		// Since gvc.RenderFilename fails if the file doesn't exist, we create it beforehand.
-		// #nosec G304 -- the caller names its own output file
-		if _, err := os.Create(filename); err != nil {
-			return fmt.Errorf("failed to create file: %w", err)
-		}
-	}
-
-	res, err := c.gvc.RenderFilename(ctx, toGraphWasm(graph), format, filename)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := c.RenderData(ctx, graph, format, &buf); err != nil {
 		return err
 	}
 
-	return toError(res)
+	// #nosec G306 -- the caller names its own output file, readable like the dot command's
+	if err := os.WriteFile(filename, buf.Bytes(), outputFileMode); err != nil {
+		return fmt.Errorf("writing %s: %w", filename, err)
+	}
+
+	return nil
 }
 
 func (c *Context) FreeLayout(ctx context.Context, g *cgraph.Graph) error {
@@ -213,6 +213,10 @@ func toError(result int) error {
 
 	return fmt.Errorf("%w: call failed with code %d and no message", cgraph.ErrGraphviz, result)
 }
+
+// outputFileMode is the mode RenderFilename creates a file with: readable
+// by everyone, as the dot command's output is.
+const outputFileMode = 0o644
 
 // ErrNoContext is returned when Graphviz cannot allocate a rendering context.
 var ErrNoContext = errors.New("graphviz context could not be created")
