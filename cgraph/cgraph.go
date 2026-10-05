@@ -1443,6 +1443,10 @@ type DataDict struct {
 type ID uint64
 
 func ParseBytes(bytes []byte) (*Graph, error) {
+	if errInit != nil {
+		return nil, errInit
+	}
+
 	graph, err := wasm.MemRead(context.Background(), string(bytes))
 	if err != nil {
 		return nil, err
@@ -1475,6 +1479,10 @@ func ParseFile(path string) (*Graph, error) {
 }
 
 func Open(name string, desc *Desc, disc *Disc) (*Graph, error) {
+	if errInit != nil {
+		return nil, errInit
+	}
+
 	graph, err := wasm.Open(context.Background(), name, desc.getWasm(), disc.getWasm())
 	if err != nil {
 		return nil, err
