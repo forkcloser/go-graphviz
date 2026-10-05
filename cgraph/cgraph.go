@@ -1452,12 +1452,7 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 		return nil, parseError()
 	}
 
-	g := toGraph(graph)
-	if err := setupNodeLabelIfEmpty(g); err != nil {
-		return nil, err
-	}
-
-	return g, nil
+	return toGraph(graph), nil
 }
 
 // parseError is the error for a read or open that returned no graph.
@@ -1489,52 +1484,7 @@ func Open(name string, desc *Desc, disc *Disc) (*Graph, error) {
 		return nil, parseError()
 	}
 
-	g := toGraph(graph)
-	if err := setupNodeLabelIfEmpty(g); err != nil {
-		return nil, err
-	}
-
-	return g, nil
-}
-
-func setupNodeLabelIfEmpty(graph *Graph) error {
-	node, err := graph.FirstNode()
-	if err != nil {
-		return err
-	}
-
-	if node == nil {
-		return nil
-	}
-
-	if err = setLabelIfEmpty(node); err != nil {
-		return err
-	}
-
-	for {
-		node, err = graph.NextNode(node)
-		if err != nil {
-			return err
-		}
-
-		if node == nil {
-			break
-		}
-
-		if err := setLabelIfEmpty(node); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func setLabelIfEmpty(n *Node) error {
-	if n.Label() == "" {
-		n.SetLabel("\\N")
-	}
-
-	return nil
+	return toGraph(graph), nil
 }
 
 type ObjectTag int
