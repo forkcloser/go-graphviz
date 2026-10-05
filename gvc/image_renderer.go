@@ -14,7 +14,6 @@ import (
 	"sync"
 
 	"github.com/fogleman/gg"
-	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/goregular"
@@ -445,14 +444,17 @@ func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (
 		return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontPath)
 	}
 
-	ft, err := truetype.Parse(fontData)
+	ft, err := opentype.Parse(fontData)
 	if err != nil {
-		return nil, fmt.Errorf("parsing TrueType font %s: %w", fontPath, err)
+		return nil, fmt.Errorf("parsing font %s: %w", fontPath, err)
 	}
 
-	return truetype.NewFace(ft, &truetype.Options{
-		Size: fontSize,
-	}), nil
+	face, err := opentype.NewFace(ft, &opentype.FaceOptions{Size: fontSize})
+	if err != nil {
+		return nil, fmt.Errorf("face for %s: %w", fontPath, err)
+	}
+
+	return face, nil
 }
 
 func (*ImageRenderer) lookupFontFromTTCFile(
@@ -509,14 +511,17 @@ func (*ImageRenderer) lookupFontFromTTCFile(
 }
 
 func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, error) {
-	ft, err := truetype.Parse(goregular.TTF)
+	ft, err := opentype.Parse(goregular.TTF)
 	if err != nil {
 		return nil, fmt.Errorf("parsing the embedded Go Regular font: %w", err)
 	}
 
-	return truetype.NewFace(ft, &truetype.Options{
-		Size: textFont.Size() * job.Zoom(),
-	}), nil
+	face, err := opentype.NewFace(ft, &opentype.FaceOptions{Size: textFont.Size() * job.Zoom()})
+	if err != nil {
+		return nil, fmt.Errorf("face for the embedded Go Regular font: %w", err)
+	}
+
+	return face, nil
 }
 
 const (
