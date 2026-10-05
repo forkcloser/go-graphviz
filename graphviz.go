@@ -140,12 +140,16 @@ func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Form
 	return g.ctx.RenderFilename(ctx, graph, string(format), path)
 }
 
+// Graph opens a new root graph, named and typed by the options given; the
+// options apply to this graph only, and the next call starts again from the
+// defaults the instance was created with (unnamed, directed).
 func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
+	call := *g
 	for _, opt := range option {
-		opt(g)
+		opt(&call)
 	}
 
-	graph, err := cgraph.Open(g.name, g.dir, nil)
+	graph, err := cgraph.Open(call.name, call.dir, nil)
 	if err != nil {
 		return nil, err
 	}
