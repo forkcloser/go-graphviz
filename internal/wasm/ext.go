@@ -56,19 +56,22 @@ func withToken(ctx context.Context, token *callToken) context.Context {
 }
 
 // enter takes the lock for a call made under ctx and returns the context to
-// run it with, which carries the token, and the matching leave.
-func (l *reentrantLock) enter(ctx context.Context) (context.Context, func()) {
+// run it with, which carries the token, the matching leave, and whether
+// this is the outermost call: the one that acquired the lock, which is the
+// one a parked callback error belongs to.
+func (l *reentrantLock) enter(ctx context.Context) (context.Context, func(), bool) {
 	if tok := tokenOf(ctx); tok != nil && tok == l.token.Load() {
-		return ctx, func() {}
+		return ctx, func() {}, false
 	}
 
 	l.lock()
 
-	if l.depth == 1 {
+	outermost := l.depth == 1
+	if outermost {
 		l.token.Store(new(callToken))
 	}
 
-	return withToken(ctx, l.token.Load()), l.unlock
+	return withToken(ctx, l.token.Load()), l.unlock, outermost
 }
 
 func (l *reentrantLock) lock() {
@@ -201,6 +204,14 @@ func TakeLastError() string {
 	lastErrorText.Reset()
 
 	return text
+}
+
+// MemorySize is the module's memory size in bytes, for tests of growth.
+func MemorySize() uint32 {
+	_, leave, _ := mod.lock.enter(context.Background())
+	defer leave()
+
+	return mod.mod.Memory().Size()
 }
 
 // SetWarningWriter names where Graphviz's warnings go, as the lines

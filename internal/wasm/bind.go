@@ -463,6 +463,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -540,6 +542,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -591,6 +595,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI64},
 		[]api.ValueType{},
@@ -643,6 +649,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI64},
 		[]api.ValueType{api.ValueTypeI32},
@@ -674,6 +682,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -725,6 +735,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -780,6 +792,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -825,6 +839,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -857,6 +873,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -910,6 +928,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -974,6 +994,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1009,6 +1031,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -1073,6 +1097,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -1126,6 +1152,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -1169,6 +1197,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -1200,6 +1230,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1242,6 +1274,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -1284,6 +1318,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -1316,6 +1352,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1348,6 +1386,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1401,6 +1441,9 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			mod.free(ctx, arg2.getPtr())
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1454,6 +1497,9 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			mod.free(ctx, arg2.getPtr())
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1497,6 +1543,9 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			mod.free(ctx, arg1.getPtr())
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1555,6 +1604,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1587,6 +1638,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1645,6 +1698,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1690,6 +1745,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1748,6 +1805,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1780,6 +1839,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1812,6 +1873,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1844,6 +1907,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1876,6 +1941,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1908,6 +1975,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1940,6 +2009,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1972,6 +2043,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2037,6 +2110,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2069,6 +2144,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2101,6 +2178,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2133,6 +2212,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2165,6 +2246,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2197,6 +2280,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2229,6 +2314,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2261,6 +2348,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2293,6 +2382,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2325,6 +2416,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2357,6 +2450,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2389,6 +2484,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2421,6 +2518,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2453,6 +2552,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2537,6 +2638,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2569,6 +2672,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2611,6 +2716,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2643,6 +2750,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2697,6 +2806,9 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			mod.free(ctx, arg1.getPtr())
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2740,6 +2852,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2798,6 +2912,11 @@ func init() {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
 					mod.failCallback(err)
 				}
+			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			for _, e := range arg1 {
+				mod.free(ctx, e.getPtr())
 			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
@@ -2868,6 +2987,11 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			for _, e := range arg1 {
+				mod.free(ctx, e.getPtr())
+			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2937,6 +3061,11 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			for _, e := range arg1 {
+				mod.free(ctx, e.getPtr())
+			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2996,6 +3125,11 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			for _, e := range arg1 {
+				mod.free(ctx, e.getPtr())
+			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -3041,6 +3175,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -3123,6 +3259,11 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			for _, e := range arg2 {
+				mod.free(ctx, e.getPtr())
+			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -3155,6 +3296,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -3187,6 +3330,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -3237,6 +3382,8 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -3301,6 +3448,9 @@ func init() {
 					mod.failCallback(err)
 				}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			mod.free(ctx, arg2.getPtr())
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -3538,10 +3688,168 @@ func getCompilationCache() wazero.CompilationCache {
 	return cache
 }
 
+// freeSlice frees a GoSlice the Go side built for a call: the data array,
+// then the header.
+func (m *WasmModule) freeSlice(ctx context.Context, p uint64) {
+	if p == 0 {
+		return
+	}
+	if data, err := m.readU32(ctx, p+4); err == nil && data != 0 {
+		m.free(ctx, data)
+	}
+	m.free(ctx, p)
+}
+
+// UnregisterCallbacks drops every callback registered under funcID, the
+// engine a plugin built; a context that is closed releases its plugins'.
+func UnregisterCallbacks(funcID uint64) {
+	mod.registerCallback(func() {
+		delete(mod.callbackFuncMap.IDAllocator_Open, funcID)
+		delete(mod.callbackFuncMap.IDAllocator_Map, funcID)
+		delete(mod.callbackFuncMap.IDAllocator_Free, funcID)
+		delete(mod.callbackFuncMap.IDAllocator_Print, funcID)
+		delete(mod.callbackFuncMap.IDAllocator_Close, funcID)
+		delete(mod.callbackFuncMap.IDAllocator_IdRegister, funcID)
+		delete(mod.callbackFuncMap.IOService_Afread, funcID)
+		delete(mod.callbackFuncMap.IOService_Putstr, funcID)
+		delete(mod.callbackFuncMap.IOService_Flush, funcID)
+		delete(mod.callbackFuncMap.ClientEventCallback_ObjectFunc, funcID)
+		delete(mod.callbackFuncMap.ClientEventCallback_ObjectUpdateFunc, funcID)
+		delete(mod.callbackFuncMap.UserRef, funcID)
+		delete(mod.callbackFuncMap.DictMemory, funcID)
+		delete(mod.callbackFuncMap.DictSearch, funcID)
+		delete(mod.callbackFuncMap.DictMake, funcID)
+		delete(mod.callbackFuncMap.DictFree, funcID)
+		delete(mod.callbackFuncMap.DictCompare, funcID)
+		delete(mod.callbackFuncMap.DictWalk, funcID)
+		delete(mod.callbackFuncMap.UserShape_DataFree, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_Refresh, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_ButtonPress, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_ButtonRelease, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_Motion, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_Modify, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_Delete, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_Read, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_Layout, funcID)
+		delete(mod.callbackFuncMap.DeviceCallbacks_Render, funcID)
+		delete(mod.callbackFuncMap.DeviceEngine_Initialize, funcID)
+		delete(mod.callbackFuncMap.DeviceEngine_Format, funcID)
+		delete(mod.callbackFuncMap.DeviceEngine_Finalize, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginJob, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndJob, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginGraph, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndGraph, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginLayer, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndLayer, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginPage, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndPage, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginCluster, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndCluster, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginNodes, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndNodes, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginEdges, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndEdges, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginNode, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndNode, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginEdge, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndEdge, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginAnchor, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndAnchor, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_BeginLabel, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_EndLabel, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_Textspan, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_ResolveColor, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_Ellipse, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_Polygon, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_Beziercurve, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_Polyline, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_Comment, funcID)
+		delete(mod.callbackFuncMap.RenderEngine_LibraryShape, funcID)
+		delete(mod.callbackFuncMap.LayoutEngine_Layout, funcID)
+		delete(mod.callbackFuncMap.LayoutEngine_Cleanup, funcID)
+		delete(mod.callbackFuncMap.TextLayoutEngine_TextLayout, funcID)
+		delete(mod.callbackFuncMap.LoadImageEngine_LoadImage, funcID)
+	})
+}
+
+// RegisteredCallbacks is the number of callbacks registered across every
+// family, for tests of the plugins' release.
+func RegisteredCallbacks() int {
+	var n int
+	mod.registerCallback(func() {
+		n += len(mod.callbackFuncMap.IDAllocator_Open)
+		n += len(mod.callbackFuncMap.IDAllocator_Map)
+		n += len(mod.callbackFuncMap.IDAllocator_Free)
+		n += len(mod.callbackFuncMap.IDAllocator_Print)
+		n += len(mod.callbackFuncMap.IDAllocator_Close)
+		n += len(mod.callbackFuncMap.IDAllocator_IdRegister)
+		n += len(mod.callbackFuncMap.IOService_Afread)
+		n += len(mod.callbackFuncMap.IOService_Putstr)
+		n += len(mod.callbackFuncMap.IOService_Flush)
+		n += len(mod.callbackFuncMap.ClientEventCallback_ObjectFunc)
+		n += len(mod.callbackFuncMap.ClientEventCallback_ObjectUpdateFunc)
+		n += len(mod.callbackFuncMap.UserRef)
+		n += len(mod.callbackFuncMap.DictMemory)
+		n += len(mod.callbackFuncMap.DictSearch)
+		n += len(mod.callbackFuncMap.DictMake)
+		n += len(mod.callbackFuncMap.DictFree)
+		n += len(mod.callbackFuncMap.DictCompare)
+		n += len(mod.callbackFuncMap.DictWalk)
+		n += len(mod.callbackFuncMap.UserShape_DataFree)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_Refresh)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_ButtonPress)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_ButtonRelease)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_Motion)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_Modify)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_Delete)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_Read)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_Layout)
+		n += len(mod.callbackFuncMap.DeviceCallbacks_Render)
+		n += len(mod.callbackFuncMap.DeviceEngine_Initialize)
+		n += len(mod.callbackFuncMap.DeviceEngine_Format)
+		n += len(mod.callbackFuncMap.DeviceEngine_Finalize)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginJob)
+		n += len(mod.callbackFuncMap.RenderEngine_EndJob)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginGraph)
+		n += len(mod.callbackFuncMap.RenderEngine_EndGraph)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginLayer)
+		n += len(mod.callbackFuncMap.RenderEngine_EndLayer)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginPage)
+		n += len(mod.callbackFuncMap.RenderEngine_EndPage)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginCluster)
+		n += len(mod.callbackFuncMap.RenderEngine_EndCluster)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginNodes)
+		n += len(mod.callbackFuncMap.RenderEngine_EndNodes)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginEdges)
+		n += len(mod.callbackFuncMap.RenderEngine_EndEdges)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginNode)
+		n += len(mod.callbackFuncMap.RenderEngine_EndNode)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginEdge)
+		n += len(mod.callbackFuncMap.RenderEngine_EndEdge)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginAnchor)
+		n += len(mod.callbackFuncMap.RenderEngine_EndAnchor)
+		n += len(mod.callbackFuncMap.RenderEngine_BeginLabel)
+		n += len(mod.callbackFuncMap.RenderEngine_EndLabel)
+		n += len(mod.callbackFuncMap.RenderEngine_Textspan)
+		n += len(mod.callbackFuncMap.RenderEngine_ResolveColor)
+		n += len(mod.callbackFuncMap.RenderEngine_Ellipse)
+		n += len(mod.callbackFuncMap.RenderEngine_Polygon)
+		n += len(mod.callbackFuncMap.RenderEngine_Beziercurve)
+		n += len(mod.callbackFuncMap.RenderEngine_Polyline)
+		n += len(mod.callbackFuncMap.RenderEngine_Comment)
+		n += len(mod.callbackFuncMap.RenderEngine_LibraryShape)
+		n += len(mod.callbackFuncMap.LayoutEngine_Layout)
+		n += len(mod.callbackFuncMap.LayoutEngine_Cleanup)
+		n += len(mod.callbackFuncMap.TextLayoutEngine_TextLayout)
+		n += len(mod.callbackFuncMap.LoadImageEngine_LoadImage)
+	})
+	return n
+}
+
 // registerCallback runs a write to the callback maps under the module's
 // lock, since host functions read them under it.
 func (m *WasmModule) registerCallback(write func()) {
-	_, leave := m.lock.enter(context.Background())
+	_, leave, _ := m.lock.enter(context.Background())
 	defer leave()
 	write()
 }
@@ -3552,9 +3860,14 @@ func (m *WasmModule) registerCallback(write func()) {
 // it, which is how a host function (Go code Graphviz called) reaches back
 // into the module.
 func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([]uint64, error) {
-	ctx, leave := m.lock.enter(ctx)
+	ctx, leave, outermost := m.lock.enter(ctx)
 	defer leave()
 	ret, err := m.mod.ExportedFunction(name).Call(ctx, args...)
+	if !outermost {
+		// A nested call (a host function reaching back in, a free after a
+		// callback failed) leaves the parked error to the call that owns it.
+		return ret, err
+	}
 	if err != nil {
 		// A trap can follow from a callback's failure (its out-parameters
 		// were never written), so a parked error is returned with it.
@@ -3656,7 +3969,7 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 // The memory helpers hold the lock too: another goroutine's call can grow
 // the memory, which moves it.
 func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, error) {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
 	if !ok {
@@ -3671,7 +3984,7 @@ func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, err
 }
 
 func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
 	if !ok {
@@ -3684,7 +3997,7 @@ func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
 }
 
 func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
 		return fmt.Errorf(
@@ -3696,7 +4009,7 @@ func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
 }
 
 func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
 		return fmt.Errorf(
@@ -3708,7 +4021,7 @@ func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
 }
 
 func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
 		return fmt.Errorf(
@@ -3720,7 +4033,7 @@ func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
 }
 
 func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
 		return fmt.Errorf(
@@ -3746,7 +4059,11 @@ func (m *WasmModule) NewPtr(ctx context.Context) (uint64, error) {
 	return p, nil
 }
 
+// toSlice reads the GoSlice at p, a header and a data array the C bridge
+// allocates for every slice it hands out, and frees both; the elements are
+// the caller's to read and, where they are copies, to free.
 func (m *WasmModule) toSlice(ctx context.Context, p uint64) ([]uint64, error) {
+	defer m.free(ctx, p)
 	length, err := m.readU32(ctx, p)
 	if err != nil {
 		return nil, err
@@ -3754,6 +4071,9 @@ func (m *WasmModule) toSlice(ctx context.Context, p uint64) ([]uint64, error) {
 	data, err := m.readU32(ctx, p+4)
 	if err != nil {
 		return nil, err
+	}
+	if data != 0 {
+		defer m.free(ctx, data)
 	}
 	var ret []uint64
 	for i := uint64(0); i < length; i++ {
@@ -3782,7 +4102,7 @@ func (m *WasmModule) toBoolSlice(v []uint64) []bool {
 }
 
 func (m *WasmModule) toFloat32(ctx context.Context, p uint64) (float32, error) {
-	v, err := m.toString(ctx, p)
+	v, err := m.readString(ctx, p, true)
 	if err != nil {
 		return 0, err
 	}
@@ -3806,7 +4126,7 @@ func (m *WasmModule) toFloat32Slice(ctx context.Context, v []uint64) ([]float32,
 }
 
 func (m *WasmModule) toFloat64(ctx context.Context, p uint64) (float64, error) {
-	v, err := m.toString(ctx, p)
+	v, err := m.readString(ctx, p, true)
 	if err != nil {
 		return 0, err
 	}
@@ -3901,13 +4221,26 @@ func (m *WasmModule) toAny(v uint64) any {
 	return v
 }
 
+// toString reads the GoString at p, a header the C bridge allocates for every
+// string it hands out, and frees the header; the text it points to is the
+// module's own and stays.
 func (m *WasmModule) toString(ctx context.Context, p uint64) (string, error) {
+	return m.readString(ctx, p, false)
+}
+
+// readString is toString; with ownsData, the text was allocated for this
+// read too (a number formatted by the bridge) and is freed with the header.
+func (m *WasmModule) readString(ctx context.Context, p uint64, ownsData bool) (string, error) {
 	if p == 0 {
 		return "", nil
 	}
+	defer m.free(ctx, p)
 	dataAddr, err := m.readU32(ctx, p)
 	if err != nil {
 		return "", err
+	}
+	if ownsData && dataAddr != 0 {
+		defer m.free(ctx, dataAddr)
 	}
 	length, err := m.readU32(ctx, p+4)
 	if err != nil {
@@ -17604,6 +17937,7 @@ func (v *Graph) Node(ctx context.Context, _arg0 string, _arg1 int) (*Node, error
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	arg1, err := mod.toIntWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
@@ -17759,6 +18093,7 @@ func (v *Graph) Edge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 string
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	arg3, err := mod.toIntWasmValue(ctx, _arg3)
 	if err != nil {
 		return zero, err
@@ -17966,6 +18301,7 @@ func (v *Node) ReLabel(ctx context.Context, _arg0 string) (int, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "Node_reLabel", v.getPtr(), arg0)
 	if err != nil {
 		return zero, err
@@ -18041,6 +18377,7 @@ func (v *Graph) Strdup(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "Graph_strdup", v.getPtr(), arg0)
 	if err != nil {
 		return zero, err
@@ -18059,6 +18396,7 @@ func (v *Graph) StrdupHTML(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "Graph_strdupHTML", v.getPtr(), arg0)
 	if err != nil {
 		return zero, err
@@ -18077,6 +18415,7 @@ func (v *Graph) StrdupText(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "Graph_strdupText", v.getPtr(), arg0)
 	if err != nil {
 		return zero, err
@@ -18095,6 +18434,7 @@ func (v *Graph) StrBind(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "Graph_strBind", v.getPtr(), arg0)
 	if err != nil {
 		return zero, err
@@ -18113,6 +18453,7 @@ func (v *Graph) StrBindText(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "Graph_strBindText", v.getPtr(), arg0)
 	if err != nil {
 		return zero, err
@@ -18131,6 +18472,7 @@ func (v *Graph) StrBindHTML(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "Graph_strBindHTML", v.getPtr(), arg0)
 	if err != nil {
 		return zero, err
@@ -18149,6 +18491,7 @@ func (v *Graph) StrFree(ctx context.Context, _arg0 string, _arg1 bool) (int, err
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	arg1, err := mod.toBoolWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
@@ -18172,10 +18515,12 @@ func (v *Graph) Attr(ctx context.Context, _arg0 int, _arg1 string, _arg2 string)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "Graph_attr", v.getPtr(), arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -18196,10 +18541,12 @@ func (v *Graph) AttrText(ctx context.Context, _arg0 int, _arg1 string, _arg2 str
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "Graph_attrText", v.getPtr(), arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -18220,10 +18567,12 @@ func (v *Graph) AttrHTML(ctx context.Context, _arg0 int, _arg1 string, _arg2 str
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "Graph_attrHTML", v.getPtr(), arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -18263,6 +18612,7 @@ func (v *Graph) Init(ctx context.Context, _arg0 int, _arg1 string, _arg2 int, _a
 	if err != nil {
 		return err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toIntWasmValue(ctx, _arg2)
 	if err != nil {
 		return err
@@ -18287,6 +18637,7 @@ func (v *Graph) Clean(ctx context.Context, _arg0 int, _arg1 string) error {
 	if err != nil {
 		return err
 	}
+	defer mod.free(ctx, arg1)
 	if err := mod.call(ctx, "Graph_clean", v.getPtr(), arg0, arg1); err != nil {
 		return err
 	}
@@ -18300,6 +18651,7 @@ func (v *Graph) SubGraph(ctx context.Context, _arg0 string, _arg1 int) (*Graph, 
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	arg1, err := mod.toIntWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
@@ -18667,6 +19019,7 @@ func (v *Context) ParseArgs(ctx context.Context, _arg0 int, _arg1 []string) (int
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "Context_parseArgs", v.getPtr(), arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -18710,6 +19063,7 @@ func (v *Context) Layout(ctx context.Context, _arg0 *Graph, _arg1 string) (int, 
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "Context_layout", v.getPtr(), arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -18752,6 +19106,7 @@ func (v *Context) Render(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toObjectWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
@@ -18775,10 +19130,12 @@ func (v *Context) RenderFilename(ctx context.Context, _arg0 *Graph, _arg1 string
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "Context_renderFilename", v.getPtr(), arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -18798,6 +19155,7 @@ func (v *Context) RenderContext(ctx context.Context, _arg0 *Graph, _arg1 string,
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toAnyWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
@@ -18821,14 +19179,17 @@ func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _a
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toPtrWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	arg3, err := mod.toPtrWasmValue(ctx, _arg3)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg3)
 	p, err := mod.callWithRet(ctx, "Context_renderData", v.getPtr(), arg0, arg1, arg2, arg3)
 	if err != nil {
 		return zero, err
@@ -18912,10 +19273,12 @@ func (v *Context) PluginList(ctx context.Context, _arg0 string, _arg1 *int) ([]s
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	arg1, err := mod.toPtrWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "Context_pluginList", v.getPtr(), arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -19025,6 +19388,7 @@ func Open(ctx context.Context, _arg0 string, _arg1 *GraphDescriptor, _arg2 *Clie
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	arg1, err := mod.toObjectWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
@@ -19047,6 +19411,7 @@ func Read(ctx context.Context, _arg0 string, _arg1 *ClientDiscipline) (*Graph, e
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	arg1, err := mod.toObjectWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
@@ -19065,6 +19430,7 @@ func MemRead(ctx context.Context, _arg0 string) (*Graph, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "memRead", arg0)
 	if err != nil {
 		return zero, err
@@ -19083,6 +19449,7 @@ func Concat(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 any, _arg3 *C
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toAnyWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
@@ -19224,6 +19591,7 @@ func HtmlStr(ctx context.Context, _arg0 string) (bool, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	p, err := mod.callWithRet(ctx, "htmlStr", arg0)
 	if err != nil {
 		return zero, err
@@ -19238,10 +19606,12 @@ func StrCanon(ctx context.Context, _arg0 string, _arg1 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg0)
 	arg1, err := mod.toStringWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "strCanon", arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -19263,6 +19633,7 @@ func AttrSym(ctx context.Context, _arg0 *Object, _arg1 string) (*Sym, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "attrSym", arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -19299,6 +19670,7 @@ func BindRecord(ctx context.Context, _arg0 any, _arg1 string, _arg2 uint, _arg3 
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toUintWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
@@ -19325,6 +19697,7 @@ func GetRecord(ctx context.Context, _arg0 any, _arg1 string, _arg2 int) (*Record
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toIntWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
@@ -19347,6 +19720,7 @@ func DeleteRecord(ctx context.Context, _arg0 any, _arg1 string) (int, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "deleteRecord", arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -19365,6 +19739,7 @@ func GetStr(ctx context.Context, _arg0 any, _arg1 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "getStr", arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -19407,10 +19782,12 @@ func SetStr(ctx context.Context, _arg0 any, _arg1 string, _arg2 string) (int, er
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "setStr", arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -19429,10 +19806,12 @@ func SetStrText(ctx context.Context, _arg0 any, _arg1 string, _arg2 string) (int
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "setStrText", arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -19451,10 +19830,12 @@ func SetStrHTML(ctx context.Context, _arg0 any, _arg1 string, _arg2 string) (int
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "setStrHTML", arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -19477,6 +19858,7 @@ func SetSymName(ctx context.Context, _arg0 any, _arg1 *Sym, _arg2 string) (int, 
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "setSymName", arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -19499,6 +19881,7 @@ func SetSymNameText(ctx context.Context, _arg0 any, _arg1 *Sym, _arg2 string) (i
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "setSymNameText", arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -19521,6 +19904,7 @@ func SetSymNameHTML(ctx context.Context, _arg0 any, _arg1 *Sym, _arg2 string) (i
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	p, err := mod.callWithRet(ctx, "setSymNameHTML", arg0, arg1, arg2)
 	if err != nil {
 		return zero, err
@@ -19539,14 +19923,17 @@ func SafeSetStr(ctx context.Context, _arg0 any, _arg1 string, _arg2 string, _arg
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	arg3, err := mod.toStringWasmValue(ctx, _arg3)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg3)
 	p, err := mod.callWithRet(ctx, "safeSetStr", arg0, arg1, arg2, arg3)
 	if err != nil {
 		return zero, err
@@ -19565,14 +19952,17 @@ func SafeSetStrText(ctx context.Context, _arg0 any, _arg1 string, _arg2 string, 
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	arg3, err := mod.toStringWasmValue(ctx, _arg3)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg3)
 	p, err := mod.callWithRet(ctx, "safeSetStrText", arg0, arg1, arg2, arg3)
 	if err != nil {
 		return zero, err
@@ -19591,14 +19981,17 @@ func SafeSetStrHTML(ctx context.Context, _arg0 any, _arg1 string, _arg2 string, 
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	arg2, err := mod.toStringWasmValue(ctx, _arg2)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg2)
 	arg3, err := mod.toStringWasmValue(ctx, _arg3)
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg3)
 	p, err := mod.callWithRet(ctx, "safeSetStrHTML", arg0, arg1, arg2, arg3)
 	if err != nil {
 		return zero, err
@@ -19644,6 +20037,7 @@ func Error(ctx context.Context, _arg0 ErrorLevel, _arg1 string) (int, error) {
 	if err != nil {
 		return zero, err
 	}
+	defer mod.free(ctx, arg1)
 	p, err := mod.callWithRet(ctx, "error", arg0, arg1)
 	if err != nil {
 		return zero, err
@@ -19657,6 +20051,7 @@ func Errorf(ctx context.Context, _arg0 string) error {
 	if err != nil {
 		return err
 	}
+	defer mod.free(ctx, arg0)
 	if err := mod.call(ctx, "errorf", arg0); err != nil {
 		return err
 	}
@@ -19668,6 +20063,7 @@ func Warningf(ctx context.Context, _arg0 string) error {
 	if err != nil {
 		return err
 	}
+	defer mod.free(ctx, arg0)
 	if err := mod.call(ctx, "warningf", arg0); err != nil {
 		return err
 	}
@@ -19762,6 +20158,7 @@ func NewContextWithSymList(ctx context.Context, _arg0 []*SymList, _arg1 int) (*C
 	if err != nil {
 		return zero, err
 	}
+	defer mod.freeSlice(ctx, arg0)
 	arg1, err := mod.toIntWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
@@ -19790,6 +20187,7 @@ func GetContextWithPlugins(ctx context.Context, _arg0 []*SymList, _arg1 int) (*C
 	if err != nil {
 		return zero, err
 	}
+	defer mod.freeSlice(ctx, arg0)
 	arg1, err := mod.toIntWasmValue(ctx, _arg1)
 	if err != nil {
 		return zero, err
@@ -19807,6 +20205,7 @@ func FreeRenderData(ctx context.Context, _arg0 string) error {
 	if err != nil {
 		return err
 	}
+	defer mod.free(ctx, arg0)
 	if err := mod.call(ctx, "freeRenderData", arg0); err != nil {
 		return err
 	}

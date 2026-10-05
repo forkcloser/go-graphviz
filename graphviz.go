@@ -10,7 +10,9 @@
 // and may use the API on the same goroutine; another goroutine's call waits
 // until the render ends. The context and the handles a callback receives
 // (the Job, its points, spans and colours) identify that call to the lock,
-// so a callback must not hand them to another goroutine while it runs.
+// so a callback must not hand them to another goroutine while it runs; the
+// points, spans, boxes and colours are copies that are freed when the
+// callback returns, so they are not to be kept past it either.
 package graphviz
 
 import (
