@@ -7,4 +7,4 @@ require (
 	google.golang.org/protobuf v1.36.12
 )
 
-require golang.org/x/sync v0.8.0 // indirect
+require golang.org/x/sync v0.23.0 // indirect
