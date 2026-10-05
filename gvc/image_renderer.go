@@ -84,20 +84,6 @@ func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 	job.SetOutputData(buf.Bytes())
 	job.SetOutputDataPosition(uint(len(buf.Bytes())))
 
-	filename := job.OutputFileName()
-	if filename != "" {
-		switch {
-		case r.isPNG(job):
-			if err := r.ctx.SavePNG(filename); err != nil {
-				return fmt.Errorf("writing %s: %w", filename, err)
-			}
-		case r.isJPG(job):
-			if err := r.saveJPG(filename); err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -338,17 +324,6 @@ func (r *ImageRenderer) encodeJPG(w io.Writer) error {
 	}
 
 	return nil
-}
-
-func (r *ImageRenderer) saveJPG(path string) error {
-	// #nosec G304 -- the output file is the one the render job names
-	file, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("creating %s: %w", path, err)
-	}
-	defer file.Close()
-
-	return r.encodeJPG(file)
 }
 
 func (r *ImageRenderer) setPenStyle(job *Job) {
