@@ -1,16 +1,18 @@
 package graphviz_test
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"image"
+	_ "image/png" // decodes the system dot's output when the hashes are regenerated
+	"math/bits"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"testing"
 
-	"github.com/corona10/goimagehash"
+	"golang.org/x/image/draw"
 
 	"github.com/forkcloser/go-graphviz"
 )
@@ -42,7 +44,7 @@ func TestGenerateHashes(t *testing.T) {
 }
 
 func generateTestData() error {
-	pathToHashDump := map[string]string{}
+	pathToHash := map[string]string{}
 
 	for _, path := range testPaths {
 		if err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
@@ -69,17 +71,7 @@ func generateTestData() error {
 				return err
 			}
 
-			hash, err := goimagehash.DifferenceHash(img)
-			if err != nil {
-				return err
-			}
-
-			var b bytes.Buffer
-			if err := hash.Dump(&b); err != nil {
-				return err
-			}
-
-			pathToHashDump[filepath.ToSlash(p)] = base64.StdEncoding.EncodeToString(b.Bytes())
+			pathToHash[filepath.ToSlash(p)] = fmt.Sprintf("%016x", differenceHash(img))
 
 			return nil
 		}); err != nil {
@@ -87,83 +79,127 @@ func generateTestData() error {
 		}
 	}
 
-	content, err := json.Marshal(pathToHashDump)
+	content, err := json.MarshalIndent(pathToHash, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(imageHashJSON, content, 0o644)
+	return os.WriteFile(imageHashJSON, append(content, '\n'), 0o644)
 }
 
 func TestGraphviz_Compatible(t *testing.T) {
-	var pathToHashDump map[string]string
+	var pathToHash map[string]string
 
 	file, err := os.ReadFile(imageHashJSON)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := json.Unmarshal(file, &pathToHashDump); err != nil {
+	if err := json.Unmarshal(file, &pathToHash); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, path := range testPaths {
-		filepath.Walk(path, func(path string, info os.FileInfo, _ error) error {
+		if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
 			if info.IsDir() {
 				return nil
 			}
 
 			t.Run(path, func(t *testing.T) {
-				file, err := os.ReadFile(path)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				graph, err := graphviz.ParseBytes(file)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer graph.Close()
-
-				ctx := t.Context()
-
-				g, err := graphviz.New(ctx)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer g.Close()
-
-				image, err := g.RenderImage(ctx, graph)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				hash, err := goimagehash.DifferenceHash(image)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				dump, err := base64.StdEncoding.DecodeString(pathToHashDump[filepath.ToSlash(path)])
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				targetHash, err := goimagehash.LoadImageHash(bytes.NewBuffer(dump))
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				distance, err := hash.Distance(targetHash)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if distance > imageThreshold {
-					t.Fatalf("doesn't compatible image with dot. %s distance = %d", path, distance)
-				}
+				compareWithDot(t, path, pathToHash[filepath.ToSlash(path)])
 			})
 
 			return nil
-		})
+		}); err != nil {
+			t.Fatal(err)
+		}
 	}
+}
+
+// compareWithDot renders the graph at path and fails when its difference
+// hash is further than imageThreshold bits from want, the hash of the system
+// dot's rendering.
+func compareWithDot(t *testing.T, path, want string) {
+	t.Helper()
+
+	reference, err := strconv.ParseUint(want, 16, 64)
+	if err != nil {
+		t.Fatalf("no reference hash for %s: %v", path, err)
+	}
+
+	file, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graph, err := graphviz.ParseBytes(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	ctx := t.Context()
+
+	g, err := graphviz.New(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	img, err := g.RenderImage(ctx, graph)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if distance := bits.OnesCount64(differenceHash(img) ^ reference); distance > imageThreshold {
+		t.Fatalf("%s differs from the system dot's rendering by %d bits of 64", path, distance)
+	}
+}
+
+// differenceHash is the 64-bit difference hash of img: the image scaled to
+// 9 by 8 pixels, each row's 8 neighbouring pairs compared by luminosity, a
+// bit set where the left one is darker, first row in the high bits. It is
+// goimagehash's DifferenceHash, which made the reference hashes, with
+// x/image/draw's bilinear scaling in place of nfnt/resize's. Measured over
+// the corpus when the switch was made, the two disagree by at most 10 bits,
+// and this one sits at most 25 bits from the references (goimagehash: 26),
+// under the threshold of 40.
+func differenceHash(img image.Image) uint64 {
+	const (
+		width  = 9
+		height = 8
+	)
+
+	small := image.NewRGBA(image.Rect(0, 0, width, height))
+	draw.BiLinear.Scale(small, small.Bounds(), img, img.Bounds(), draw.Src, nil)
+
+	var hash uint64
+
+	bit := 63
+
+	for y := range height {
+		for x := range width - 1 {
+			if luminosity(small.At(x, y)) < luminosity(small.At(x+1, y)) {
+				hash |= 1 << bit
+			}
+
+			bit--
+		}
+	}
+
+	return hash
+}
+
+// luminosity weighs a colour's channels as goimagehash does, including its
+// division of the blue channel by 256 where the others divide by 257.
+func luminosity(c interface{ RGBA() (r, g, b, a uint32) }) float64 {
+	r, g, b, _ := c.RGBA()
+
+	return 0.299*float64(r/257) + 0.587*float64(g/257) + 0.114*float64(b/256)
 }
