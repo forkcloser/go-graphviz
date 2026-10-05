@@ -259,11 +259,6 @@ licenses:
     # the baseline's allowed list; go-licenses cannot classify the dual text
     # and reports the module as unlicensed. A classifier limitation, judged.
     - github.com/golang/freetype
-    # ONBOARDING BACKLOG, not a judgment: nfnt/resize is ISC, which the
-    # baseline does not carry, and a project cannot admit a licence through a
-    # carve-out. It is a test-only transitive of goimagehash; alignment
-    # replaces the hash in the tests and this line goes with it.
-    - github.com/nfnt/resize
 nilaway:
   # ONBOARDING BACKLOG, not a judgment: NilAway's findings print without
   # failing the lane until alignment reaches them.
