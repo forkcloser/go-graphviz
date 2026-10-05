@@ -2,6 +2,7 @@ package gvc
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/cgraph"
@@ -11,6 +12,8 @@ import (
 type RenderPlugin struct {
 	plugin *wasm.PluginAPI
 	engine RenderEngine
+	funcID uint64       // the engine's address, the key its callbacks are registered under
+	uses   atomic.Int32 // the contexts the plugin is installed in
 }
 
 func NewRenderPlugin(
@@ -33,6 +36,16 @@ func (p *RenderPlugin) RenderEngine() RenderEngine {
 
 func (p *RenderPlugin) raw() *wasm.PluginAPI {
 	return p.plugin
+}
+
+func (p *RenderPlugin) acquire() {
+	p.uses.Add(1)
+}
+
+func (p *RenderPlugin) release() {
+	if p.uses.Add(-1) == 0 {
+		wasm.UnregisterCallbacks(p.funcID)
+	}
 }
 
 type RenderEngine interface {
@@ -351,6 +364,7 @@ func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, e
 	return &RenderPlugin{
 		plugin: plg,
 		engine: cfg.RenderEngine,
+		funcID: wasm.WasmPtr(engine),
 	}, nil
 }
 

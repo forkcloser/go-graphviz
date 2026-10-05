@@ -27,6 +27,10 @@ func (p *DevicePlugin) raw() *wasm.PluginAPI {
 	return p.plugin
 }
 
+func (*DevicePlugin) acquire() {}
+
+func (*DevicePlugin) release() {}
+
 type DeviceFeature int64
 
 var (

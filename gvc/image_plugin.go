@@ -2,12 +2,15 @@ package gvc
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
 type LoadImagePlugin struct {
 	plugin *wasm.PluginAPI
+	funcID uint64       // the engine's address, the key its callback is registered under
+	uses   atomic.Int32 // the contexts the plugin is installed in
 }
 
 func NewLoadImagePlugin(ctx context.Context, typ string, engine LoadImageEngine) (*LoadImagePlugin, error) {
@@ -17,6 +20,16 @@ func NewLoadImagePlugin(ctx context.Context, typ string, engine LoadImageEngine)
 
 func (p *LoadImagePlugin) raw() *wasm.PluginAPI {
 	return p.plugin
+}
+
+func (p *LoadImagePlugin) acquire() {
+	p.uses.Add(1)
+}
+
+func (p *LoadImagePlugin) release() {
+	if p.uses.Add(-1) == 0 {
+		wasm.UnregisterCallbacks(p.funcID)
+	}
 }
 
 type loadImageConfig struct {
@@ -84,6 +97,7 @@ func buildLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImage
 
 	return &LoadImagePlugin{
 		plugin: plg,
+		funcID: wasm.WasmPtr(engine),
 	}, nil
 }
 

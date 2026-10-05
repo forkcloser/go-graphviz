@@ -20,7 +20,8 @@ import (
 )
 
 type Context struct {
-	gvc *wasm.Context
+	gvc     *wasm.Context
+	plugins []Plugin
 }
 
 func New(ctx context.Context) (*Context, error) {
@@ -47,7 +48,11 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 		return nil, ErrNoContext
 	}
 
-	return &Context{gvc: gvc}, nil
+	for _, plugin := range plugins {
+		plugin.acquire()
+	}
+
+	return &Context{gvc: gvc, plugins: plugins}, nil
 }
 
 // Close frees the context. gvFreeContext returns the number of errors
@@ -55,6 +60,10 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 // call, so that number is not an error here.
 func (c *Context) Close() error {
 	_, err := c.gvc.FreeContext(context.Background())
+
+	for _, plugin := range c.plugins {
+		plugin.release()
+	}
 
 	return err
 }
@@ -137,7 +146,8 @@ func (c *Context) Clone(ctx context.Context) (*Context, error) {
 		return nil, err
 	}
 
-	return &Context{gvc: gvc}, nil
+	// The plugins stay the original's; a clone does not release them.
+	return &Context{gvc: gvc, plugins: nil}, nil
 }
 
 func (c *Context) FreeClonedContext(ctx context.Context) error {

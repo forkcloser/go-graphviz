@@ -82,6 +82,30 @@ func (v *GoValue) IsStruct() bool {
 	return v.typ.Kind == nori.TypeKind_STRUCT
 }
 
+// IsValueStruct reports a message passed by value, which the C bridge hands
+// a host function as a copy it allocated; for a slice, each element is one.
+func (v *GoValue) IsValueStruct() bool {
+	return v.typ.Kind == nori.TypeKind_STRUCT && v.typ.Pointer == 0
+}
+
+// IsOwnedArg reports an argument the Go side allocates in the module for the
+// duration of a call: a string, an out-parameter slot or a scalar array.
+func (v *GoValue) IsOwnedArg() bool {
+	if isGoPtrValue(v.typ) || v.typ.IsStringKind() {
+		return true
+	}
+	if !v.typ.IsRepeated || v.typ.Kind == nori.TypeKind_STRUCT {
+		return false
+	}
+	return true
+}
+
+// IsObjectArrayArg reports a slice of handles, which the Go side passes as a
+// GoSlice header and a data array, both allocated for the call.
+func (v *GoValue) IsObjectArrayArg() bool {
+	return v.typ.IsRepeated && v.typ.Kind == nori.TypeKind_STRUCT && !isGoPtrValue(v.typ)
+}
+
 func (v *GoValue) FuncName() string {
 	if !v.typ.IsFunction() {
 		return ""

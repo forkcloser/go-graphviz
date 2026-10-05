@@ -158,6 +158,19 @@ func init() {
 				}
 				{{- end }}
 			}
+			// The bridge allocated a copy for every argument passed by value;
+			// the callback is over, so the copies go.
+			{{- range .Args }}
+			{{- if .Value.IsValueStruct }}
+			{{- if .Value.IsSlice }}
+			for _, e := range arg{{ .Index }} {
+				mod.free(ctx, e.getPtr())
+			}
+			{{- else }}
+			mod.free(ctx, arg{{ .Index }}.getPtr())
+			{{- end }}
+			{{- end }}
+			{{- end }}
 		}),
 		[]api.ValueType{ {{- range .Args }}api.ValueTypeI{{- if .Value.Is64Bit -}}64{{- else -}}32{{- end -}},{{- end }} },
 		{{- if .Return }}
@@ -240,10 +253,44 @@ func getCompilationCache() wazero.CompilationCache {
 	return cache
 }
 
+// freeSlice frees a GoSlice the Go side built for a call: the data array,
+// then the header.
+func (m *WasmModule) freeSlice(ctx context.Context, p uint64) {
+	if p == 0 {
+		return
+	}
+	if data, err := m.readU32(ctx, p+4); err == nil && data != 0 {
+		m.free(ctx, data)
+	}
+	m.free(ctx, p)
+}
+
+// UnregisterCallbacks drops every callback registered under funcID, the
+// engine a plugin built; a context that is closed releases its plugins'.
+func UnregisterCallbacks(funcID uint64) {
+	mod.registerCallback(func() {
+		{{- range .ExportCallbackFunctions }}
+		delete(mod.callbackFuncMap.{{ .Name }}, funcID)
+		{{- end }}
+	})
+}
+
+// RegisteredCallbacks is the number of callbacks registered across every
+// family, for tests of the plugins' release.
+func RegisteredCallbacks() int {
+	var n int
+	mod.registerCallback(func() {
+		{{- range .ExportCallbackFunctions }}
+		n += len(mod.callbackFuncMap.{{ .Name }})
+		{{- end }}
+	})
+	return n
+}
+
 // registerCallback runs a write to the callback maps under the module's
 // lock, since host functions read them under it.
 func (m *WasmModule) registerCallback(write func()) {
-	_, leave := m.lock.enter(context.Background())
+	_, leave, _ := m.lock.enter(context.Background())
 	defer leave()
 	write()
 }
@@ -254,9 +301,14 @@ func (m *WasmModule) registerCallback(write func()) {
 // it, which is how a host function (Go code Graphviz called) reaches back
 // into the module.
 func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([]uint64, error) {
-	ctx, leave := m.lock.enter(ctx)
+	ctx, leave, outermost := m.lock.enter(ctx)
 	defer leave()
 	ret, err := m.mod.ExportedFunction(name).Call(ctx, args...)
+	if !outermost {
+		// A nested call (a host function reaching back in, a free after a
+		// callback failed) leaves the parked error to the call that owns it.
+		return ret, err
+	}
 	if err != nil {
 		// A trap can follow from a callback's failure (its out-parameters
 		// were never written), so a parked error is returned with it.
@@ -358,7 +410,7 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 // The memory helpers hold the lock too: another goroutine's call can grow
 // the memory, which moves it.
 func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, error) {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
 	if !ok {
@@ -373,7 +425,7 @@ func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, err
 }
 
 func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
 	if !ok {
@@ -386,7 +438,7 @@ func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
 }
 
 func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
 		return fmt.Errorf(
@@ -398,7 +450,7 @@ func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
 }
 
 func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
 		return fmt.Errorf(
@@ -410,7 +462,7 @@ func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
 }
 
 func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
 		return fmt.Errorf(
@@ -422,7 +474,7 @@ func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
 }
 
 func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
-	_, leave := m.lock.enter(ctx)
+	_, leave, _ := m.lock.enter(ctx)
 	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
 		return fmt.Errorf(
@@ -448,7 +500,11 @@ func (m *WasmModule) NewPtr(ctx context.Context) (uint64, error) {
 	return p, nil
 }
 
+// toSlice reads the GoSlice at p, a header and a data array the C bridge
+// allocates for every slice it hands out, and frees both; the elements are
+// the caller's to read and, where they are copies, to free.
 func (m *WasmModule) toSlice(ctx context.Context, p uint64) ([]uint64, error) {
+	defer m.free(ctx, p)
 	length, err := m.readU32(ctx, p)
 	if err != nil {
 		return nil, err
@@ -456,6 +512,9 @@ func (m *WasmModule) toSlice(ctx context.Context, p uint64) ([]uint64, error) {
 	data, err := m.readU32(ctx, p+4)
 	if err != nil {
 		return nil, err
+	}
+	if data != 0 {
+		defer m.free(ctx, data)
 	}
 	var ret []uint64
 	for i := uint64(0); i < length; i++ {
@@ -484,7 +543,7 @@ func (m *WasmModule) toBoolSlice(v []uint64) []bool {
 }
 
 func (m *WasmModule) toFloat32(ctx context.Context, p uint64) (float32, error) {
-	v, err := m.toString(ctx, p)
+	v, err := m.readString(ctx, p, true)
 	if err != nil {
 		return 0, err
 	}
@@ -508,7 +567,7 @@ func (m *WasmModule) toFloat32Slice(ctx context.Context, v []uint64) ([]float32,
 }
 
 func (m *WasmModule) toFloat64(ctx context.Context, p uint64) (float64, error) {
-	v, err := m.toString(ctx, p)
+	v, err := m.readString(ctx, p, true)
 	if err != nil {
 		return 0, err
 	}
@@ -603,13 +662,26 @@ func (m *WasmModule) toAny(v uint64) any {
 	return v
 }
 
+// toString reads the GoString at p, a header the C bridge allocates for every
+// string it hands out, and frees the header; the text it points to is the
+// module's own and stays.
 func (m *WasmModule) toString(ctx context.Context, p uint64) (string, error) {
+	return m.readString(ctx, p, false)
+}
+
+// readString is toString; with ownsData, the text was allocated for this
+// read too (a number formatted by the bridge) and is freed with the header.
+func (m *WasmModule) readString(ctx context.Context, p uint64, ownsData bool) (string, error) {
 	if p == 0 {
 		return "", nil
 	}
+	defer m.free(ctx, p)
 	dataAddr, err := m.readU32(ctx, p)
 	if err != nil {
 		return "", err
+	}
+	if ownsData && dataAddr != 0 {
+		defer m.free(ctx, dataAddr)
 	}
 	length, err := m.readU32(ctx, p+4)
 	if err != nil {
@@ -1058,6 +1130,11 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 	if err != nil {
 		return zero, err
 	}
+	{{- if .Value.IsOwnedArg }}
+	defer mod.free(ctx, arg{{- .Index -}})
+	{{- else if .Value.IsObjectArrayArg }}
+	defer mod.freeSlice(ctx, arg{{- .Index -}})
+	{{- end }}
 	{{- end }}
 	p, err := mod.callWithRet(ctx, "{{ .WasmName }}", v.getPtr(), {{- range .Args }}arg{{- .Index -}},{{- end }})
 	if err != nil {
@@ -1092,6 +1169,11 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 	if err != nil {
 		return err
 	}
+	{{- if .Value.IsOwnedArg }}
+	defer mod.free(ctx, arg{{- .Index -}})
+	{{- else if .Value.IsObjectArrayArg }}
+	defer mod.freeSlice(ctx, arg{{- .Index -}})
+	{{- end }}
 	{{- end }}
 	if err := mod.call(ctx, "{{ .WasmName }}", v.getPtr(), {{- range .Args }}arg{{- .Index -}},{{- end }}); err != nil {
 		return err
@@ -1117,6 +1199,11 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	if err != nil {
 		return zero, err
 	}
+	{{- if .Value.IsOwnedArg }}
+	defer mod.free(ctx, arg{{- .Index -}})
+	{{- else if .Value.IsObjectArrayArg }}
+	defer mod.freeSlice(ctx, arg{{- .Index -}})
+	{{- end }}
 	{{- end }}
 	p, err := mod.callWithRet(ctx, "{{ .WasmName }}", {{- range .Args }}arg{{- .Index -}},{{- end }})
 	if err != nil {
@@ -1149,6 +1236,11 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	if err != nil {
 		return err
 	}
+	{{- if .Value.IsOwnedArg }}
+	defer mod.free(ctx, arg{{- .Index -}})
+	{{- else if .Value.IsObjectArrayArg }}
+	defer mod.freeSlice(ctx, arg{{- .Index -}})
+	{{- end }}
 	{{- end }}
 	if err := mod.call(ctx, "{{ .WasmName }}", {{- range .Args }}arg{{- .Index -}},{{- end }}); err != nil {
 		return err
