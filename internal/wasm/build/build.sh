@@ -116,6 +116,23 @@ sed "s/@GRAPHVIZ_VERSION@/${graphviz_version}/g" "${here}/config.h" > "${gv}/con
 sed "s/@EXPAT_VERSION@/${expat_version}/g" "${here}/expat_config.h" > "${expat}/expat_config.h"
 rm -f "${gv}/lib/rbtree/test_red_black_tree.c"
 
+# One source fix on top of the release: storeline (lib/common/labels.c) tells
+# gv_recalloc that one more span existed than did, so the span it is about to
+# fill is never zeroed, and a line that is empty skips textspan_size, the
+# only other thing that would null the span's layout fields. A label whose
+# first line is empty then frees a garbage layout pointer in free_textspan,
+# which under wasm is an indirect call into nowhere. The old count is the
+# number of spans stored so far.
+labels="${gv}/lib/common/labels.c"
+if grep -q 'size_t oldsz = lp->u.txt.nspans + 1;' "${labels}"; then
+  sed -i.orig 's/size_t oldsz = lp->u.txt.nspans + 1;/size_t oldsz = lp->u.txt.nspans;/' "${labels}"
+  rm -f "${labels}.orig"
+fi
+grep -q 'size_t oldsz = lp->u.txt.nspans;' "${labels}" || {
+  echo "labels.c: storeline does not look like the one this fix is for" >&2
+  exit 1
+}
+
 # Graphviz's lib/neatogen has sources for optional engines (ipsep, the vpsc
 # constraint solver) that the configure flags upstream used excluded; the
 # list below is the engine set the original container build compiled.
