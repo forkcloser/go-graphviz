@@ -393,8 +393,19 @@ func (m *WasmModule) writeF64(p uint64, v float64) error {
 	return nil
 }
 
+// NewPtr allocates a one-word slot for a value a bridge function hands back.
+// It starts zeroed: a function that fails never writes its out-parameters,
+// and a null there reads back as a nil object or an empty string instead of
+// whatever the allocator left.
 func (m *WasmModule) NewPtr(ctx context.Context) (uint64, error) {
-	return m.malloc(ctx, 4)
+	p, err := m.malloc(ctx, 4)
+	if err != nil {
+		return 0, err
+	}
+	if err := m.writeU32(p, 0); err != nil {
+		return 0, err
+	}
+	return p, nil
 }
 
 func (m *WasmModule) toSlice(ctx context.Context, p uint64) ([]uint64, error) {

@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
@@ -246,14 +247,16 @@ func Open(disc *Disc, mtd *Method) (*Dict, error) {
 // left in its error buffer follows it.
 var ErrDict = errors.New("cdt")
 
+// toError maps a libcdt result code: zero is success, anything else is a
+// failure, with the message Graphviz reported when it reported one.
 func toError(result int) error {
 	if result == 0 {
 		return nil
 	}
 
-	if e, _ := wasm.LastError(context.Background()); e != "" {
-		return fmt.Errorf("%w: %s", ErrDict, e)
+	if text := wasm.TakeLastError(); text != "" {
+		return fmt.Errorf("%w: %s", ErrDict, strings.TrimRight(text, "\n"))
 	}
 
-	return nil
+	return fmt.Errorf("%w: call failed with code %d and no message", ErrDict, result)
 }

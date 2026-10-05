@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
@@ -1448,7 +1449,7 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 	}
 
 	if graph == nil {
-		return nil, lastError()
+		return nil, parseError()
 	}
 
 	g := toGraph(graph)
@@ -1457,6 +1458,15 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 	}
 
 	return g, nil
+}
+
+// parseError is the error for a read or open that returned no graph.
+func parseError() error {
+	if err := lastError(); err != nil {
+		return err
+	}
+
+	return fmt.Errorf("%w: no graph was produced", ErrGraphviz)
 }
 
 func ParseFile(path string) (*Graph, error) {
@@ -1476,7 +1486,7 @@ func Open(name string, desc *Desc, disc *Disc) (*Graph, error) {
 	}
 
 	if graph == nil {
-		return nil, lastError()
+		return nil, parseError()
 	}
 
 	g := toGraph(graph)
@@ -1606,22 +1616,30 @@ func AttrSym(obj *Object, name string) (*Symbol, error) {
 	return toSymbol(sym), nil
 }
 
+// toError maps a Graphviz result code: zero is success, anything else is a
+// failure, with the message Graphviz reported when it reported one.
 func toError(result int) error {
 	if result == 0 {
 		return nil
 	}
 
-	return lastError()
+	if err := lastError(); err != nil {
+		return err
+	}
+
+	return fmt.Errorf("%w: call failed with code %d and no message", ErrGraphviz, result)
 }
 
 // ErrGraphviz is the error every failed Graphviz call wraps; the message
-// Graphviz left in its error buffer follows it, so errors.Is tells a Graphviz
-// failure from any other and the text is still there to read.
+// Graphviz reported follows it, so errors.Is tells a Graphviz failure from
+// any other and the text is still there to read.
 var ErrGraphviz = errors.New("graphviz")
 
+// lastError is the latest message Graphviz reported as an error, as an
+// error, or nil when it reported none since the last read.
 func lastError() error {
-	if e, _ := wasm.LastError(context.Background()); e != "" {
-		return fmt.Errorf("%w: %s", ErrGraphviz, e)
+	if text := wasm.TakeLastError(); text != "" {
+		return fmt.Errorf("%w: %s", ErrGraphviz, strings.TrimRight(text, "\n"))
 	}
 
 	return nil

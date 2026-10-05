@@ -13,6 +13,7 @@ import (
 	_ "image/png"  // registers the decoder image.Decode needs
 	"io"
 	"os"
+	"strings"
 
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
@@ -67,12 +68,18 @@ func (c *Context) Layout(ctx context.Context, g *cgraph.Graph, engine string) er
 	return toError(res)
 }
 
-func (c *Context) RenderData(ctx context.Context, g *cgraph.Graph, format string, w io.Writer) error {
+func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format string, w io.Writer) error {
 	var (
 		rendered    string
 		renderedLen uint
 	)
-	if _, err := c.gvc.RenderData(ctx, toGraphWasm(g), format, &rendered, &renderedLen); err != nil {
+
+	res, err := c.gvc.RenderData(ctx, toGraphWasm(graph), format, &rendered, &renderedLen)
+	if err != nil {
+		return err
+	}
+
+	if err := toError(res); err != nil {
 		return err
 	}
 
@@ -193,21 +200,19 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error)
 	return append(append([]*wasm.SymList{sym}, defaults...), symTerm), nil
 }
 
+// toError maps a Graphviz result code: zero is success, anything else is a
+// failure, with the message Graphviz reported when it reported one.
 func toError(result int) error {
 	if result == 0 {
 		return nil
 	}
 
-	return lastError()
+	if text := wasm.TakeLastError(); text != "" {
+		return fmt.Errorf("%w: %s", cgraph.ErrGraphviz, strings.TrimRight(text, "\n"))
+	}
+
+	return fmt.Errorf("%w: call failed with code %d and no message", cgraph.ErrGraphviz, result)
 }
 
 // ErrNoContext is returned when Graphviz cannot allocate a rendering context.
 var ErrNoContext = errors.New("graphviz context could not be created")
-
-func lastError() error {
-	if e, _ := wasm.LastError(context.Background()); e != "" {
-		return fmt.Errorf("%w: %s", cgraph.ErrGraphviz, e)
-	}
-
-	return nil
-}
