@@ -2,6 +2,15 @@
 // from the embedded WebAssembly module, the graph it lays out and renders, and
 // aliases for every type of the cgraph, cdt and gvc packages, so a program
 // imports this one package for the whole API.
+//
+// One WebAssembly module serves the whole process, and Graphviz is
+// single-threaded, so calls are serialized: instances and graphs may be used
+// from any goroutine, and a call waits for the one in progress. A callback a
+// render makes (a RenderEngine method, a FontLoader) runs inside that call
+// and may use the API on the same goroutine; another goroutine's call waits
+// until the render ends. The context and the handles a callback receives
+// (the Job, its points, spans and colours) identify that call to the lock,
+// so a callback must not hand them to another goroutine while it runs.
 package graphviz
 
 import (

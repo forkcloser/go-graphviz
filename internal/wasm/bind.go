@@ -3,6 +3,7 @@
 package wasm
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"errors"
@@ -29,6 +30,8 @@ type WasmModule struct {
 	fs              *WasmFileSystem
 	lookupFuncMap   *LookupFuncMap
 	callbackFuncMap *CallbackFuncMap
+	// lock serializes every call into the module (see reentrantLock).
+	lock reentrantLock
 	// callbackErr is the first error a Go callback returned during the
 	// exported call in progress. A host function must not panic: the panic
 	// unwinds through Graphviz's C frames and leaves its state half-updated,
@@ -436,6 +439,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (*ClientDiscipline, error) {
 				var zero *ClientDiscipline
 				_ = zero
@@ -446,6 +450,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.IDAllocator_Open(arg0, arg1)
 			if err != nil {
@@ -872,6 +877,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (*Object, error) {
 				var zero *Object
 				_ = zero
@@ -882,6 +888,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 			arg2, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -923,6 +930,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (*Object, error) {
 				var zero *Object
 				_ = zero
@@ -933,6 +941,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 			arg2, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -953,6 +962,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg3.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.ClientEventCallback_ObjectUpdateFunc(arg0, arg1, arg2, arg3)
 			if err != nil {
@@ -1019,6 +1029,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1049,6 +1060,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg3.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DictMemory(arg0, arg1, arg2, arg3)
 			if err != nil {
@@ -1081,6 +1093,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1143,6 +1156,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DictMake(arg0, arg1)
 			if err != nil {
@@ -1290,6 +1304,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.UserShape_DataFree(arg0)
 			if err != nil {
@@ -1321,6 +1336,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Refresh(arg0)
 			if err != nil {
@@ -1352,6 +1368,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (int, error) {
 				var zero int
 				_ = zero
@@ -1372,6 +1389,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg2.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_ButtonPress(arg0, arg1, arg2)
 			if err != nil {
@@ -1403,6 +1421,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (int, error) {
 				var zero int
 				_ = zero
@@ -1423,6 +1442,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg2.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_ButtonRelease(arg0, arg1, arg2)
 			if err != nil {
@@ -1454,6 +1474,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (*PointFloat, error) {
 				var zero *PointFloat
 				_ = zero
@@ -1464,6 +1485,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Motion(arg0, arg1)
 			if err != nil {
@@ -1495,6 +1517,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -1552,6 +1575,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Delete(arg0)
 			if err != nil {
@@ -1583,6 +1607,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -1640,6 +1665,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -1684,6 +1710,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -1741,6 +1768,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceEngine_Initialize(arg0)
 			if err != nil {
@@ -1772,6 +1800,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceEngine_Format(arg0)
 			if err != nil {
@@ -1803,6 +1832,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.DeviceEngine_Finalize(arg0)
 			if err != nil {
@@ -1834,6 +1864,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginJob(arg0)
 			if err != nil {
@@ -1865,6 +1896,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndJob(arg0)
 			if err != nil {
@@ -1896,6 +1928,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginGraph(arg0)
 			if err != nil {
@@ -1927,6 +1960,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndGraph(arg0)
 			if err != nil {
@@ -1958,6 +1992,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -2022,6 +2057,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndLayer(arg0)
 			if err != nil {
@@ -2053,6 +2089,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginPage(arg0)
 			if err != nil {
@@ -2084,6 +2121,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndPage(arg0)
 			if err != nil {
@@ -2115,6 +2153,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginCluster(arg0)
 			if err != nil {
@@ -2146,6 +2185,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndCluster(arg0)
 			if err != nil {
@@ -2177,6 +2217,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNodes(arg0)
 			if err != nil {
@@ -2208,6 +2249,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndNodes(arg0)
 			if err != nil {
@@ -2239,6 +2281,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdges(arg0)
 			if err != nil {
@@ -2270,6 +2313,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdges(arg0)
 			if err != nil {
@@ -2301,6 +2345,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNode(arg0)
 			if err != nil {
@@ -2332,6 +2377,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndNode(arg0)
 			if err != nil {
@@ -2363,6 +2409,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdge(arg0)
 			if err != nil {
@@ -2394,6 +2441,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdge(arg0)
 			if err != nil {
@@ -2425,6 +2473,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -2508,6 +2557,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndAnchor(arg0)
 			if err != nil {
@@ -2539,6 +2589,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (LabelType, error) {
 				var zero LabelType
 				_ = zero
@@ -2580,6 +2631,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndLabel(arg0)
 			if err != nil {
@@ -2611,6 +2663,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (*PointFloat, error) {
 				var zero *PointFloat
 				_ = zero
@@ -2621,6 +2674,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 			arg2, err := func() (*Textspan, error) {
 				var zero *Textspan
 				_ = zero
@@ -2631,6 +2685,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg2.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_Textspan(arg0, arg1, arg2)
 			if err != nil {
@@ -2662,6 +2717,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (*Color, error) {
 				var zero *Color
 				_ = zero
@@ -2672,6 +2728,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_ResolveColor(arg0, arg1)
 			if err != nil {
@@ -2703,6 +2760,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
 				_ = zero
@@ -2716,6 +2774,9 @@ func init() {
 			if err != nil {
 				mod.failCallback(err)
 				return
+			}
+			for _, e := range arg1 {
+				e.withToken(tokenOf(ctx))
 			}
 			arg2, err := func() (int, error) {
 				var zero int
@@ -2758,6 +2819,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
 				_ = zero
@@ -2771,6 +2833,9 @@ func init() {
 			if err != nil {
 				mod.failCallback(err)
 				return
+			}
+			for _, e := range arg1 {
+				e.withToken(tokenOf(ctx))
 			}
 			arg2, err := func() (uint32, error) {
 				var zero uint32
@@ -2823,6 +2888,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
 				_ = zero
@@ -2836,6 +2902,9 @@ func init() {
 			if err != nil {
 				mod.failCallback(err)
 				return
+			}
+			for _, e := range arg1 {
+				e.withToken(tokenOf(ctx))
 			}
 			arg2, err := func() (uint32, error) {
 				var zero uint32
@@ -2888,6 +2957,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
 				_ = zero
@@ -2901,6 +2971,9 @@ func init() {
 			if err != nil {
 				mod.failCallback(err)
 				return
+			}
+			for _, e := range arg1 {
+				e.withToken(tokenOf(ctx))
 			}
 			arg2, err := func() (uint32, error) {
 				var zero uint32
@@ -2943,6 +3016,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -2987,6 +3061,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -3013,6 +3088,9 @@ func init() {
 			if err != nil {
 				mod.failCallback(err)
 				return
+			}
+			for _, e := range arg2 {
+				e.withToken(tokenOf(ctx))
 			}
 			arg3, err := func() (uint32, error) {
 				var zero uint32
@@ -3065,6 +3143,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.LayoutEngine_Layout(arg0)
 			if err != nil {
@@ -3096,6 +3175,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 
 			funcID, err := mod.lookupFuncMap.LayoutEngine_Cleanup(arg0)
 			if err != nil {
@@ -3127,6 +3207,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() ([]string, error) {
 				var zero []string
 				_ = zero
@@ -3176,6 +3257,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg0.withToken(tokenOf(ctx))
 			arg1, err := func() (*UserShape, error) {
 				var zero *UserShape
 				_ = zero
@@ -3186,6 +3268,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg1.withToken(tokenOf(ctx))
 			arg2, err := func() (*BoxFloat, error) {
 				var zero *BoxFloat
 				_ = zero
@@ -3196,6 +3279,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			arg2.withToken(tokenOf(ctx))
 			arg3, err := func() (bool, error) {
 				var zero bool
 				_ = zero
@@ -3425,7 +3509,7 @@ func init() {
 }
 
 func (m *WasmModule) getEnumValue(ctx context.Context, value string) int {
-	ret, err := mod.ExportedFunction("wasm_bridge_get_" + value).Call(ctx)
+	ret, err := mod.invoke(ctx, "wasm_bridge_get_"+value)
 	if err != nil {
 		panic(err)
 	}
@@ -3454,12 +3538,36 @@ func getCompilationCache() wazero.CompilationCache {
 	return cache
 }
 
-func (m *WasmModule) ExportedFunction(name string) api.Function {
-	return m.mod.ExportedFunction(name)
+// registerCallback runs a write to the callback maps under the module's
+// lock, since host functions read them under it.
+func (m *WasmModule) registerCallback(write func()) {
+	_, leave := m.lock.enter(context.Background())
+	defer leave()
+	write()
+}
+
+// invoke runs one exported function under the module's lock: one call at a
+// time, process-wide, since Graphviz is single-threaded and wazero's Call
+// is not goroutine-safe. The lock is re-entrant on the goroutine holding
+// it, which is how a host function (Go code Graphviz called) reaches back
+// into the module.
+func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([]uint64, error) {
+	ctx, leave := m.lock.enter(ctx)
+	defer leave()
+	ret, err := m.mod.ExportedFunction(name).Call(ctx, args...)
+	if err != nil {
+		// A trap can follow from a callback's failure (its out-parameters
+		// were never written), so a parked error is returned with it.
+		return nil, errors.Join(err, m.takeCallbackError())
+	}
+	if err := m.takeCallbackError(); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (m *WasmModule) malloc(ctx context.Context, size uint64) (uint64, error) {
-	ret, err := m.ExportedFunction("malloc").Call(ctx, size)
+	ret, err := m.invoke(ctx, "malloc", size)
 	if err != nil {
 		return 0, err
 	}
@@ -3467,14 +3575,14 @@ func (m *WasmModule) malloc(ctx context.Context, size uint64) (uint64, error) {
 }
 
 func (m *WasmModule) free(ctx context.Context, p uint64) error {
-	if _, err := m.ExportedFunction("free").Call(ctx, p); err != nil {
+	if _, err := m.invoke(ctx, "free", p); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *WasmModule) newObject(ctx context.Context, name string) (uint64, error) {
-	ret, err := mod.ExportedFunction("wasm_bridge_new_" + name).Call(ctx)
+	ret, err := m.invoke(ctx, "wasm_bridge_new_"+name)
 	if err != nil {
 		return 0, err
 	}
@@ -3482,14 +3590,14 @@ func (m *WasmModule) newObject(ctx context.Context, name string) (uint64, error)
 }
 
 func (m *WasmModule) setField(ctx context.Context, name string, recv, arg uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_"+name).Call(ctx, recv, arg); err != nil {
+	if _, err := m.invoke(ctx, "wasm_bridge_set_"+name, recv, arg); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *WasmModule) setFieldFunction(ctx context.Context, name string, recv uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_"+name).Call(ctx, recv); err != nil {
+	if _, err := m.invoke(ctx, "wasm_bridge_set_"+name, recv); err != nil {
 		return err
 	}
 	return nil
@@ -3506,10 +3614,10 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 		}
 	}()
 
-	if _, err := m.ExportedFunction("wasm_bridge_get_"+name).Call(ctx, recv, retPtr); err != nil {
+	if _, err := m.invoke(ctx, "wasm_bridge_get_"+name, recv, retPtr); err != nil {
 		return 0, err
 	}
-	p, err := m.readU32(retPtr)
+	p, err := m.readU32(ctx, retPtr)
 	if err != nil {
 		return 0, err
 	}
@@ -3520,12 +3628,8 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 // function ran comes back from here, after Graphviz has unwound normally;
 // a wazero error (a trap, a panic in a callback) comes back as is.
 func (m *WasmModule) call(ctx context.Context, name string, args ...uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_"+name).Call(ctx, args...); err != nil {
-		// A trap can follow from a callback's failure (its out-parameters
-		// were never written), so a parked error is returned with it.
-		return errors.Join(err, m.takeCallbackError())
-	}
-	return m.takeCallbackError()
+	_, err := m.invoke(ctx, "wasm_bridge_"+name, args...)
+	return err
 }
 
 func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint64) (r uint64, e error) {
@@ -3542,25 +3646,33 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 	if err := m.call(ctx, name, append(append([]uint64{}, args...), retPtr)...); err != nil {
 		return 0, err
 	}
-	p, err := m.readU32(retPtr)
+	p, err := m.readU32(ctx, retPtr)
 	if err != nil {
 		return 0, err
 	}
 	return p, nil
 }
 
-func (m *WasmModule) read(addr, length uint64) ([]byte, error) {
-	bytes, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
+// The memory helpers hold the lock too: another goroutine's call can grow
+// the memory, which moves it.
+func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, error) {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
+	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
 	if !ok {
 		return nil, fmt.Errorf(
 			`failed to read wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
 			addr, length, m.mod.Memory().Size(),
 		)
 	}
-	return bytes, nil
+	// Read returns a view of the module's memory, which another call may
+	// move or overwrite once the lock is released; the caller gets a copy.
+	return bytes.Clone(view), nil
 }
 
-func (m *WasmModule) readU32(addr uint64) (uint64, error) {
+func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
 	if !ok {
 		return 0, fmt.Errorf(
@@ -3571,7 +3683,9 @@ func (m *WasmModule) readU32(addr uint64) (uint64, error) {
 	return uint64(p), nil
 }
 
-func (m *WasmModule) write(p uint64, b []byte) error {
+func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
 		return fmt.Errorf(
 			`failed to write wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
@@ -3581,7 +3695,9 @@ func (m *WasmModule) write(p uint64, b []byte) error {
 	return nil
 }
 
-func (m *WasmModule) writeU32(p uint64, v uint32) error {
+func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
@@ -3591,7 +3707,9 @@ func (m *WasmModule) writeU32(p uint64, v uint32) error {
 	return nil
 }
 
-func (m *WasmModule) writeU64(p uint64, v uint64) error {
+func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
@@ -3601,7 +3719,9 @@ func (m *WasmModule) writeU64(p uint64, v uint64) error {
 	return nil
 }
 
-func (m *WasmModule) writeF64(p uint64, v float64) error {
+func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
@@ -3620,24 +3740,24 @@ func (m *WasmModule) NewPtr(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if err := m.writeU32(p, 0); err != nil {
+	if err := m.writeU32(ctx, p, 0); err != nil {
 		return 0, err
 	}
 	return p, nil
 }
 
 func (m *WasmModule) toSlice(ctx context.Context, p uint64) ([]uint64, error) {
-	length, err := m.readU32(p)
+	length, err := m.readU32(ctx, p)
 	if err != nil {
 		return nil, err
 	}
-	data, err := m.readU32(p + 4)
+	data, err := m.readU32(ctx, p+4)
 	if err != nil {
 		return nil, err
 	}
 	var ret []uint64
 	for i := uint64(0); i < length; i++ {
-		p, err := m.readU32(data + 8*i)
+		p, err := m.readU32(ctx, data+8*i)
 		if err != nil {
 			return nil, err
 		}
@@ -3785,18 +3905,18 @@ func (m *WasmModule) toString(ctx context.Context, p uint64) (string, error) {
 	if p == 0 {
 		return "", nil
 	}
-	dataAddr, err := m.readU32(p)
+	dataAddr, err := m.readU32(ctx, p)
 	if err != nil {
 		return "", err
 	}
-	length, err := m.readU32(p + 4)
+	length, err := m.readU32(ctx, p+4)
 	if err != nil {
 		return "", err
 	}
 	if length == 0 {
 		return "", nil
 	}
-	bytes, err := m.read(dataAddr, length)
+	bytes, err := m.read(ctx, dataAddr, length)
 	if err != nil {
 		return "", err
 	}
@@ -3913,7 +4033,7 @@ func (m *WasmModule) toIntArrayWasmValue(ctx context.Context, v []int) (uint64, 
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -3928,7 +4048,7 @@ func (m *WasmModule) toInt32ArrayWasmValue(ctx context.Context, v []int32) (uint
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -3943,7 +4063,7 @@ func (m *WasmModule) toInt64ArrayWasmValue(ctx context.Context, v []int64) (uint
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -3958,7 +4078,7 @@ func (m *WasmModule) toUintArrayWasmValue(ctx context.Context, v []uint) (uint64
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -3973,7 +4093,7 @@ func (m *WasmModule) toUint32ArrayWasmValue(ctx context.Context, v []uint32) (ui
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -3988,7 +4108,7 @@ func (m *WasmModule) toUint64ArrayWasmValue(ctx context.Context, v []uint64) (ui
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, vv); err != nil {
+		if err := m.writeU64(ctx, ptr, vv); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -4003,7 +4123,7 @@ func (m *WasmModule) toDoubleArrayWasmValue(ctx context.Context, v []float64) (u
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeF64(ptr, vv); err != nil {
+		if err := m.writeF64(ctx, ptr, vv); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -4030,7 +4150,7 @@ func (m *WasmModule) toFloatStringArrayWasmValue(ctx context.Context, v []float3
 		if err != nil {
 			return 0, err
 		}
-		if err := m.writeU64(ptr, f); err != nil {
+		if err := m.writeU64(ctx, ptr, f); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -4049,7 +4169,7 @@ func (m *WasmModule) toDoubleStringArrayWasmValue(ctx context.Context, v []float
 		if err != nil {
 			return 0, err
 		}
-		if err := m.writeU64(ptr, f); err != nil {
+		if err := m.writeU64(ctx, ptr, f); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -4062,7 +4182,7 @@ func (m *WasmModule) toStringWasmValue(ctx context.Context, s string) (uint64, e
 	if err != nil {
 		return 0, err
 	}
-	if err := m.write(ret, append([]byte(s), 0)); err != nil {
+	if err := m.write(ctx, ret, append([]byte(s), 0)); err != nil {
 		return 0, err
 	}
 	return ret, nil
@@ -4078,20 +4198,20 @@ func (m *WasmModule) toObjectArrayWasmValue(ctx context.Context, v any) (uint64,
 		return 0, err
 	}
 	rv := reflect.ValueOf(v)
-	if err := m.writeU32(ret, uint32(rv.Len())); err != nil {
+	if err := m.writeU32(ctx, ret, uint32(rv.Len())); err != nil {
 		return 0, err
 	}
 	data, err := m.malloc(ctx, uint64(8*rv.Len()))
 	if err != nil {
 		return 0, err
 	}
-	if err := m.writeU32(ret+4, uint32(data)); err != nil {
+	if err := m.writeU32(ctx, ret+4, uint32(data)); err != nil {
 		return 0, err
 	}
 	ptr := data
 	for i := 0; i < rv.Len(); i++ {
 		vv := rv.Index(i).Interface().(wasmStruct)
-		if err := m.writeU32(ptr, uint32(vv.getPtr())); err != nil {
+		if err := m.writeU32(ctx, ptr, uint32(vv.getPtr())); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -4101,8 +4221,27 @@ func (m *WasmModule) toObjectArrayWasmValue(ctx context.Context, v any) (uint64,
 
 type Record struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Record) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Record) withToken(token *callToken) *Record {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewRecord(ctx context.Context) (*Record, error) {
 	o, err := mod.newObject(ctx, "Record")
 	if err != nil {
@@ -4133,7 +4272,7 @@ func newRecordSlice(v []uint64) []*Record {
 	return ret
 }
 func (v *Record) SetName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4142,7 +4281,7 @@ func (v *Record) SetName(_arg string) error {
 }
 
 func (v *Record) GetName() string {
-	ret, err := v.getName(context.Background())
+	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4163,7 +4302,7 @@ func (v *Record) getName(ctx context.Context) (string, error) {
 }
 
 func (v *Record) SetNext(_arg *Record) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4172,7 +4311,7 @@ func (v *Record) SetNext(_arg *Record) error {
 }
 
 func (v *Record) GetNext() *Record {
-	ret, err := v.getNext(context.Background())
+	ret, err := v.getNext(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4186,13 +4325,33 @@ func (v *Record) getNext(ctx context.Context) (*Record, error) {
 		return zero, err
 	}
 	ret := newRecord(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type Tag struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Tag) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Tag) withToken(token *callToken) *Tag {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewTag(ctx context.Context) (*Tag, error) {
 	o, err := mod.newObject(ctx, "Tag")
 	if err != nil {
@@ -4223,7 +4382,7 @@ func newTagSlice(v []uint64) []*Tag {
 	return ret
 }
 func (v *Tag) SetObjectType(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4232,7 +4391,7 @@ func (v *Tag) SetObjectType(_arg uint32) error {
 }
 
 func (v *Tag) GetObjectType() uint32 {
-	ret, err := v.getObjectType(context.Background())
+	ret, err := v.getObjectType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4250,7 +4409,7 @@ func (v *Tag) getObjectType(ctx context.Context) (uint32, error) {
 }
 
 func (v *Tag) SetMtflock(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4259,7 +4418,7 @@ func (v *Tag) SetMtflock(_arg uint32) error {
 }
 
 func (v *Tag) GetMtflock() uint32 {
-	ret, err := v.getMtflock(context.Background())
+	ret, err := v.getMtflock(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4277,7 +4436,7 @@ func (v *Tag) getMtflock(ctx context.Context) (uint32, error) {
 }
 
 func (v *Tag) SetAttrwf(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4286,7 +4445,7 @@ func (v *Tag) SetAttrwf(_arg uint32) error {
 }
 
 func (v *Tag) GetAttrwf() uint32 {
-	ret, err := v.getAttrwf(context.Background())
+	ret, err := v.getAttrwf(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4304,7 +4463,7 @@ func (v *Tag) getAttrwf(ctx context.Context) (uint32, error) {
 }
 
 func (v *Tag) SetSeq(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4313,7 +4472,7 @@ func (v *Tag) SetSeq(_arg uint32) error {
 }
 
 func (v *Tag) GetSeq() uint32 {
-	ret, err := v.getSeq(context.Background())
+	ret, err := v.getSeq(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4331,7 +4490,7 @@ func (v *Tag) getSeq(ctx context.Context) (uint32, error) {
 }
 
 func (v *Tag) SetId(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4340,7 +4499,7 @@ func (v *Tag) SetId(_arg uint64) error {
 }
 
 func (v *Tag) GetId() uint64 {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4359,8 +4518,27 @@ func (v *Tag) getId(ctx context.Context) (uint64, error) {
 
 type Object struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Object) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Object) withToken(token *callToken) *Object {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewObject(ctx context.Context) (*Object, error) {
 	o, err := mod.newObject(ctx, "Object")
 	if err != nil {
@@ -4391,7 +4569,7 @@ func newObjectSlice(v []uint64) []*Object {
 	return ret
 }
 func (v *Object) SetTag(_arg *Tag) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4400,7 +4578,7 @@ func (v *Object) SetTag(_arg *Tag) error {
 }
 
 func (v *Object) GetTag() *Tag {
-	ret, err := v.getTag(context.Background())
+	ret, err := v.getTag(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4414,11 +4592,12 @@ func (v *Object) getTag(ctx context.Context) (*Tag, error) {
 		return zero, err
 	}
 	ret := newTag(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Object) SetData(_arg *Record) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4427,7 +4606,7 @@ func (v *Object) SetData(_arg *Record) error {
 }
 
 func (v *Object) GetData() *Record {
-	ret, err := v.getData(context.Background())
+	ret, err := v.getData(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4441,13 +4620,33 @@ func (v *Object) getData(ctx context.Context) (*Record, error) {
 		return zero, err
 	}
 	ret := newRecord(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type SubNode struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *SubNode) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *SubNode) withToken(token *callToken) *SubNode {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewSubNode(ctx context.Context) (*SubNode, error) {
 	o, err := mod.newObject(ctx, "SubNode")
 	if err != nil {
@@ -4478,7 +4677,7 @@ func newSubNodeSlice(v []uint64) []*SubNode {
 	return ret
 }
 func (v *SubNode) SetSeqLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4487,7 +4686,7 @@ func (v *SubNode) SetSeqLink(_arg *DictLink) error {
 }
 
 func (v *SubNode) GetSeqLink() *DictLink {
-	ret, err := v.getSeqLink(context.Background())
+	ret, err := v.getSeqLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4501,11 +4700,12 @@ func (v *SubNode) getSeqLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *SubNode) SetIdLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4514,7 +4714,7 @@ func (v *SubNode) SetIdLink(_arg *DictLink) error {
 }
 
 func (v *SubNode) GetIdLink() *DictLink {
-	ret, err := v.getIdLink(context.Background())
+	ret, err := v.getIdLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4528,11 +4728,12 @@ func (v *SubNode) getIdLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *SubNode) SetNode(_arg *Node) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4541,7 +4742,7 @@ func (v *SubNode) SetNode(_arg *Node) error {
 }
 
 func (v *SubNode) GetNode() *Node {
-	ret, err := v.getNode(context.Background())
+	ret, err := v.getNode(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4555,11 +4756,12 @@ func (v *SubNode) getNode(ctx context.Context) (*Node, error) {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *SubNode) SetInId(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4568,7 +4770,7 @@ func (v *SubNode) SetInId(_arg *DictLink) error {
 }
 
 func (v *SubNode) GetInId() *DictLink {
-	ret, err := v.getInId(context.Background())
+	ret, err := v.getInId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4582,11 +4784,12 @@ func (v *SubNode) getInId(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *SubNode) SetOutId(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4595,7 +4798,7 @@ func (v *SubNode) SetOutId(_arg *DictLink) error {
 }
 
 func (v *SubNode) GetOutId() *DictLink {
-	ret, err := v.getOutId(context.Background())
+	ret, err := v.getOutId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4609,11 +4812,12 @@ func (v *SubNode) getOutId(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *SubNode) SetInSeq(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4622,7 +4826,7 @@ func (v *SubNode) SetInSeq(_arg *DictLink) error {
 }
 
 func (v *SubNode) GetInSeq() *DictLink {
-	ret, err := v.getInSeq(context.Background())
+	ret, err := v.getInSeq(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4636,11 +4840,12 @@ func (v *SubNode) getInSeq(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *SubNode) SetOutSeq(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4649,7 +4854,7 @@ func (v *SubNode) SetOutSeq(_arg *DictLink) error {
 }
 
 func (v *SubNode) GetOutSeq() *DictLink {
-	ret, err := v.getOutSeq(context.Background())
+	ret, err := v.getOutSeq(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4663,13 +4868,33 @@ func (v *SubNode) getOutSeq(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type Node struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Node) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Node) withToken(token *callToken) *Node {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewNode(ctx context.Context) (*Node, error) {
 	o, err := mod.newObject(ctx, "Node")
 	if err != nil {
@@ -4700,7 +4925,7 @@ func newNodeSlice(v []uint64) []*Node {
 	return ret
 }
 func (v *Node) SetBase(_arg *Object) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4709,7 +4934,7 @@ func (v *Node) SetBase(_arg *Object) error {
 }
 
 func (v *Node) GetBase() *Object {
-	ret, err := v.getBase(context.Background())
+	ret, err := v.getBase(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4723,11 +4948,12 @@ func (v *Node) getBase(ctx context.Context) (*Object, error) {
 		return zero, err
 	}
 	ret := newObject(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Node) SetRoot(_arg *Graph) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4736,7 +4962,7 @@ func (v *Node) SetRoot(_arg *Graph) error {
 }
 
 func (v *Node) GetRoot() *Graph {
-	ret, err := v.getRoot(context.Background())
+	ret, err := v.getRoot(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4750,11 +4976,12 @@ func (v *Node) getRoot(ctx context.Context) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Node) SetMainsub(_arg *SubNode) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4763,7 +4990,7 @@ func (v *Node) SetMainsub(_arg *SubNode) error {
 }
 
 func (v *Node) GetMainsub() *SubNode {
-	ret, err := v.getMainsub(context.Background())
+	ret, err := v.getMainsub(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4777,13 +5004,33 @@ func (v *Node) getMainsub(ctx context.Context) (*SubNode, error) {
 		return zero, err
 	}
 	ret := newSubNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type Edge struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Edge) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Edge) withToken(token *callToken) *Edge {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewEdge(ctx context.Context) (*Edge, error) {
 	o, err := mod.newObject(ctx, "Edge")
 	if err != nil {
@@ -4814,7 +5061,7 @@ func newEdgeSlice(v []uint64) []*Edge {
 	return ret
 }
 func (v *Edge) SetBase(_arg *Object) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4823,7 +5070,7 @@ func (v *Edge) SetBase(_arg *Object) error {
 }
 
 func (v *Edge) GetBase() *Object {
-	ret, err := v.getBase(context.Background())
+	ret, err := v.getBase(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4837,11 +5084,12 @@ func (v *Edge) getBase(ctx context.Context) (*Object, error) {
 		return zero, err
 	}
 	ret := newObject(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Edge) SetIdLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4850,7 +5098,7 @@ func (v *Edge) SetIdLink(_arg *DictLink) error {
 }
 
 func (v *Edge) GetIdLink() *DictLink {
-	ret, err := v.getIdLink(context.Background())
+	ret, err := v.getIdLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4864,11 +5112,12 @@ func (v *Edge) getIdLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Edge) SetSeqLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4877,7 +5126,7 @@ func (v *Edge) SetSeqLink(_arg *DictLink) error {
 }
 
 func (v *Edge) GetSeqLink() *DictLink {
-	ret, err := v.getSeqLink(context.Background())
+	ret, err := v.getSeqLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4891,11 +5140,12 @@ func (v *Edge) getSeqLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Edge) SetNode(_arg *Node) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4904,7 +5154,7 @@ func (v *Edge) SetNode(_arg *Node) error {
 }
 
 func (v *Edge) GetNode() *Node {
-	ret, err := v.getNode(context.Background())
+	ret, err := v.getNode(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4918,13 +5168,33 @@ func (v *Edge) getNode(ctx context.Context) (*Node, error) {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type EdgePair struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *EdgePair) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *EdgePair) withToken(token *callToken) *EdgePair {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewEdgePair(ctx context.Context) (*EdgePair, error) {
 	o, err := mod.newObject(ctx, "EdgePair")
 	if err != nil {
@@ -4955,7 +5225,7 @@ func newEdgePairSlice(v []uint64) []*EdgePair {
 	return ret
 }
 func (v *EdgePair) SetOut(_arg *Edge) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4964,7 +5234,7 @@ func (v *EdgePair) SetOut(_arg *Edge) error {
 }
 
 func (v *EdgePair) GetOut() *Edge {
-	ret, err := v.getOut(context.Background())
+	ret, err := v.getOut(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -4978,11 +5248,12 @@ func (v *EdgePair) getOut(ctx context.Context) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *EdgePair) SetIn(_arg *Edge) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -4991,7 +5262,7 @@ func (v *EdgePair) SetIn(_arg *Edge) error {
 }
 
 func (v *EdgePair) GetIn() *Edge {
-	ret, err := v.getIn(context.Background())
+	ret, err := v.getIn(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5005,13 +5276,33 @@ func (v *EdgePair) getIn(ctx context.Context) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type GraphDescriptor struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *GraphDescriptor) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *GraphDescriptor) withToken(token *callToken) *GraphDescriptor {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewGraphDescriptor(ctx context.Context) (*GraphDescriptor, error) {
 	o, err := mod.newObject(ctx, "GraphDescriptor")
 	if err != nil {
@@ -5042,7 +5333,7 @@ func newGraphDescriptorSlice(v []uint64) []*GraphDescriptor {
 	return ret
 }
 func (v *GraphDescriptor) SetDirected(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5051,7 +5342,7 @@ func (v *GraphDescriptor) SetDirected(_arg uint32) error {
 }
 
 func (v *GraphDescriptor) GetDirected() uint32 {
-	ret, err := v.getDirected(context.Background())
+	ret, err := v.getDirected(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5069,7 +5360,7 @@ func (v *GraphDescriptor) getDirected(ctx context.Context) (uint32, error) {
 }
 
 func (v *GraphDescriptor) SetStrict(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5078,7 +5369,7 @@ func (v *GraphDescriptor) SetStrict(_arg uint32) error {
 }
 
 func (v *GraphDescriptor) GetStrict() uint32 {
-	ret, err := v.getStrict(context.Background())
+	ret, err := v.getStrict(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5096,7 +5387,7 @@ func (v *GraphDescriptor) getStrict(ctx context.Context) (uint32, error) {
 }
 
 func (v *GraphDescriptor) SetNoLoop(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5105,7 +5396,7 @@ func (v *GraphDescriptor) SetNoLoop(_arg uint32) error {
 }
 
 func (v *GraphDescriptor) GetNoLoop() uint32 {
-	ret, err := v.getNoLoop(context.Background())
+	ret, err := v.getNoLoop(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5123,7 +5414,7 @@ func (v *GraphDescriptor) getNoLoop(ctx context.Context) (uint32, error) {
 }
 
 func (v *GraphDescriptor) SetMaingraph(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5132,7 +5423,7 @@ func (v *GraphDescriptor) SetMaingraph(_arg uint32) error {
 }
 
 func (v *GraphDescriptor) GetMaingraph() uint32 {
-	ret, err := v.getMaingraph(context.Background())
+	ret, err := v.getMaingraph(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5150,7 +5441,7 @@ func (v *GraphDescriptor) getMaingraph(ctx context.Context) (uint32, error) {
 }
 
 func (v *GraphDescriptor) SetNoWrite(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5159,7 +5450,7 @@ func (v *GraphDescriptor) SetNoWrite(_arg uint32) error {
 }
 
 func (v *GraphDescriptor) GetNoWrite() uint32 {
-	ret, err := v.getNoWrite(context.Background())
+	ret, err := v.getNoWrite(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5177,7 +5468,7 @@ func (v *GraphDescriptor) getNoWrite(ctx context.Context) (uint32, error) {
 }
 
 func (v *GraphDescriptor) SetHasAttrs(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5186,7 +5477,7 @@ func (v *GraphDescriptor) SetHasAttrs(_arg uint32) error {
 }
 
 func (v *GraphDescriptor) GetHasAttrs() uint32 {
-	ret, err := v.getHasAttrs(context.Background())
+	ret, err := v.getHasAttrs(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5204,7 +5495,7 @@ func (v *GraphDescriptor) getHasAttrs(ctx context.Context) (uint32, error) {
 }
 
 func (v *GraphDescriptor) SetHasCmpnd(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5213,7 +5504,7 @@ func (v *GraphDescriptor) SetHasCmpnd(_arg uint32) error {
 }
 
 func (v *GraphDescriptor) GetHasCmpnd() uint32 {
-	ret, err := v.getHasCmpnd(context.Background())
+	ret, err := v.getHasCmpnd(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5232,8 +5523,27 @@ func (v *GraphDescriptor) getHasCmpnd(ctx context.Context) (uint32, error) {
 
 type IDAllocator struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *IDAllocator) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *IDAllocator) withToken(token *callToken) *IDAllocator {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewIDAllocator(ctx context.Context) (*IDAllocator, error) {
 	o, err := mod.newObject(ctx, "IDAllocator")
 	if err != nil {
@@ -5267,7 +5577,7 @@ func (v *IDAllocator) SetOpen(ctx context.Context, arg *CallbackFunc[func(contex
 	if mod.lookupFuncMap.IDAllocator_Open == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Open before")
 	}
-	mod.callbackFuncMap.IDAllocator_Open[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IDAllocator_Open[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IDAllocator_open", v.getPtr())
 }
 
@@ -5275,7 +5585,7 @@ func (v *IDAllocator) SetMap(ctx context.Context, arg *CallbackFunc[func(context
 	if mod.lookupFuncMap.IDAllocator_Map == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Map before")
 	}
-	mod.callbackFuncMap.IDAllocator_Map[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IDAllocator_Map[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IDAllocator_map", v.getPtr())
 }
 
@@ -5283,7 +5593,7 @@ func (v *IDAllocator) SetFree(ctx context.Context, arg *CallbackFunc[func(contex
 	if mod.lookupFuncMap.IDAllocator_Free == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Free before")
 	}
-	mod.callbackFuncMap.IDAllocator_Free[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IDAllocator_Free[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IDAllocator_free", v.getPtr())
 }
 
@@ -5291,7 +5601,7 @@ func (v *IDAllocator) SetPrint(ctx context.Context, arg *CallbackFunc[func(conte
 	if mod.lookupFuncMap.IDAllocator_Print == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Print before")
 	}
-	mod.callbackFuncMap.IDAllocator_Print[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IDAllocator_Print[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IDAllocator_print", v.getPtr())
 }
 
@@ -5299,7 +5609,7 @@ func (v *IDAllocator) SetClose(ctx context.Context, arg *CallbackFunc[func(conte
 	if mod.lookupFuncMap.IDAllocator_Close == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Close before")
 	}
-	mod.callbackFuncMap.IDAllocator_Close[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IDAllocator_Close[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IDAllocator_close", v.getPtr())
 }
 
@@ -5307,14 +5617,33 @@ func (v *IDAllocator) SetIdregister(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.IDAllocator_IdRegister == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_IdRegister before")
 	}
-	mod.callbackFuncMap.IDAllocator_IdRegister[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IDAllocator_IdRegister[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IDAllocator_idregister", v.getPtr())
 }
 
 type IOService struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *IOService) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *IOService) withToken(token *callToken) *IOService {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewIOService(ctx context.Context) (*IOService, error) {
 	o, err := mod.newObject(ctx, "IOService")
 	if err != nil {
@@ -5348,7 +5677,7 @@ func (v *IOService) SetAfread(ctx context.Context, arg *CallbackFunc[func(contex
 	if mod.lookupFuncMap.IOService_Afread == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IOService_Afread before")
 	}
-	mod.callbackFuncMap.IOService_Afread[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IOService_Afread[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IOService_afread", v.getPtr())
 }
 
@@ -5356,7 +5685,7 @@ func (v *IOService) SetPutstr(ctx context.Context, arg *CallbackFunc[func(contex
 	if mod.lookupFuncMap.IOService_Putstr == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IOService_Putstr before")
 	}
-	mod.callbackFuncMap.IOService_Putstr[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IOService_Putstr[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IOService_putstr", v.getPtr())
 }
 
@@ -5364,14 +5693,33 @@ func (v *IOService) SetFlush(ctx context.Context, arg *CallbackFunc[func(context
 	if mod.lookupFuncMap.IOService_Flush == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_IOService_Flush before")
 	}
-	mod.callbackFuncMap.IOService_Flush[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.IOService_Flush[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "IOService_flush", v.getPtr())
 }
 
 type ClientDiscipline struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *ClientDiscipline) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *ClientDiscipline) withToken(token *callToken) *ClientDiscipline {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewClientDiscipline(ctx context.Context) (*ClientDiscipline, error) {
 	o, err := mod.newObject(ctx, "ClientDiscipline")
 	if err != nil {
@@ -5402,7 +5750,7 @@ func newClientDisciplineSlice(v []uint64) []*ClientDiscipline {
 	return ret
 }
 func (v *ClientDiscipline) SetId(_arg *IDAllocator) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5411,7 +5759,7 @@ func (v *ClientDiscipline) SetId(_arg *IDAllocator) error {
 }
 
 func (v *ClientDiscipline) GetId() *IDAllocator {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5425,11 +5773,12 @@ func (v *ClientDiscipline) getId(ctx context.Context) (*IDAllocator, error) {
 		return zero, err
 	}
 	ret := newIDAllocator(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ClientDiscipline) SetIo(_arg *IOService) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5438,7 +5787,7 @@ func (v *ClientDiscipline) SetIo(_arg *IOService) error {
 }
 
 func (v *ClientDiscipline) GetIo() *IOService {
-	ret, err := v.getIo(context.Background())
+	ret, err := v.getIo(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5452,13 +5801,33 @@ func (v *ClientDiscipline) getIo(ctx context.Context) (*IOService, error) {
 		return zero, err
 	}
 	ret := newIOService(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type State struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *State) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *State) withToken(token *callToken) *State {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewState(ctx context.Context) (*State, error) {
 	o, err := mod.newObject(ctx, "State")
 	if err != nil {
@@ -5489,7 +5858,7 @@ func newStateSlice(v []uint64) []*State {
 	return ret
 }
 func (v *State) SetId(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5498,7 +5867,7 @@ func (v *State) SetId(_arg any) error {
 }
 
 func (v *State) GetId() any {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5517,8 +5886,27 @@ func (v *State) getId(ctx context.Context) (any, error) {
 
 type ClientEventCallback struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *ClientEventCallback) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *ClientEventCallback) withToken(token *callToken) *ClientEventCallback {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewClientEventCallback(ctx context.Context) (*ClientEventCallback, error) {
 	o, err := mod.newObject(ctx, "ClientEventCallback")
 	if err != nil {
@@ -5551,8 +5939,27 @@ func newClientEventCallbackSlice(v []uint64) []*ClientEventCallback {
 
 type CallbackStack struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *CallbackStack) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *CallbackStack) withToken(token *callToken) *CallbackStack {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewCallbackStack(ctx context.Context) (*CallbackStack, error) {
 	o, err := mod.newObject(ctx, "CallbackStack")
 	if err != nil {
@@ -5583,7 +5990,7 @@ func newCallbackStackSlice(v []uint64) []*CallbackStack {
 	return ret
 }
 func (v *CallbackStack) SetF(_arg *ClientEventCallback) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5592,7 +5999,7 @@ func (v *CallbackStack) SetF(_arg *ClientEventCallback) error {
 }
 
 func (v *CallbackStack) GetF() *ClientEventCallback {
-	ret, err := v.getF(context.Background())
+	ret, err := v.getF(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5606,11 +6013,12 @@ func (v *CallbackStack) getF(ctx context.Context) (*ClientEventCallback, error) 
 		return zero, err
 	}
 	ret := newClientEventCallback(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *CallbackStack) SetState(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5619,7 +6027,7 @@ func (v *CallbackStack) SetState(_arg any) error {
 }
 
 func (v *CallbackStack) GetState() any {
-	ret, err := v.getState(context.Background())
+	ret, err := v.getState(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5637,7 +6045,7 @@ func (v *CallbackStack) getState(ctx context.Context) (any, error) {
 }
 
 func (v *CallbackStack) SetPrev(_arg *CallbackStack) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5646,7 +6054,7 @@ func (v *CallbackStack) SetPrev(_arg *CallbackStack) error {
 }
 
 func (v *CallbackStack) GetPrev() *CallbackStack {
-	ret, err := v.getPrev(context.Background())
+	ret, err := v.getPrev(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5660,13 +6068,33 @@ func (v *CallbackStack) getPrev(ctx context.Context) (*CallbackStack, error) {
 		return zero, err
 	}
 	ret := newCallbackStack(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type CommonFields struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *CommonFields) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *CommonFields) withToken(token *callToken) *CommonFields {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewCommonFields(ctx context.Context) (*CommonFields, error) {
 	o, err := mod.newObject(ctx, "CommonFields")
 	if err != nil {
@@ -5697,7 +6125,7 @@ func newCommonFieldsSlice(v []uint64) []*CommonFields {
 	return ret
 }
 func (v *CommonFields) SetDisc(_arg *ClientDiscipline) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5706,7 +6134,7 @@ func (v *CommonFields) SetDisc(_arg *ClientDiscipline) error {
 }
 
 func (v *CommonFields) GetDisc() *ClientDiscipline {
-	ret, err := v.getDisc(context.Background())
+	ret, err := v.getDisc(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5720,11 +6148,12 @@ func (v *CommonFields) getDisc(ctx context.Context) (*ClientDiscipline, error) {
 		return zero, err
 	}
 	ret := newClientDiscipline(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *CommonFields) SetState(_arg *State) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5733,7 +6162,7 @@ func (v *CommonFields) SetState(_arg *State) error {
 }
 
 func (v *CommonFields) GetState() *State {
-	ret, err := v.getState(context.Background())
+	ret, err := v.getState(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5747,11 +6176,12 @@ func (v *CommonFields) getState(ctx context.Context) (*State, error) {
 		return zero, err
 	}
 	ret := newState(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *CommonFields) SetStrdict(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5760,7 +6190,7 @@ func (v *CommonFields) SetStrdict(_arg *Dict) error {
 }
 
 func (v *CommonFields) GetStrdict() *Dict {
-	ret, err := v.getStrdict(context.Background())
+	ret, err := v.getStrdict(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5774,11 +6204,12 @@ func (v *CommonFields) getStrdict(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *CommonFields) SetSeq(_arg []uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64ArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5787,7 +6218,7 @@ func (v *CommonFields) SetSeq(_arg []uint64) error {
 }
 
 func (v *CommonFields) GetSeq() []uint64 {
-	ret, err := v.getSeq(context.Background())
+	ret, err := v.getSeq(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5809,7 +6240,7 @@ func (v *CommonFields) getSeq(ctx context.Context) ([]uint64, error) {
 }
 
 func (v *CommonFields) SetCb(_arg *CallbackStack) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5818,7 +6249,7 @@ func (v *CommonFields) SetCb(_arg *CallbackStack) error {
 }
 
 func (v *CommonFields) GetCb() *CallbackStack {
-	ret, err := v.getCb(context.Background())
+	ret, err := v.getCb(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5832,11 +6263,12 @@ func (v *CommonFields) getCb(ctx context.Context) (*CallbackStack, error) {
 		return zero, err
 	}
 	ret := newCallbackStack(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *CommonFields) SetLookupByName(_arg []*Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5845,7 +6277,7 @@ func (v *CommonFields) SetLookupByName(_arg []*Dict) error {
 }
 
 func (v *CommonFields) GetLookupByName() []*Dict {
-	ret, err := v.getLookupByName(context.Background())
+	ret, err := v.getLookupByName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5863,11 +6295,14 @@ func (v *CommonFields) getLookupByName(ctx context.Context) ([]*Dict, error) {
 		return zero, err
 	}
 	ret := newDictSlice(slice)
+	for _, e := range ret {
+		e.withToken(v.token)
+	}
 	return ret, nil
 }
 
 func (v *CommonFields) SetLookupById(_arg []*Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5876,7 +6311,7 @@ func (v *CommonFields) SetLookupById(_arg []*Dict) error {
 }
 
 func (v *CommonFields) GetLookupById() []*Dict {
-	ret, err := v.getLookupById(context.Background())
+	ret, err := v.getLookupById(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5894,13 +6329,35 @@ func (v *CommonFields) getLookupById(ctx context.Context) ([]*Dict, error) {
 		return zero, err
 	}
 	ret := newDictSlice(slice)
+	for _, e := range ret {
+		e.withToken(v.token)
+	}
 	return ret, nil
 }
 
 type Graph struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Graph) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Graph) withToken(token *callToken) *Graph {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewGraph(ctx context.Context) (*Graph, error) {
 	o, err := mod.newObject(ctx, "Graph")
 	if err != nil {
@@ -5931,7 +6388,7 @@ func newGraphSlice(v []uint64) []*Graph {
 	return ret
 }
 func (v *Graph) SetBase(_arg *Object) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5940,7 +6397,7 @@ func (v *Graph) SetBase(_arg *Object) error {
 }
 
 func (v *Graph) GetBase() *Object {
-	ret, err := v.getBase(context.Background())
+	ret, err := v.getBase(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5954,11 +6411,12 @@ func (v *Graph) getBase(ctx context.Context) (*Object, error) {
 		return zero, err
 	}
 	ret := newObject(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetDesc(_arg *GraphDescriptor) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5967,7 +6425,7 @@ func (v *Graph) SetDesc(_arg *GraphDescriptor) error {
 }
 
 func (v *Graph) GetDesc() *GraphDescriptor {
-	ret, err := v.getDesc(context.Background())
+	ret, err := v.getDesc(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -5981,11 +6439,12 @@ func (v *Graph) getDesc(ctx context.Context) (*GraphDescriptor, error) {
 		return zero, err
 	}
 	ret := newGraphDescriptor(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetSeqLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -5994,7 +6453,7 @@ func (v *Graph) SetSeqLink(_arg *DictLink) error {
 }
 
 func (v *Graph) GetSeqLink() *DictLink {
-	ret, err := v.getSeqLink(context.Background())
+	ret, err := v.getSeqLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6008,11 +6467,12 @@ func (v *Graph) getSeqLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetIdLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6021,7 +6481,7 @@ func (v *Graph) SetIdLink(_arg *DictLink) error {
 }
 
 func (v *Graph) GetIdLink() *DictLink {
-	ret, err := v.getIdLink(context.Background())
+	ret, err := v.getIdLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6035,11 +6495,12 @@ func (v *Graph) getIdLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetNSeq(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6048,7 +6509,7 @@ func (v *Graph) SetNSeq(_arg *Dict) error {
 }
 
 func (v *Graph) GetNSeq() *Dict {
-	ret, err := v.getNSeq(context.Background())
+	ret, err := v.getNSeq(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6062,11 +6523,12 @@ func (v *Graph) getNSeq(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetESeq(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6075,7 +6537,7 @@ func (v *Graph) SetESeq(_arg *Dict) error {
 }
 
 func (v *Graph) GetESeq() *Dict {
-	ret, err := v.getESeq(context.Background())
+	ret, err := v.getESeq(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6089,11 +6551,12 @@ func (v *Graph) getESeq(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetEId(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6102,7 +6565,7 @@ func (v *Graph) SetEId(_arg *Dict) error {
 }
 
 func (v *Graph) GetEId() *Dict {
-	ret, err := v.getEId(context.Background())
+	ret, err := v.getEId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6116,11 +6579,12 @@ func (v *Graph) getEId(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetGSeq(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6129,7 +6593,7 @@ func (v *Graph) SetGSeq(_arg *Dict) error {
 }
 
 func (v *Graph) GetGSeq() *Dict {
-	ret, err := v.getGSeq(context.Background())
+	ret, err := v.getGSeq(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6143,11 +6607,12 @@ func (v *Graph) getGSeq(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetGId(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6156,7 +6621,7 @@ func (v *Graph) SetGId(_arg *Dict) error {
 }
 
 func (v *Graph) GetGId() *Dict {
-	ret, err := v.getGId(context.Background())
+	ret, err := v.getGId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6170,11 +6635,12 @@ func (v *Graph) getGId(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetParent(_arg *Graph) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6183,7 +6649,7 @@ func (v *Graph) SetParent(_arg *Graph) error {
 }
 
 func (v *Graph) GetParent() *Graph {
-	ret, err := v.getParent(context.Background())
+	ret, err := v.getParent(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6197,11 +6663,12 @@ func (v *Graph) getParent(ctx context.Context) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetRoot(_arg *Graph) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6210,7 +6677,7 @@ func (v *Graph) SetRoot(_arg *Graph) error {
 }
 
 func (v *Graph) GetRoot() *Graph {
-	ret, err := v.getRoot(context.Background())
+	ret, err := v.getRoot(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6224,11 +6691,12 @@ func (v *Graph) getRoot(ctx context.Context) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SetClos(_arg *CommonFields) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6237,7 +6705,7 @@ func (v *Graph) SetClos(_arg *CommonFields) error {
 }
 
 func (v *Graph) GetClos() *CommonFields {
-	ret, err := v.getClos(context.Background())
+	ret, err := v.getClos(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6251,13 +6719,33 @@ func (v *Graph) getClos(ctx context.Context) (*CommonFields, error) {
 		return zero, err
 	}
 	ret := newCommonFields(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type Attr struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Attr) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Attr) withToken(token *callToken) *Attr {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewAttr(ctx context.Context) (*Attr, error) {
 	o, err := mod.newObject(ctx, "Attr")
 	if err != nil {
@@ -6288,7 +6776,7 @@ func newAttrSlice(v []uint64) []*Attr {
 	return ret
 }
 func (v *Attr) SetH(_arg *Record) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6297,7 +6785,7 @@ func (v *Attr) SetH(_arg *Record) error {
 }
 
 func (v *Attr) GetH() *Record {
-	ret, err := v.getH(context.Background())
+	ret, err := v.getH(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6311,11 +6799,12 @@ func (v *Attr) getH(ctx context.Context) (*Record, error) {
 		return zero, err
 	}
 	ret := newRecord(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Attr) SetDict(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6324,7 +6813,7 @@ func (v *Attr) SetDict(_arg *Dict) error {
 }
 
 func (v *Attr) GetDict() *Dict {
-	ret, err := v.getDict(context.Background())
+	ret, err := v.getDict(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6338,11 +6827,12 @@ func (v *Attr) getDict(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Attr) SetStr(_arg []string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6351,7 +6841,7 @@ func (v *Attr) SetStr(_arg []string) error {
 }
 
 func (v *Attr) GetStr() []string {
-	ret, err := v.getStr(context.Background())
+	ret, err := v.getStr(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6377,8 +6867,27 @@ func (v *Attr) getStr(ctx context.Context) ([]string, error) {
 
 type Sym struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Sym) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Sym) withToken(token *callToken) *Sym {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewSym(ctx context.Context) (*Sym, error) {
 	o, err := mod.newObject(ctx, "Sym")
 	if err != nil {
@@ -6409,7 +6918,7 @@ func newSymSlice(v []uint64) []*Sym {
 	return ret
 }
 func (v *Sym) SetLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6418,7 +6927,7 @@ func (v *Sym) SetLink(_arg *DictLink) error {
 }
 
 func (v *Sym) GetLink() *DictLink {
-	ret, err := v.getLink(context.Background())
+	ret, err := v.getLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6432,11 +6941,12 @@ func (v *Sym) getLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Sym) SetName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6445,7 +6955,7 @@ func (v *Sym) SetName(_arg string) error {
 }
 
 func (v *Sym) GetName() string {
-	ret, err := v.getName(context.Background())
+	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6466,7 +6976,7 @@ func (v *Sym) getName(ctx context.Context) (string, error) {
 }
 
 func (v *Sym) SetDefval(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6475,7 +6985,7 @@ func (v *Sym) SetDefval(_arg string) error {
 }
 
 func (v *Sym) GetDefval() string {
-	ret, err := v.getDefval(context.Background())
+	ret, err := v.getDefval(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6496,7 +7006,7 @@ func (v *Sym) getDefval(ctx context.Context) (string, error) {
 }
 
 func (v *Sym) SetId(_arg int32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6505,7 +7015,7 @@ func (v *Sym) SetId(_arg int32) error {
 }
 
 func (v *Sym) GetId() int32 {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6523,7 +7033,7 @@ func (v *Sym) getId(ctx context.Context) (int32, error) {
 }
 
 func (v *Sym) SetKind(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6532,7 +7042,7 @@ func (v *Sym) SetKind(_arg uint32) error {
 }
 
 func (v *Sym) GetKind() uint32 {
-	ret, err := v.getKind(context.Background())
+	ret, err := v.getKind(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6550,7 +7060,7 @@ func (v *Sym) getKind(ctx context.Context) (uint32, error) {
 }
 
 func (v *Sym) SetFixed(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6559,7 +7069,7 @@ func (v *Sym) SetFixed(_arg uint32) error {
 }
 
 func (v *Sym) GetFixed() uint32 {
-	ret, err := v.getFixed(context.Background())
+	ret, err := v.getFixed(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6577,7 +7087,7 @@ func (v *Sym) getFixed(ctx context.Context) (uint32, error) {
 }
 
 func (v *Sym) SetPrint(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6586,7 +7096,7 @@ func (v *Sym) SetPrint(_arg uint32) error {
 }
 
 func (v *Sym) GetPrint() uint32 {
-	ret, err := v.getPrint(context.Background())
+	ret, err := v.getPrint(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6604,7 +7114,7 @@ func (v *Sym) getPrint(ctx context.Context) (uint32, error) {
 }
 
 func (v *Sym) SetOwner(_arg *Graph) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6613,7 +7123,7 @@ func (v *Sym) SetOwner(_arg *Graph) error {
 }
 
 func (v *Sym) GetOwner() *Graph {
-	ret, err := v.getOwner(context.Background())
+	ret, err := v.getOwner(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6627,13 +7137,33 @@ func (v *Sym) getOwner(ctx context.Context) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type DataDict struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DataDict) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DataDict) withToken(token *callToken) *DataDict {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDataDict(ctx context.Context) (*DataDict, error) {
 	o, err := mod.newObject(ctx, "DataDict")
 	if err != nil {
@@ -6664,7 +7194,7 @@ func newDataDictSlice(v []uint64) []*DataDict {
 	return ret
 }
 func (v *DataDict) SetH(_arg *Record) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6673,7 +7203,7 @@ func (v *DataDict) SetH(_arg *Record) error {
 }
 
 func (v *DataDict) GetH() *Record {
-	ret, err := v.getH(context.Background())
+	ret, err := v.getH(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6687,13 +7217,33 @@ func (v *DataDict) getH(ctx context.Context) (*Record, error) {
 		return zero, err
 	}
 	ret := newRecord(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type DictLink struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DictLink) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DictLink) withToken(token *callToken) *DictLink {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDictLink(ctx context.Context) (*DictLink, error) {
 	o, err := mod.newObject(ctx, "DictLink")
 	if err != nil {
@@ -6724,7 +7274,7 @@ func newDictLinkSlice(v []uint64) []*DictLink {
 	return ret
 }
 func (v *DictLink) SetRight(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6733,7 +7283,7 @@ func (v *DictLink) SetRight(_arg *DictLink) error {
 }
 
 func (v *DictLink) GetRight() *DictLink {
-	ret, err := v.getRight(context.Background())
+	ret, err := v.getRight(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6747,11 +7297,12 @@ func (v *DictLink) getRight(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *DictLink) SetHash(_arg uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6760,7 +7311,7 @@ func (v *DictLink) SetHash(_arg uint32) error {
 }
 
 func (v *DictLink) GetHash() uint32 {
-	ret, err := v.getHash(context.Background())
+	ret, err := v.getHash(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6778,7 +7329,7 @@ func (v *DictLink) getHash(ctx context.Context) (uint32, error) {
 }
 
 func (v *DictLink) SetLeft(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6787,7 +7338,7 @@ func (v *DictLink) SetLeft(_arg *DictLink) error {
 }
 
 func (v *DictLink) GetLeft() *DictLink {
-	ret, err := v.getLeft(context.Background())
+	ret, err := v.getLeft(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6801,13 +7352,33 @@ func (v *DictLink) getLeft(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type DictHold struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DictHold) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DictHold) withToken(token *callToken) *DictHold {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDictHold(ctx context.Context) (*DictHold, error) {
 	o, err := mod.newObject(ctx, "DictHold")
 	if err != nil {
@@ -6838,7 +7409,7 @@ func newDictHoldSlice(v []uint64) []*DictHold {
 	return ret
 }
 func (v *DictHold) SetHdr(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6847,7 +7418,7 @@ func (v *DictHold) SetHdr(_arg *DictLink) error {
 }
 
 func (v *DictHold) GetHdr() *DictLink {
-	ret, err := v.getHdr(context.Background())
+	ret, err := v.getHdr(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6861,11 +7432,12 @@ func (v *DictHold) getHdr(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *DictHold) SetObj(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6874,7 +7446,7 @@ func (v *DictHold) SetObj(_arg any) error {
 }
 
 func (v *DictHold) GetObj() any {
-	ret, err := v.getObj(context.Background())
+	ret, err := v.getObj(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6893,8 +7465,27 @@ func (v *DictHold) getObj(ctx context.Context) (any, error) {
 
 type DictMethod struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DictMethod) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DictMethod) withToken(token *callToken) *DictMethod {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDictMethod(ctx context.Context) (*DictMethod, error) {
 	o, err := mod.newObject(ctx, "DictMethod")
 	if err != nil {
@@ -6928,12 +7519,12 @@ func (v *DictMethod) SetSearchf(ctx context.Context, arg *CallbackFunc[func(cont
 	if mod.lookupFuncMap.DictSearch == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictSearch before")
 	}
-	mod.callbackFuncMap.DictSearch[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DictSearch[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DictMethod_searchf", v.getPtr())
 }
 
 func (v *DictMethod) SetType(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -6942,7 +7533,7 @@ func (v *DictMethod) SetType(_arg int64) error {
 }
 
 func (v *DictMethod) GetType() int64 {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -6961,8 +7552,27 @@ func (v *DictMethod) getType(ctx context.Context) (int64, error) {
 
 type DictData struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DictData) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DictData) withToken(token *callToken) *DictData {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDictData(ctx context.Context) (*DictData, error) {
 	o, err := mod.newObject(ctx, "DictData")
 	if err != nil {
@@ -6993,7 +7603,7 @@ func newDictDataSlice(v []uint64) []*DictData {
 	return ret
 }
 func (v *DictData) SetType(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7002,7 +7612,7 @@ func (v *DictData) SetType(_arg int64) error {
 }
 
 func (v *DictData) GetType() int64 {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7020,7 +7630,7 @@ func (v *DictData) getType(ctx context.Context) (int64, error) {
 }
 
 func (v *DictData) SetHere(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7029,7 +7639,7 @@ func (v *DictData) SetHere(_arg *DictLink) error {
 }
 
 func (v *DictData) GetHere() *DictLink {
-	ret, err := v.getHere(context.Background())
+	ret, err := v.getHere(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7043,11 +7653,12 @@ func (v *DictData) getHere(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *DictData) SetHtab(_arg []*DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7056,7 +7667,7 @@ func (v *DictData) SetHtab(_arg []*DictLink) error {
 }
 
 func (v *DictData) GetHtab() []*DictLink {
-	ret, err := v.getHtab(context.Background())
+	ret, err := v.getHtab(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7074,11 +7685,14 @@ func (v *DictData) getHtab(ctx context.Context) ([]*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLinkSlice(slice)
+	for _, e := range ret {
+		e.withToken(v.token)
+	}
 	return ret, nil
 }
 
 func (v *DictData) SetHead(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7087,7 +7701,7 @@ func (v *DictData) SetHead(_arg *DictLink) error {
 }
 
 func (v *DictData) GetHead() *DictLink {
-	ret, err := v.getHead(context.Background())
+	ret, err := v.getHead(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7101,11 +7715,12 @@ func (v *DictData) getHead(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *DictData) SetNtab(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7114,7 +7729,7 @@ func (v *DictData) SetNtab(_arg int64) error {
 }
 
 func (v *DictData) GetNtab() int64 {
-	ret, err := v.getNtab(context.Background())
+	ret, err := v.getNtab(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7132,7 +7747,7 @@ func (v *DictData) getNtab(ctx context.Context) (int64, error) {
 }
 
 func (v *DictData) SetSize(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7141,7 +7756,7 @@ func (v *DictData) SetSize(_arg int64) error {
 }
 
 func (v *DictData) GetSize() int64 {
-	ret, err := v.getSize(context.Background())
+	ret, err := v.getSize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7159,7 +7774,7 @@ func (v *DictData) getSize(ctx context.Context) (int64, error) {
 }
 
 func (v *DictData) SetLoop(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7168,7 +7783,7 @@ func (v *DictData) SetLoop(_arg int64) error {
 }
 
 func (v *DictData) GetLoop() int64 {
-	ret, err := v.getLoop(context.Background())
+	ret, err := v.getLoop(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7187,8 +7802,27 @@ func (v *DictData) getLoop(ctx context.Context) (int64, error) {
 
 type DictDisc struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DictDisc) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DictDisc) withToken(token *callToken) *DictDisc {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDictDisc(ctx context.Context) (*DictDisc, error) {
 	o, err := mod.newObject(ctx, "DictDisc")
 	if err != nil {
@@ -7219,7 +7853,7 @@ func newDictDiscSlice(v []uint64) []*DictDisc {
 	return ret
 }
 func (v *DictDisc) SetKey(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7228,7 +7862,7 @@ func (v *DictDisc) SetKey(_arg int64) error {
 }
 
 func (v *DictDisc) GetKey() int64 {
-	ret, err := v.getKey(context.Background())
+	ret, err := v.getKey(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7246,7 +7880,7 @@ func (v *DictDisc) getKey(ctx context.Context) (int64, error) {
 }
 
 func (v *DictDisc) SetSize(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7255,7 +7889,7 @@ func (v *DictDisc) SetSize(_arg int64) error {
 }
 
 func (v *DictDisc) GetSize() int64 {
-	ret, err := v.getSize(context.Background())
+	ret, err := v.getSize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7273,7 +7907,7 @@ func (v *DictDisc) getSize(ctx context.Context) (int64, error) {
 }
 
 func (v *DictDisc) SetLink(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7282,7 +7916,7 @@ func (v *DictDisc) SetLink(_arg int64) error {
 }
 
 func (v *DictDisc) GetLink() int64 {
-	ret, err := v.getLink(context.Background())
+	ret, err := v.getLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7303,7 +7937,7 @@ func (v *DictDisc) SetMakef(ctx context.Context, arg *CallbackFunc[func(context.
 	if mod.lookupFuncMap.DictMake == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictMake before")
 	}
-	mod.callbackFuncMap.DictMake[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DictMake[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DictDisc_makef", v.getPtr())
 }
 
@@ -7311,7 +7945,7 @@ func (v *DictDisc) SetFreef(ctx context.Context, arg *CallbackFunc[func(context.
 	if mod.lookupFuncMap.DictFree == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictFree before")
 	}
-	mod.callbackFuncMap.DictFree[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DictFree[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DictDisc_freef", v.getPtr())
 }
 
@@ -7319,14 +7953,33 @@ func (v *DictDisc) SetComparf(ctx context.Context, arg *CallbackFunc[func(contex
 	if mod.lookupFuncMap.DictCompare == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictCompare before")
 	}
-	mod.callbackFuncMap.DictCompare[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DictCompare[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DictDisc_comparf", v.getPtr())
 }
 
 type Dict struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Dict) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Dict) withToken(token *callToken) *Dict {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDict(ctx context.Context) (*Dict, error) {
 	o, err := mod.newObject(ctx, "Dict")
 	if err != nil {
@@ -7360,12 +8013,12 @@ func (v *Dict) SetSearchf(ctx context.Context, arg *CallbackFunc[func(context.Co
 	if mod.lookupFuncMap.DictSearch == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictSearch before")
 	}
-	mod.callbackFuncMap.DictSearch[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DictSearch[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "Dict_searchf", v.getPtr())
 }
 
 func (v *Dict) SetDisc(_arg *DictDisc) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7374,7 +8027,7 @@ func (v *Dict) SetDisc(_arg *DictDisc) error {
 }
 
 func (v *Dict) GetDisc() *DictDisc {
-	ret, err := v.getDisc(context.Background())
+	ret, err := v.getDisc(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7388,11 +8041,12 @@ func (v *Dict) getDisc(ctx context.Context) (*DictDisc, error) {
 		return zero, err
 	}
 	ret := newDictDisc(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) SetData(_arg *DictData) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7401,7 +8055,7 @@ func (v *Dict) SetData(_arg *DictData) error {
 }
 
 func (v *Dict) GetData() *DictData {
-	ret, err := v.getData(context.Background())
+	ret, err := v.getData(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7415,11 +8069,12 @@ func (v *Dict) getData(ctx context.Context) (*DictData, error) {
 		return zero, err
 	}
 	ret := newDictData(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) SetMeth(_arg *DictMethod) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7428,7 +8083,7 @@ func (v *Dict) SetMeth(_arg *DictMethod) error {
 }
 
 func (v *Dict) GetMeth() *DictMethod {
-	ret, err := v.getMeth(context.Background())
+	ret, err := v.getMeth(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7442,11 +8097,12 @@ func (v *Dict) getMeth(ctx context.Context) (*DictMethod, error) {
 		return zero, err
 	}
 	ret := newDictMethod(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) SetNview(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7455,7 +8111,7 @@ func (v *Dict) SetNview(_arg int64) error {
 }
 
 func (v *Dict) GetNview() int64 {
-	ret, err := v.getNview(context.Background())
+	ret, err := v.getNview(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7473,7 +8129,7 @@ func (v *Dict) getNview(ctx context.Context) (int64, error) {
 }
 
 func (v *Dict) SetView(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7482,7 +8138,7 @@ func (v *Dict) SetView(_arg *Dict) error {
 }
 
 func (v *Dict) GetView() *Dict {
-	ret, err := v.getView(context.Background())
+	ret, err := v.getView(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7496,11 +8152,12 @@ func (v *Dict) getView(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) SetWalk(_arg *Dict) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7509,7 +8166,7 @@ func (v *Dict) SetWalk(_arg *Dict) error {
 }
 
 func (v *Dict) GetWalk() *Dict {
-	ret, err := v.getWalk(context.Background())
+	ret, err := v.getWalk(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7523,11 +8180,12 @@ func (v *Dict) getWalk(ctx context.Context) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) SetUser(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7536,7 +8194,7 @@ func (v *Dict) SetUser(_arg any) error {
 }
 
 func (v *Dict) GetUser() any {
-	ret, err := v.getUser(context.Background())
+	ret, err := v.getUser(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7555,8 +8213,27 @@ func (v *Dict) getUser(ctx context.Context) (any, error) {
 
 type DictStat struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DictStat) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DictStat) withToken(token *callToken) *DictStat {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDictStat(ctx context.Context) (*DictStat, error) {
 	o, err := mod.newObject(ctx, "DictStat")
 	if err != nil {
@@ -7587,7 +8264,7 @@ func newDictStatSlice(v []uint64) []*DictStat {
 	return ret
 }
 func (v *DictStat) SetDtMeth(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7596,7 +8273,7 @@ func (v *DictStat) SetDtMeth(_arg int64) error {
 }
 
 func (v *DictStat) GetDtMeth() int64 {
-	ret, err := v.getDtMeth(context.Background())
+	ret, err := v.getDtMeth(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7614,7 +8291,7 @@ func (v *DictStat) getDtMeth(ctx context.Context) (int64, error) {
 }
 
 func (v *DictStat) SetDtSize(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7623,7 +8300,7 @@ func (v *DictStat) SetDtSize(_arg int64) error {
 }
 
 func (v *DictStat) GetDtSize() int64 {
-	ret, err := v.getDtSize(context.Background())
+	ret, err := v.getDtSize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7641,7 +8318,7 @@ func (v *DictStat) getDtSize(ctx context.Context) (int64, error) {
 }
 
 func (v *DictStat) SetDtN(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7650,7 +8327,7 @@ func (v *DictStat) SetDtN(_arg uint64) error {
 }
 
 func (v *DictStat) GetDtN() uint64 {
-	ret, err := v.getDtN(context.Background())
+	ret, err := v.getDtN(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7668,7 +8345,7 @@ func (v *DictStat) getDtN(ctx context.Context) (uint64, error) {
 }
 
 func (v *DictStat) SetDtMax(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7677,7 +8354,7 @@ func (v *DictStat) SetDtMax(_arg uint64) error {
 }
 
 func (v *DictStat) GetDtMax() uint64 {
-	ret, err := v.getDtMax(context.Background())
+	ret, err := v.getDtMax(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7695,7 +8372,7 @@ func (v *DictStat) getDtMax(ctx context.Context) (uint64, error) {
 }
 
 func (v *DictStat) SetDtCount(_arg []uint32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint32ArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7704,7 +8381,7 @@ func (v *DictStat) SetDtCount(_arg []uint32) error {
 }
 
 func (v *DictStat) GetDtCount() []uint32 {
-	ret, err := v.getDtCount(context.Background())
+	ret, err := v.getDtCount(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7727,8 +8404,27 @@ func (v *DictStat) getDtCount(ctx context.Context) ([]uint32, error) {
 
 type File struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *File) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *File) withToken(token *callToken) *File {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func newFile(ptr uint64) *File {
 	if ptr == 0 {
 		return nil
@@ -7753,8 +8449,27 @@ func newFileSlice(v []uint64) []*File {
 
 type Context struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Context) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Context) withToken(token *callToken) *Context {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewContext(ctx context.Context) (*Context, error) {
 	o, err := mod.newObject(ctx, "Context")
 	if err != nil {
@@ -7785,7 +8500,7 @@ func newContextSlice(v []uint64) []*Context {
 	return ret
 }
 func (v *Context) SetCommon(_arg *Common) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7794,7 +8509,7 @@ func (v *Context) SetCommon(_arg *Common) error {
 }
 
 func (v *Context) GetCommon() *Common {
-	ret, err := v.getCommon(context.Background())
+	ret, err := v.getCommon(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7808,11 +8523,12 @@ func (v *Context) getCommon(ctx context.Context) (*Common, error) {
 		return zero, err
 	}
 	ret := newCommon(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Context) SetConfigPath(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7821,7 +8537,7 @@ func (v *Context) SetConfigPath(_arg string) error {
 }
 
 func (v *Context) GetConfigPath() string {
-	ret, err := v.getConfigPath(context.Background())
+	ret, err := v.getConfigPath(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7842,7 +8558,7 @@ func (v *Context) getConfigPath(ctx context.Context) (string, error) {
 }
 
 func (v *Context) SetConfigFound(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7851,7 +8567,7 @@ func (v *Context) SetConfigFound(_arg bool) error {
 }
 
 func (v *Context) GetConfigFound() bool {
-	ret, err := v.getConfigFound(context.Background())
+	ret, err := v.getConfigFound(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7869,7 +8585,7 @@ func (v *Context) getConfigFound(ctx context.Context) (bool, error) {
 }
 
 func (v *Context) SetInputFilenames(_arg []string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7878,7 +8594,7 @@ func (v *Context) SetInputFilenames(_arg []string) error {
 }
 
 func (v *Context) GetInputFilenames() []string {
-	ret, err := v.getInputFilenames(context.Background())
+	ret, err := v.getInputFilenames(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7903,7 +8619,7 @@ func (v *Context) getInputFilenames(ctx context.Context) ([]string, error) {
 }
 
 func (v *Context) SetApis(_arg []*PluginAvailable) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7912,7 +8628,7 @@ func (v *Context) SetApis(_arg []*PluginAvailable) error {
 }
 
 func (v *Context) GetApis() []*PluginAvailable {
-	ret, err := v.getApis(context.Background())
+	ret, err := v.getApis(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7930,11 +8646,14 @@ func (v *Context) getApis(ctx context.Context) ([]*PluginAvailable, error) {
 		return zero, err
 	}
 	ret := newPluginAvailableSlice(slice)
+	for _, e := range ret {
+		e.withToken(v.token)
+	}
 	return ret, nil
 }
 
 func (v *Context) SetApi(_arg []*PluginAvailable) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -7943,7 +8662,7 @@ func (v *Context) SetApi(_arg []*PluginAvailable) error {
 }
 
 func (v *Context) GetApi() []*PluginAvailable {
-	ret, err := v.getApi(context.Background())
+	ret, err := v.getApi(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -7961,13 +8680,35 @@ func (v *Context) getApi(ctx context.Context) ([]*PluginAvailable, error) {
 		return zero, err
 	}
 	ret := newPluginAvailableSlice(slice)
+	for _, e := range ret {
+		e.withToken(v.token)
+	}
 	return ret, nil
 }
 
 type PluginAvailable struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginAvailable) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginAvailable) withToken(token *callToken) *PluginAvailable {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginAvailable(ctx context.Context) (*PluginAvailable, error) {
 	o, err := mod.newObject(ctx, "PluginAvailable")
 	if err != nil {
@@ -7998,7 +8739,7 @@ func newPluginAvailableSlice(v []uint64) []*PluginAvailable {
 	return ret
 }
 func (v *PluginAvailable) SetNext(_arg *PluginAvailable) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8007,7 +8748,7 @@ func (v *PluginAvailable) SetNext(_arg *PluginAvailable) error {
 }
 
 func (v *PluginAvailable) GetNext() *PluginAvailable {
-	ret, err := v.getNext(context.Background())
+	ret, err := v.getNext(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8021,11 +8762,12 @@ func (v *PluginAvailable) getNext(ctx context.Context) (*PluginAvailable, error)
 		return zero, err
 	}
 	ret := newPluginAvailable(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginAvailable) SetTypestr(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8034,7 +8776,7 @@ func (v *PluginAvailable) SetTypestr(_arg string) error {
 }
 
 func (v *PluginAvailable) GetTypestr() string {
-	ret, err := v.getTypestr(context.Background())
+	ret, err := v.getTypestr(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8055,7 +8797,7 @@ func (v *PluginAvailable) getTypestr(ctx context.Context) (string, error) {
 }
 
 func (v *PluginAvailable) SetQuality(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8064,7 +8806,7 @@ func (v *PluginAvailable) SetQuality(_arg int64) error {
 }
 
 func (v *PluginAvailable) GetQuality() int64 {
-	ret, err := v.getQuality(context.Background())
+	ret, err := v.getQuality(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8082,7 +8824,7 @@ func (v *PluginAvailable) getQuality(ctx context.Context) (int64, error) {
 }
 
 func (v *PluginAvailable) SetPackage(_arg *PluginPackage) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8091,7 +8833,7 @@ func (v *PluginAvailable) SetPackage(_arg *PluginPackage) error {
 }
 
 func (v *PluginAvailable) GetPackage() *PluginPackage {
-	ret, err := v.getPackage(context.Background())
+	ret, err := v.getPackage(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8105,11 +8847,12 @@ func (v *PluginAvailable) getPackage(ctx context.Context) (*PluginPackage, error
 		return zero, err
 	}
 	ret := newPluginPackage(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginAvailable) SetTypeptr(_arg *PluginInstalled) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8118,7 +8861,7 @@ func (v *PluginAvailable) SetTypeptr(_arg *PluginInstalled) error {
 }
 
 func (v *PluginAvailable) GetTypeptr() *PluginInstalled {
-	ret, err := v.getTypeptr(context.Background())
+	ret, err := v.getTypeptr(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8132,13 +8875,33 @@ func (v *PluginAvailable) getTypeptr(ctx context.Context) (*PluginInstalled, err
 		return zero, err
 	}
 	ret := newPluginInstalled(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type PluginPackage struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginPackage) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginPackage) withToken(token *callToken) *PluginPackage {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginPackage(ctx context.Context) (*PluginPackage, error) {
 	o, err := mod.newObject(ctx, "PluginPackage")
 	if err != nil {
@@ -8169,7 +8932,7 @@ func newPluginPackageSlice(v []uint64) []*PluginPackage {
 	return ret
 }
 func (v *PluginPackage) SetNext(_arg *PluginPackage) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8178,7 +8941,7 @@ func (v *PluginPackage) SetNext(_arg *PluginPackage) error {
 }
 
 func (v *PluginPackage) GetNext() *PluginPackage {
-	ret, err := v.getNext(context.Background())
+	ret, err := v.getNext(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8192,11 +8955,12 @@ func (v *PluginPackage) getNext(ctx context.Context) (*PluginPackage, error) {
 		return zero, err
 	}
 	ret := newPluginPackage(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginPackage) SetPath(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8205,7 +8969,7 @@ func (v *PluginPackage) SetPath(_arg string) error {
 }
 
 func (v *PluginPackage) GetPath() string {
-	ret, err := v.getPath(context.Background())
+	ret, err := v.getPath(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8226,7 +8990,7 @@ func (v *PluginPackage) getPath(ctx context.Context) (string, error) {
 }
 
 func (v *PluginPackage) SetName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8235,7 +8999,7 @@ func (v *PluginPackage) SetName(_arg string) error {
 }
 
 func (v *PluginPackage) GetName() string {
-	ret, err := v.getName(context.Background())
+	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8257,8 +9021,27 @@ func (v *PluginPackage) getName(ctx context.Context) (string, error) {
 
 type SymList struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *SymList) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *SymList) withToken(token *callToken) *SymList {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewSymList(ctx context.Context) (*SymList, error) {
 	o, err := mod.newObject(ctx, "SymList")
 	if err != nil {
@@ -8289,7 +9072,7 @@ func newSymListSlice(v []uint64) []*SymList {
 	return ret
 }
 func (v *SymList) SetName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8298,7 +9081,7 @@ func (v *SymList) SetName(_arg string) error {
 }
 
 func (v *SymList) GetName() string {
-	ret, err := v.getName(context.Background())
+	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8319,7 +9102,7 @@ func (v *SymList) getName(ctx context.Context) (string, error) {
 }
 
 func (v *SymList) SetAddress(_arg *PluginLibrary) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8328,7 +9111,7 @@ func (v *SymList) SetAddress(_arg *PluginLibrary) error {
 }
 
 func (v *SymList) GetAddress() *PluginLibrary {
-	ret, err := v.getAddress(context.Background())
+	ret, err := v.getAddress(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8342,13 +9125,33 @@ func (v *SymList) getAddress(ctx context.Context) (*PluginLibrary, error) {
 		return zero, err
 	}
 	ret := newPluginLibrary(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type UserShape struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *UserShape) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *UserShape) withToken(token *callToken) *UserShape {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewUserShape(ctx context.Context) (*UserShape, error) {
 	o, err := mod.newObject(ctx, "UserShape")
 	if err != nil {
@@ -8379,7 +9182,7 @@ func newUserShapeSlice(v []uint64) []*UserShape {
 	return ret
 }
 func (v *UserShape) SetLink(_arg *DictLink) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8388,7 +9191,7 @@ func (v *UserShape) SetLink(_arg *DictLink) error {
 }
 
 func (v *UserShape) GetLink() *DictLink {
-	ret, err := v.getLink(context.Background())
+	ret, err := v.getLink(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8402,11 +9205,12 @@ func (v *UserShape) getLink(ctx context.Context) (*DictLink, error) {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *UserShape) SetName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8415,7 +9219,7 @@ func (v *UserShape) SetName(_arg string) error {
 }
 
 func (v *UserShape) GetName() string {
-	ret, err := v.getName(context.Background())
+	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8436,7 +9240,7 @@ func (v *UserShape) getName(ctx context.Context) (string, error) {
 }
 
 func (v *UserShape) SetMacroId(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8445,7 +9249,7 @@ func (v *UserShape) SetMacroId(_arg int64) error {
 }
 
 func (v *UserShape) GetMacroId() int64 {
-	ret, err := v.getMacroId(context.Background())
+	ret, err := v.getMacroId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8463,7 +9267,7 @@ func (v *UserShape) getMacroId(ctx context.Context) (int64, error) {
 }
 
 func (v *UserShape) SetMustInline(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8472,7 +9276,7 @@ func (v *UserShape) SetMustInline(_arg bool) error {
 }
 
 func (v *UserShape) GetMustInline() bool {
-	ret, err := v.getMustInline(context.Background())
+	ret, err := v.getMustInline(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8490,7 +9294,7 @@ func (v *UserShape) getMustInline(ctx context.Context) (bool, error) {
 }
 
 func (v *UserShape) SetNocache(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8499,7 +9303,7 @@ func (v *UserShape) SetNocache(_arg bool) error {
 }
 
 func (v *UserShape) GetNocache() bool {
-	ret, err := v.getNocache(context.Background())
+	ret, err := v.getNocache(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8517,7 +9321,7 @@ func (v *UserShape) getNocache(ctx context.Context) (bool, error) {
 }
 
 func (v *UserShape) SetF(_arg *File) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8526,7 +9330,7 @@ func (v *UserShape) SetF(_arg *File) error {
 }
 
 func (v *UserShape) GetF() *File {
-	ret, err := v.getF(context.Background())
+	ret, err := v.getF(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8540,11 +9344,12 @@ func (v *UserShape) getF(ctx context.Context) (*File, error) {
 		return zero, err
 	}
 	ret := newFile(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *UserShape) SetType(_arg ImageType) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8553,7 +9358,7 @@ func (v *UserShape) SetType(_arg ImageType) error {
 }
 
 func (v *UserShape) GetType() ImageType {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8571,7 +9376,7 @@ func (v *UserShape) getType(ctx context.Context) (ImageType, error) {
 }
 
 func (v *UserShape) SetStringtype(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8580,7 +9385,7 @@ func (v *UserShape) SetStringtype(_arg string) error {
 }
 
 func (v *UserShape) GetStringtype() string {
-	ret, err := v.getStringtype(context.Background())
+	ret, err := v.getStringtype(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8601,7 +9406,7 @@ func (v *UserShape) getStringtype(ctx context.Context) (string, error) {
 }
 
 func (v *UserShape) SetX(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8610,7 +9415,7 @@ func (v *UserShape) SetX(_arg int64) error {
 }
 
 func (v *UserShape) GetX() int64 {
-	ret, err := v.getX(context.Background())
+	ret, err := v.getX(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8628,7 +9433,7 @@ func (v *UserShape) getX(ctx context.Context) (int64, error) {
 }
 
 func (v *UserShape) SetY(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8637,7 +9442,7 @@ func (v *UserShape) SetY(_arg int64) error {
 }
 
 func (v *UserShape) GetY() int64 {
-	ret, err := v.getY(context.Background())
+	ret, err := v.getY(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8655,7 +9460,7 @@ func (v *UserShape) getY(ctx context.Context) (int64, error) {
 }
 
 func (v *UserShape) SetW(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8664,7 +9469,7 @@ func (v *UserShape) SetW(_arg int64) error {
 }
 
 func (v *UserShape) GetW() int64 {
-	ret, err := v.getW(context.Background())
+	ret, err := v.getW(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8682,7 +9487,7 @@ func (v *UserShape) getW(ctx context.Context) (int64, error) {
 }
 
 func (v *UserShape) SetH(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8691,7 +9496,7 @@ func (v *UserShape) SetH(_arg int64) error {
 }
 
 func (v *UserShape) GetH() int64 {
-	ret, err := v.getH(context.Background())
+	ret, err := v.getH(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8709,7 +9514,7 @@ func (v *UserShape) getH(ctx context.Context) (int64, error) {
 }
 
 func (v *UserShape) SetDpi(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8718,7 +9523,7 @@ func (v *UserShape) SetDpi(_arg int64) error {
 }
 
 func (v *UserShape) GetDpi() int64 {
-	ret, err := v.getDpi(context.Background())
+	ret, err := v.getDpi(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8736,7 +9541,7 @@ func (v *UserShape) getDpi(ctx context.Context) (int64, error) {
 }
 
 func (v *UserShape) SetData(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8745,7 +9550,7 @@ func (v *UserShape) SetData(_arg any) error {
 }
 
 func (v *UserShape) GetData() any {
-	ret, err := v.getData(context.Background())
+	ret, err := v.getData(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8763,7 +9568,7 @@ func (v *UserShape) getData(ctx context.Context) (any, error) {
 }
 
 func (v *UserShape) SetDatasize(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8772,7 +9577,7 @@ func (v *UserShape) SetDatasize(_arg uint64) error {
 }
 
 func (v *UserShape) GetDatasize() uint64 {
-	ret, err := v.getDatasize(context.Background())
+	ret, err := v.getDatasize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8793,14 +9598,33 @@ func (v *UserShape) SetDatafree(ctx context.Context, arg *CallbackFunc[func(cont
 	if mod.lookupFuncMap.UserShape_DataFree == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_UserShape_DataFree before")
 	}
-	mod.callbackFuncMap.UserShape_DataFree[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.UserShape_DataFree[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "UserShape_datafree", v.getPtr())
 }
 
 type PluginActiveLoadImage struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginActiveLoadImage) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginActiveLoadImage) withToken(token *callToken) *PluginActiveLoadImage {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginActiveLoadImage(ctx context.Context) (*PluginActiveLoadImage, error) {
 	o, err := mod.newObject(ctx, "PluginActiveLoadImage")
 	if err != nil {
@@ -8831,7 +9655,7 @@ func newPluginActiveLoadImageSlice(v []uint64) []*PluginActiveLoadImage {
 	return ret
 }
 func (v *PluginActiveLoadImage) SetEngine(_arg *LoadImageEngine) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8840,7 +9664,7 @@ func (v *PluginActiveLoadImage) SetEngine(_arg *LoadImageEngine) error {
 }
 
 func (v *PluginActiveLoadImage) GetEngine() *LoadImageEngine {
-	ret, err := v.getEngine(context.Background())
+	ret, err := v.getEngine(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8854,11 +9678,12 @@ func (v *PluginActiveLoadImage) getEngine(ctx context.Context) (*LoadImageEngine
 		return zero, err
 	}
 	ret := newLoadImageEngine(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginActiveLoadImage) SetId(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8867,7 +9692,7 @@ func (v *PluginActiveLoadImage) SetId(_arg int64) error {
 }
 
 func (v *PluginActiveLoadImage) GetId() int64 {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8885,7 +9710,7 @@ func (v *PluginActiveLoadImage) getId(ctx context.Context) (int64, error) {
 }
 
 func (v *PluginActiveLoadImage) SetType(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8894,7 +9719,7 @@ func (v *PluginActiveLoadImage) SetType(_arg string) error {
 }
 
 func (v *PluginActiveLoadImage) GetType() string {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8916,8 +9741,27 @@ func (v *PluginActiveLoadImage) getType(ctx context.Context) (string, error) {
 
 type Common struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Common) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Common) withToken(token *callToken) *Common {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewCommon(ctx context.Context) (*Common, error) {
 	o, err := mod.newObject(ctx, "Common")
 	if err != nil {
@@ -8948,7 +9792,7 @@ func newCommonSlice(v []uint64) []*Common {
 	return ret
 }
 func (v *Common) SetInfo(_arg []string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8957,7 +9801,7 @@ func (v *Common) SetInfo(_arg []string) error {
 }
 
 func (v *Common) GetInfo() []string {
-	ret, err := v.getInfo(context.Background())
+	ret, err := v.getInfo(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -8982,7 +9826,7 @@ func (v *Common) getInfo(ctx context.Context) ([]string, error) {
 }
 
 func (v *Common) SetCmdname(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -8991,7 +9835,7 @@ func (v *Common) SetCmdname(_arg string) error {
 }
 
 func (v *Common) GetCmdname() string {
-	ret, err := v.getCmdname(context.Background())
+	ret, err := v.getCmdname(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9012,7 +9856,7 @@ func (v *Common) getCmdname(ctx context.Context) (string, error) {
 }
 
 func (v *Common) SetVerbose(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9021,7 +9865,7 @@ func (v *Common) SetVerbose(_arg int64) error {
 }
 
 func (v *Common) GetVerbose() int64 {
-	ret, err := v.getVerbose(context.Background())
+	ret, err := v.getVerbose(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9039,7 +9883,7 @@ func (v *Common) getVerbose(ctx context.Context) (int64, error) {
 }
 
 func (v *Common) SetConfig(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9048,7 +9892,7 @@ func (v *Common) SetConfig(_arg bool) error {
 }
 
 func (v *Common) GetConfig() bool {
-	ret, err := v.getConfig(context.Background())
+	ret, err := v.getConfig(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9066,7 +9910,7 @@ func (v *Common) getConfig(ctx context.Context) (bool, error) {
 }
 
 func (v *Common) SetAutoOutfileNames(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9075,7 +9919,7 @@ func (v *Common) SetAutoOutfileNames(_arg bool) error {
 }
 
 func (v *Common) GetAutoOutfileNames() bool {
-	ret, err := v.getAutoOutfileNames(context.Background())
+	ret, err := v.getAutoOutfileNames(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9093,7 +9937,7 @@ func (v *Common) getAutoOutfileNames(ctx context.Context) (bool, error) {
 }
 
 func (v *Common) SetShowBoxes(_arg []string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9102,7 +9946,7 @@ func (v *Common) SetShowBoxes(_arg []string) error {
 }
 
 func (v *Common) GetShowBoxes() []string {
-	ret, err := v.getShowBoxes(context.Background())
+	ret, err := v.getShowBoxes(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9127,7 +9971,7 @@ func (v *Common) getShowBoxes(ctx context.Context) ([]string, error) {
 }
 
 func (v *Common) SetLib(_arg []string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9136,7 +9980,7 @@ func (v *Common) SetLib(_arg []string) error {
 }
 
 func (v *Common) GetLib() []string {
-	ret, err := v.getLib(context.Background())
+	ret, err := v.getLib(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9161,7 +10005,7 @@ func (v *Common) getLib(ctx context.Context) ([]string, error) {
 }
 
 func (v *Common) SetViewNum(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9170,7 +10014,7 @@ func (v *Common) SetViewNum(_arg int64) error {
 }
 
 func (v *Common) GetViewNum() int64 {
-	ret, err := v.getViewNum(context.Background())
+	ret, err := v.getViewNum(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9188,7 +10032,7 @@ func (v *Common) getViewNum(ctx context.Context) (int64, error) {
 }
 
 func (v *Common) SetBuiltins(_arg *SymList) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9197,7 +10041,7 @@ func (v *Common) SetBuiltins(_arg *SymList) error {
 }
 
 func (v *Common) GetBuiltins() *SymList {
-	ret, err := v.getBuiltins(context.Background())
+	ret, err := v.getBuiltins(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9211,11 +10055,12 @@ func (v *Common) getBuiltins(ctx context.Context) (*SymList, error) {
 		return zero, err
 	}
 	ret := newSymList(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Common) SetDemandLoading(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9224,7 +10069,7 @@ func (v *Common) SetDemandLoading(_arg int64) error {
 }
 
 func (v *Common) GetDemandLoading() int64 {
-	ret, err := v.getDemandLoading(context.Background())
+	ret, err := v.getDemandLoading(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9243,8 +10088,27 @@ func (v *Common) getDemandLoading(ctx context.Context) (int64, error) {
 
 type ObjectState struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *ObjectState) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *ObjectState) withToken(token *callToken) *ObjectState {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewObjectState(ctx context.Context) (*ObjectState, error) {
 	o, err := mod.newObject(ctx, "ObjectState")
 	if err != nil {
@@ -9275,7 +10139,7 @@ func newObjectStateSlice(v []uint64) []*ObjectState {
 	return ret
 }
 func (v *ObjectState) SetParent(_arg *ObjectState) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9284,7 +10148,7 @@ func (v *ObjectState) SetParent(_arg *ObjectState) error {
 }
 
 func (v *ObjectState) GetParent() *ObjectState {
-	ret, err := v.getParent(context.Background())
+	ret, err := v.getParent(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9298,11 +10162,12 @@ func (v *ObjectState) getParent(ctx context.Context) (*ObjectState, error) {
 		return zero, err
 	}
 	ret := newObjectState(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetType(_arg ObjectType) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9311,7 +10176,7 @@ func (v *ObjectState) SetType(_arg ObjectType) error {
 }
 
 func (v *ObjectState) GetType() ObjectType {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9329,7 +10194,7 @@ func (v *ObjectState) getType(ctx context.Context) (ObjectType, error) {
 }
 
 func (v *ObjectState) SetG(_arg *Graph) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9338,7 +10203,7 @@ func (v *ObjectState) SetG(_arg *Graph) error {
 }
 
 func (v *ObjectState) GetG() *Graph {
-	ret, err := v.getG(context.Background())
+	ret, err := v.getG(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9352,11 +10217,12 @@ func (v *ObjectState) getG(ctx context.Context) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetSg(_arg *Graph) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9365,7 +10231,7 @@ func (v *ObjectState) SetSg(_arg *Graph) error {
 }
 
 func (v *ObjectState) GetSg() *Graph {
-	ret, err := v.getSg(context.Background())
+	ret, err := v.getSg(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9379,11 +10245,12 @@ func (v *ObjectState) getSg(ctx context.Context) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetN(_arg *Node) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9392,7 +10259,7 @@ func (v *ObjectState) SetN(_arg *Node) error {
 }
 
 func (v *ObjectState) GetN() *Node {
-	ret, err := v.getN(context.Background())
+	ret, err := v.getN(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9406,11 +10273,12 @@ func (v *ObjectState) getN(ctx context.Context) (*Node, error) {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetE(_arg *Edge) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9419,7 +10287,7 @@ func (v *ObjectState) SetE(_arg *Edge) error {
 }
 
 func (v *ObjectState) GetE() *Edge {
-	ret, err := v.getE(context.Background())
+	ret, err := v.getE(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9433,11 +10301,12 @@ func (v *ObjectState) getE(ctx context.Context) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetEmitState(_arg EmitState) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9446,7 +10315,7 @@ func (v *ObjectState) SetEmitState(_arg EmitState) error {
 }
 
 func (v *ObjectState) GetEmitState() EmitState {
-	ret, err := v.getEmitState(context.Background())
+	ret, err := v.getEmitState(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9464,7 +10333,7 @@ func (v *ObjectState) getEmitState(ctx context.Context) (EmitState, error) {
 }
 
 func (v *ObjectState) SetPencolor(_arg *Color) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9473,7 +10342,7 @@ func (v *ObjectState) SetPencolor(_arg *Color) error {
 }
 
 func (v *ObjectState) GetPencolor() *Color {
-	ret, err := v.getPencolor(context.Background())
+	ret, err := v.getPencolor(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9487,11 +10356,12 @@ func (v *ObjectState) getPencolor(ctx context.Context) (*Color, error) {
 		return zero, err
 	}
 	ret := newColor(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetFillcolor(_arg *Color) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9500,7 +10370,7 @@ func (v *ObjectState) SetFillcolor(_arg *Color) error {
 }
 
 func (v *ObjectState) GetFillcolor() *Color {
-	ret, err := v.getFillcolor(context.Background())
+	ret, err := v.getFillcolor(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9514,11 +10384,12 @@ func (v *ObjectState) getFillcolor(ctx context.Context) (*Color, error) {
 		return zero, err
 	}
 	ret := newColor(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetStopcolor(_arg *Color) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9527,7 +10398,7 @@ func (v *ObjectState) SetStopcolor(_arg *Color) error {
 }
 
 func (v *ObjectState) GetStopcolor() *Color {
-	ret, err := v.getStopcolor(context.Background())
+	ret, err := v.getStopcolor(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9541,11 +10412,12 @@ func (v *ObjectState) getStopcolor(ctx context.Context) (*Color, error) {
 		return zero, err
 	}
 	ret := newColor(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetGradientAngle(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9554,7 +10426,7 @@ func (v *ObjectState) SetGradientAngle(_arg int64) error {
 }
 
 func (v *ObjectState) GetGradientAngle() int64 {
-	ret, err := v.getGradientAngle(context.Background())
+	ret, err := v.getGradientAngle(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9572,7 +10444,7 @@ func (v *ObjectState) getGradientAngle(ctx context.Context) (int64, error) {
 }
 
 func (v *ObjectState) SetGradientFrac(_arg float32) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toFloatWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9581,7 +10453,7 @@ func (v *ObjectState) SetGradientFrac(_arg float32) error {
 }
 
 func (v *ObjectState) GetGradientFrac() float32 {
-	ret, err := v.getGradientFrac(context.Background())
+	ret, err := v.getGradientFrac(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9602,7 +10474,7 @@ func (v *ObjectState) getGradientFrac(ctx context.Context) (float32, error) {
 }
 
 func (v *ObjectState) SetPen(_arg PenType) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9611,7 +10483,7 @@ func (v *ObjectState) SetPen(_arg PenType) error {
 }
 
 func (v *ObjectState) GetPen() PenType {
-	ret, err := v.getPen(context.Background())
+	ret, err := v.getPen(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9629,7 +10501,7 @@ func (v *ObjectState) getPen(ctx context.Context) (PenType, error) {
 }
 
 func (v *ObjectState) SetFill(_arg FillType) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9638,7 +10510,7 @@ func (v *ObjectState) SetFill(_arg FillType) error {
 }
 
 func (v *ObjectState) GetFill() FillType {
-	ret, err := v.getFill(context.Background())
+	ret, err := v.getFill(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9656,7 +10528,7 @@ func (v *ObjectState) getFill(ctx context.Context) (FillType, error) {
 }
 
 func (v *ObjectState) SetPenwidth(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9665,7 +10537,7 @@ func (v *ObjectState) SetPenwidth(_arg float64) error {
 }
 
 func (v *ObjectState) GetPenwidth() float64 {
-	ret, err := v.getPenwidth(context.Background())
+	ret, err := v.getPenwidth(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9686,7 +10558,7 @@ func (v *ObjectState) getPenwidth(ctx context.Context) (float64, error) {
 }
 
 func (v *ObjectState) SetRawstyle(_arg []string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9695,7 +10567,7 @@ func (v *ObjectState) SetRawstyle(_arg []string) error {
 }
 
 func (v *ObjectState) GetRawstyle() []string {
-	ret, err := v.getRawstyle(context.Background())
+	ret, err := v.getRawstyle(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9720,7 +10592,7 @@ func (v *ObjectState) getRawstyle(ctx context.Context) ([]string, error) {
 }
 
 func (v *ObjectState) SetZ(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9729,7 +10601,7 @@ func (v *ObjectState) SetZ(_arg float64) error {
 }
 
 func (v *ObjectState) GetZ() float64 {
-	ret, err := v.getZ(context.Background())
+	ret, err := v.getZ(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9750,7 +10622,7 @@ func (v *ObjectState) getZ(ctx context.Context) (float64, error) {
 }
 
 func (v *ObjectState) SetTailZ(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9759,7 +10631,7 @@ func (v *ObjectState) SetTailZ(_arg float64) error {
 }
 
 func (v *ObjectState) GetTailZ() float64 {
-	ret, err := v.getTailZ(context.Background())
+	ret, err := v.getTailZ(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9780,7 +10652,7 @@ func (v *ObjectState) getTailZ(ctx context.Context) (float64, error) {
 }
 
 func (v *ObjectState) SetHeadZ(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9789,7 +10661,7 @@ func (v *ObjectState) SetHeadZ(_arg float64) error {
 }
 
 func (v *ObjectState) GetHeadZ() float64 {
-	ret, err := v.getHeadZ(context.Background())
+	ret, err := v.getHeadZ(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9810,7 +10682,7 @@ func (v *ObjectState) getHeadZ(ctx context.Context) (float64, error) {
 }
 
 func (v *ObjectState) SetLabel(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9819,7 +10691,7 @@ func (v *ObjectState) SetLabel(_arg string) error {
 }
 
 func (v *ObjectState) GetLabel() string {
-	ret, err := v.getLabel(context.Background())
+	ret, err := v.getLabel(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9840,7 +10712,7 @@ func (v *ObjectState) getLabel(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetXlabel(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9849,7 +10721,7 @@ func (v *ObjectState) SetXlabel(_arg string) error {
 }
 
 func (v *ObjectState) GetXlabel() string {
-	ret, err := v.getXlabel(context.Background())
+	ret, err := v.getXlabel(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9870,7 +10742,7 @@ func (v *ObjectState) getXlabel(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetTaillabel(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9879,7 +10751,7 @@ func (v *ObjectState) SetTaillabel(_arg string) error {
 }
 
 func (v *ObjectState) GetTaillabel() string {
-	ret, err := v.getTaillabel(context.Background())
+	ret, err := v.getTaillabel(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9900,7 +10772,7 @@ func (v *ObjectState) getTaillabel(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetHeadlabel(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9909,7 +10781,7 @@ func (v *ObjectState) SetHeadlabel(_arg string) error {
 }
 
 func (v *ObjectState) GetHeadlabel() string {
-	ret, err := v.getHeadlabel(context.Background())
+	ret, err := v.getHeadlabel(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9930,7 +10802,7 @@ func (v *ObjectState) getHeadlabel(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetUrl(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9939,7 +10811,7 @@ func (v *ObjectState) SetUrl(_arg string) error {
 }
 
 func (v *ObjectState) GetUrl() string {
-	ret, err := v.getUrl(context.Background())
+	ret, err := v.getUrl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9960,7 +10832,7 @@ func (v *ObjectState) getUrl(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetId(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9969,7 +10841,7 @@ func (v *ObjectState) SetId(_arg string) error {
 }
 
 func (v *ObjectState) GetId() string {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -9990,7 +10862,7 @@ func (v *ObjectState) getId(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetLabelurl(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -9999,7 +10871,7 @@ func (v *ObjectState) SetLabelurl(_arg string) error {
 }
 
 func (v *ObjectState) GetLabelurl() string {
-	ret, err := v.getLabelurl(context.Background())
+	ret, err := v.getLabelurl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10020,7 +10892,7 @@ func (v *ObjectState) getLabelurl(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetTailurl(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10029,7 +10901,7 @@ func (v *ObjectState) SetTailurl(_arg string) error {
 }
 
 func (v *ObjectState) GetTailurl() string {
-	ret, err := v.getTailurl(context.Background())
+	ret, err := v.getTailurl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10050,7 +10922,7 @@ func (v *ObjectState) getTailurl(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetHeadurl(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10059,7 +10931,7 @@ func (v *ObjectState) SetHeadurl(_arg string) error {
 }
 
 func (v *ObjectState) GetHeadurl() string {
-	ret, err := v.getHeadurl(context.Background())
+	ret, err := v.getHeadurl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10080,7 +10952,7 @@ func (v *ObjectState) getHeadurl(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetTooltip(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10089,7 +10961,7 @@ func (v *ObjectState) SetTooltip(_arg string) error {
 }
 
 func (v *ObjectState) GetTooltip() string {
-	ret, err := v.getTooltip(context.Background())
+	ret, err := v.getTooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10110,7 +10982,7 @@ func (v *ObjectState) getTooltip(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetLabeltooltip(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10119,7 +10991,7 @@ func (v *ObjectState) SetLabeltooltip(_arg string) error {
 }
 
 func (v *ObjectState) GetLabeltooltip() string {
-	ret, err := v.getLabeltooltip(context.Background())
+	ret, err := v.getLabeltooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10140,7 +11012,7 @@ func (v *ObjectState) getLabeltooltip(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetTailtooltip(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10149,7 +11021,7 @@ func (v *ObjectState) SetTailtooltip(_arg string) error {
 }
 
 func (v *ObjectState) GetTailtooltip() string {
-	ret, err := v.getTailtooltip(context.Background())
+	ret, err := v.getTailtooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10170,7 +11042,7 @@ func (v *ObjectState) getTailtooltip(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetHeadtooltip(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10179,7 +11051,7 @@ func (v *ObjectState) SetHeadtooltip(_arg string) error {
 }
 
 func (v *ObjectState) GetHeadtooltip() string {
-	ret, err := v.getHeadtooltip(context.Background())
+	ret, err := v.getHeadtooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10200,7 +11072,7 @@ func (v *ObjectState) getHeadtooltip(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetTarget(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10209,7 +11081,7 @@ func (v *ObjectState) SetTarget(_arg string) error {
 }
 
 func (v *ObjectState) GetTarget() string {
-	ret, err := v.getTarget(context.Background())
+	ret, err := v.getTarget(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10230,7 +11102,7 @@ func (v *ObjectState) getTarget(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetLabeltarget(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10239,7 +11111,7 @@ func (v *ObjectState) SetLabeltarget(_arg string) error {
 }
 
 func (v *ObjectState) GetLabeltarget() string {
-	ret, err := v.getLabeltarget(context.Background())
+	ret, err := v.getLabeltarget(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10260,7 +11132,7 @@ func (v *ObjectState) getLabeltarget(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetTailtarget(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10269,7 +11141,7 @@ func (v *ObjectState) SetTailtarget(_arg string) error {
 }
 
 func (v *ObjectState) GetTailtarget() string {
-	ret, err := v.getTailtarget(context.Background())
+	ret, err := v.getTailtarget(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10290,7 +11162,7 @@ func (v *ObjectState) getTailtarget(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetHeadtarget(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10299,7 +11171,7 @@ func (v *ObjectState) SetHeadtarget(_arg string) error {
 }
 
 func (v *ObjectState) GetHeadtarget() string {
-	ret, err := v.getHeadtarget(context.Background())
+	ret, err := v.getHeadtarget(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10320,7 +11192,7 @@ func (v *ObjectState) getHeadtarget(ctx context.Context) (string, error) {
 }
 
 func (v *ObjectState) SetExplicitTooltip(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10329,7 +11201,7 @@ func (v *ObjectState) SetExplicitTooltip(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitTooltip() uint64 {
-	ret, err := v.getExplicitTooltip(context.Background())
+	ret, err := v.getExplicitTooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10347,7 +11219,7 @@ func (v *ObjectState) getExplicitTooltip(ctx context.Context) (uint64, error) {
 }
 
 func (v *ObjectState) SetExplicitTailtooltip(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10356,7 +11228,7 @@ func (v *ObjectState) SetExplicitTailtooltip(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitTailtooltip() uint64 {
-	ret, err := v.getExplicitTailtooltip(context.Background())
+	ret, err := v.getExplicitTailtooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10374,7 +11246,7 @@ func (v *ObjectState) getExplicitTailtooltip(ctx context.Context) (uint64, error
 }
 
 func (v *ObjectState) SetExplicitHeadtooltip(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10383,7 +11255,7 @@ func (v *ObjectState) SetExplicitHeadtooltip(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitHeadtooltip() uint64 {
-	ret, err := v.getExplicitHeadtooltip(context.Background())
+	ret, err := v.getExplicitHeadtooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10401,7 +11273,7 @@ func (v *ObjectState) getExplicitHeadtooltip(ctx context.Context) (uint64, error
 }
 
 func (v *ObjectState) SetExplicitLabeltooltip(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10410,7 +11282,7 @@ func (v *ObjectState) SetExplicitLabeltooltip(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitLabeltooltip() uint64 {
-	ret, err := v.getExplicitLabeltooltip(context.Background())
+	ret, err := v.getExplicitLabeltooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10428,7 +11300,7 @@ func (v *ObjectState) getExplicitLabeltooltip(ctx context.Context) (uint64, erro
 }
 
 func (v *ObjectState) SetExplicitTailtarget(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10437,7 +11309,7 @@ func (v *ObjectState) SetExplicitTailtarget(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitTailtarget() uint64 {
-	ret, err := v.getExplicitTailtarget(context.Background())
+	ret, err := v.getExplicitTailtarget(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10455,7 +11327,7 @@ func (v *ObjectState) getExplicitTailtarget(ctx context.Context) (uint64, error)
 }
 
 func (v *ObjectState) SetExplicitHeadtarget(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10464,7 +11336,7 @@ func (v *ObjectState) SetExplicitHeadtarget(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitHeadtarget() uint64 {
-	ret, err := v.getExplicitHeadtarget(context.Background())
+	ret, err := v.getExplicitHeadtarget(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10482,7 +11354,7 @@ func (v *ObjectState) getExplicitHeadtarget(ctx context.Context) (uint64, error)
 }
 
 func (v *ObjectState) SetExplicitEdgetarget(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10491,7 +11363,7 @@ func (v *ObjectState) SetExplicitEdgetarget(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitEdgetarget() uint64 {
-	ret, err := v.getExplicitEdgetarget(context.Background())
+	ret, err := v.getExplicitEdgetarget(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10509,7 +11381,7 @@ func (v *ObjectState) getExplicitEdgetarget(ctx context.Context) (uint64, error)
 }
 
 func (v *ObjectState) SetExplicitTailurl(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10518,7 +11390,7 @@ func (v *ObjectState) SetExplicitTailurl(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitTailurl() uint64 {
-	ret, err := v.getExplicitTailurl(context.Background())
+	ret, err := v.getExplicitTailurl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10536,7 +11408,7 @@ func (v *ObjectState) getExplicitTailurl(ctx context.Context) (uint64, error) {
 }
 
 func (v *ObjectState) SetExplicitHeadurl(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10545,7 +11417,7 @@ func (v *ObjectState) SetExplicitHeadurl(_arg uint64) error {
 }
 
 func (v *ObjectState) GetExplicitHeadurl() uint64 {
-	ret, err := v.getExplicitHeadurl(context.Background())
+	ret, err := v.getExplicitHeadurl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10563,7 +11435,7 @@ func (v *ObjectState) getExplicitHeadurl(ctx context.Context) (uint64, error) {
 }
 
 func (v *ObjectState) SetLabeledgealigned(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10572,7 +11444,7 @@ func (v *ObjectState) SetLabeledgealigned(_arg uint64) error {
 }
 
 func (v *ObjectState) GetLabeledgealigned() uint64 {
-	ret, err := v.getLabeledgealigned(context.Background())
+	ret, err := v.getLabeledgealigned(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10590,7 +11462,7 @@ func (v *ObjectState) getLabeledgealigned(ctx context.Context) (uint64, error) {
 }
 
 func (v *ObjectState) SetUrlMapShape(_arg MapShapeType) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10599,7 +11471,7 @@ func (v *ObjectState) SetUrlMapShape(_arg MapShapeType) error {
 }
 
 func (v *ObjectState) GetUrlMapShape() MapShapeType {
-	ret, err := v.getUrlMapShape(context.Background())
+	ret, err := v.getUrlMapShape(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10617,7 +11489,7 @@ func (v *ObjectState) getUrlMapShape(ctx context.Context) (MapShapeType, error) 
 }
 
 func (v *ObjectState) SetUrlMapN(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10626,7 +11498,7 @@ func (v *ObjectState) SetUrlMapN(_arg uint64) error {
 }
 
 func (v *ObjectState) GetUrlMapN() uint64 {
-	ret, err := v.getUrlMapN(context.Background())
+	ret, err := v.getUrlMapN(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10644,7 +11516,7 @@ func (v *ObjectState) getUrlMapN(ctx context.Context) (uint64, error) {
 }
 
 func (v *ObjectState) SetUrlMapP(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10653,7 +11525,7 @@ func (v *ObjectState) SetUrlMapP(_arg *PointFloat) error {
 }
 
 func (v *ObjectState) GetUrlMapP() *PointFloat {
-	ret, err := v.getUrlMapP(context.Background())
+	ret, err := v.getUrlMapP(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10667,11 +11539,12 @@ func (v *ObjectState) getUrlMapP(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetUrlBsplinemapPolyN(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10680,7 +11553,7 @@ func (v *ObjectState) SetUrlBsplinemapPolyN(_arg int64) error {
 }
 
 func (v *ObjectState) GetUrlBsplinemapPolyN() int64 {
-	ret, err := v.getUrlBsplinemapPolyN(context.Background())
+	ret, err := v.getUrlBsplinemapPolyN(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10698,7 +11571,7 @@ func (v *ObjectState) getUrlBsplinemapPolyN(ctx context.Context) (int64, error) 
 }
 
 func (v *ObjectState) SetUrlBsplinemapN(_arg []int) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10707,7 +11580,7 @@ func (v *ObjectState) SetUrlBsplinemapN(_arg []int) error {
 }
 
 func (v *ObjectState) GetUrlBsplinemapN() []int {
-	ret, err := v.getUrlBsplinemapN(context.Background())
+	ret, err := v.getUrlBsplinemapN(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10729,7 +11602,7 @@ func (v *ObjectState) getUrlBsplinemapN(ctx context.Context) ([]int, error) {
 }
 
 func (v *ObjectState) SetUrlBsplinemapP(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10738,7 +11611,7 @@ func (v *ObjectState) SetUrlBsplinemapP(_arg *PointFloat) error {
 }
 
 func (v *ObjectState) GetUrlBsplinemapP() *PointFloat {
-	ret, err := v.getUrlBsplinemapP(context.Background())
+	ret, err := v.getUrlBsplinemapP(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10752,11 +11625,12 @@ func (v *ObjectState) getUrlBsplinemapP(ctx context.Context) (*PointFloat, error
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetTailendurlMapN(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10765,7 +11639,7 @@ func (v *ObjectState) SetTailendurlMapN(_arg int64) error {
 }
 
 func (v *ObjectState) GetTailendurlMapN() int64 {
-	ret, err := v.getTailendurlMapN(context.Background())
+	ret, err := v.getTailendurlMapN(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10783,7 +11657,7 @@ func (v *ObjectState) getTailendurlMapN(ctx context.Context) (int64, error) {
 }
 
 func (v *ObjectState) SetTailendurlMapP(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10792,7 +11666,7 @@ func (v *ObjectState) SetTailendurlMapP(_arg *PointFloat) error {
 }
 
 func (v *ObjectState) GetTailendurlMapP() *PointFloat {
-	ret, err := v.getTailendurlMapP(context.Background())
+	ret, err := v.getTailendurlMapP(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10806,11 +11680,12 @@ func (v *ObjectState) getTailendurlMapP(ctx context.Context) (*PointFloat, error
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *ObjectState) SetHeadendurlMapN(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10819,7 +11694,7 @@ func (v *ObjectState) SetHeadendurlMapN(_arg int64) error {
 }
 
 func (v *ObjectState) GetHeadendurlMapN() int64 {
-	ret, err := v.getHeadendurlMapN(context.Background())
+	ret, err := v.getHeadendurlMapN(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10837,7 +11712,7 @@ func (v *ObjectState) getHeadendurlMapN(ctx context.Context) (int64, error) {
 }
 
 func (v *ObjectState) SetHeadendurlMapP(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -10846,7 +11721,7 @@ func (v *ObjectState) SetHeadendurlMapP(_arg *PointFloat) error {
 }
 
 func (v *ObjectState) GetHeadendurlMapP() *PointFloat {
-	ret, err := v.getHeadendurlMapP(context.Background())
+	ret, err := v.getHeadendurlMapP(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -10860,13 +11735,33 @@ func (v *ObjectState) getHeadendurlMapP(ctx context.Context) (*PointFloat, error
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type DeviceCallbacks struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DeviceCallbacks) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DeviceCallbacks) withToken(token *callToken) *DeviceCallbacks {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDeviceCallbacks(ctx context.Context) (*DeviceCallbacks, error) {
 	o, err := mod.newObject(ctx, "DeviceCallbacks")
 	if err != nil {
@@ -10900,7 +11795,7 @@ func (v *DeviceCallbacks) SetRefresh(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.DeviceCallbacks_Refresh == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Refresh before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_Refresh[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_Refresh[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_refresh", v.getPtr())
 }
 
@@ -10908,7 +11803,7 @@ func (v *DeviceCallbacks) SetButtonPress(ctx context.Context, arg *CallbackFunc[
 	if mod.lookupFuncMap.DeviceCallbacks_ButtonPress == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_ButtonPress before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_ButtonPress[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_ButtonPress[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_button_press", v.getPtr())
 }
 
@@ -10916,7 +11811,7 @@ func (v *DeviceCallbacks) SetButtonRelease(ctx context.Context, arg *CallbackFun
 	if mod.lookupFuncMap.DeviceCallbacks_ButtonRelease == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_ButtonRelease before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_ButtonRelease[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_ButtonRelease[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_button_release", v.getPtr())
 }
 
@@ -10924,7 +11819,7 @@ func (v *DeviceCallbacks) SetMotion(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.DeviceCallbacks_Motion == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Motion before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_Motion[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_Motion[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_motion", v.getPtr())
 }
 
@@ -10932,7 +11827,7 @@ func (v *DeviceCallbacks) SetModify(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.DeviceCallbacks_Modify == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Modify before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_Modify[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_Modify[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_modify", v.getPtr())
 }
 
@@ -10940,7 +11835,7 @@ func (v *DeviceCallbacks) SetDel(ctx context.Context, arg *CallbackFunc[func(con
 	if mod.lookupFuncMap.DeviceCallbacks_Delete == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Delete before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_Delete[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_Delete[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_del", v.getPtr())
 }
 
@@ -10948,7 +11843,7 @@ func (v *DeviceCallbacks) SetRead(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.DeviceCallbacks_Read == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Read before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_Read[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_Read[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_read", v.getPtr())
 }
 
@@ -10956,7 +11851,7 @@ func (v *DeviceCallbacks) SetLayout(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.DeviceCallbacks_Layout == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Layout before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_Layout[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_Layout[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_layout", v.getPtr())
 }
 
@@ -10964,14 +11859,33 @@ func (v *DeviceCallbacks) SetRender(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.DeviceCallbacks_Render == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Render before")
 	}
-	mod.callbackFuncMap.DeviceCallbacks_Render[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceCallbacks_Render[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceCallbacks_render", v.getPtr())
 }
 
 type Job struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Job) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Job) withToken(token *callToken) *Job {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewJob(ctx context.Context) (*Job, error) {
 	o, err := mod.newObject(ctx, "Job")
 	if err != nil {
@@ -11002,7 +11916,7 @@ func newJobSlice(v []uint64) []*Job {
 	return ret
 }
 func (v *Job) SetGvc(_arg *Context) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11011,7 +11925,7 @@ func (v *Job) SetGvc(_arg *Context) error {
 }
 
 func (v *Job) GetGvc() *Context {
-	ret, err := v.getGvc(context.Background())
+	ret, err := v.getGvc(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11025,11 +11939,12 @@ func (v *Job) getGvc(ctx context.Context) (*Context, error) {
 		return zero, err
 	}
 	ret := newContext(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetNext(_arg *Job) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11038,7 +11953,7 @@ func (v *Job) SetNext(_arg *Job) error {
 }
 
 func (v *Job) GetNext() *Job {
-	ret, err := v.getNext(context.Background())
+	ret, err := v.getNext(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11052,11 +11967,12 @@ func (v *Job) getNext(ctx context.Context) (*Job, error) {
 		return zero, err
 	}
 	ret := newJob(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetNextActive(_arg *Job) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11065,7 +11981,7 @@ func (v *Job) SetNextActive(_arg *Job) error {
 }
 
 func (v *Job) GetNextActive() *Job {
-	ret, err := v.getNextActive(context.Background())
+	ret, err := v.getNextActive(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11079,11 +11995,12 @@ func (v *Job) getNextActive(ctx context.Context) (*Job, error) {
 		return zero, err
 	}
 	ret := newJob(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetCommon(_arg *Common) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11092,7 +12009,7 @@ func (v *Job) SetCommon(_arg *Common) error {
 }
 
 func (v *Job) GetCommon() *Common {
-	ret, err := v.getCommon(context.Background())
+	ret, err := v.getCommon(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11106,11 +12023,12 @@ func (v *Job) getCommon(ctx context.Context) (*Common, error) {
 		return zero, err
 	}
 	ret := newCommon(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetObj(_arg *ObjectState) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11119,7 +12037,7 @@ func (v *Job) SetObj(_arg *ObjectState) error {
 }
 
 func (v *Job) GetObj() *ObjectState {
-	ret, err := v.getObj(context.Background())
+	ret, err := v.getObj(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11133,11 +12051,12 @@ func (v *Job) getObj(ctx context.Context) (*ObjectState, error) {
 		return zero, err
 	}
 	ret := newObjectState(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetInputFilename(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11146,7 +12065,7 @@ func (v *Job) SetInputFilename(_arg string) error {
 }
 
 func (v *Job) GetInputFilename() string {
-	ret, err := v.getInputFilename(context.Background())
+	ret, err := v.getInputFilename(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11167,7 +12086,7 @@ func (v *Job) getInputFilename(ctx context.Context) (string, error) {
 }
 
 func (v *Job) SetGraphIndex(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11176,7 +12095,7 @@ func (v *Job) SetGraphIndex(_arg int64) error {
 }
 
 func (v *Job) GetGraphIndex() int64 {
-	ret, err := v.getGraphIndex(context.Background())
+	ret, err := v.getGraphIndex(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11194,7 +12113,7 @@ func (v *Job) getGraphIndex(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetLayoutType(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11203,7 +12122,7 @@ func (v *Job) SetLayoutType(_arg string) error {
 }
 
 func (v *Job) GetLayoutType() string {
-	ret, err := v.getLayoutType(context.Background())
+	ret, err := v.getLayoutType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11224,7 +12143,7 @@ func (v *Job) getLayoutType(ctx context.Context) (string, error) {
 }
 
 func (v *Job) SetOutputFilename(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11233,7 +12152,7 @@ func (v *Job) SetOutputFilename(_arg string) error {
 }
 
 func (v *Job) GetOutputFilename() string {
-	ret, err := v.getOutputFilename(context.Background())
+	ret, err := v.getOutputFilename(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11254,7 +12173,7 @@ func (v *Job) getOutputFilename(ctx context.Context) (string, error) {
 }
 
 func (v *Job) SetOutputFile(_arg *File) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11263,7 +12182,7 @@ func (v *Job) SetOutputFile(_arg *File) error {
 }
 
 func (v *Job) GetOutputFile() *File {
-	ret, err := v.getOutputFile(context.Background())
+	ret, err := v.getOutputFile(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11277,11 +12196,12 @@ func (v *Job) getOutputFile(ctx context.Context) (*File, error) {
 		return zero, err
 	}
 	ret := newFile(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetOutputData(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11290,7 +12210,7 @@ func (v *Job) SetOutputData(_arg string) error {
 }
 
 func (v *Job) GetOutputData() string {
-	ret, err := v.getOutputData(context.Background())
+	ret, err := v.getOutputData(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11311,7 +12231,7 @@ func (v *Job) getOutputData(ctx context.Context) (string, error) {
 }
 
 func (v *Job) SetOutputDataAllocated(_arg uint) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUintWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11320,7 +12240,7 @@ func (v *Job) SetOutputDataAllocated(_arg uint) error {
 }
 
 func (v *Job) GetOutputDataAllocated() uint {
-	ret, err := v.getOutputDataAllocated(context.Background())
+	ret, err := v.getOutputDataAllocated(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11338,7 +12258,7 @@ func (v *Job) getOutputDataAllocated(ctx context.Context) (uint, error) {
 }
 
 func (v *Job) SetOutputDataPosition(_arg uint) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUintWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11347,7 +12267,7 @@ func (v *Job) SetOutputDataPosition(_arg uint) error {
 }
 
 func (v *Job) GetOutputDataPosition() uint {
-	ret, err := v.getOutputDataPosition(context.Background())
+	ret, err := v.getOutputDataPosition(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11365,7 +12285,7 @@ func (v *Job) getOutputDataPosition(ctx context.Context) (uint, error) {
 }
 
 func (v *Job) SetOutputLangname(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11374,7 +12294,7 @@ func (v *Job) SetOutputLangname(_arg string) error {
 }
 
 func (v *Job) GetOutputLangname() string {
-	ret, err := v.getOutputLangname(context.Background())
+	ret, err := v.getOutputLangname(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11395,7 +12315,7 @@ func (v *Job) getOutputLangname(ctx context.Context) (string, error) {
 }
 
 func (v *Job) SetOutputLang(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11404,7 +12324,7 @@ func (v *Job) SetOutputLang(_arg int64) error {
 }
 
 func (v *Job) GetOutputLang() int64 {
-	ret, err := v.getOutputLang(context.Background())
+	ret, err := v.getOutputLang(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11422,7 +12342,7 @@ func (v *Job) getOutputLang(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetRender(_arg *PluginActiveRender) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11431,7 +12351,7 @@ func (v *Job) SetRender(_arg *PluginActiveRender) error {
 }
 
 func (v *Job) GetRender() *PluginActiveRender {
-	ret, err := v.getRender(context.Background())
+	ret, err := v.getRender(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11445,11 +12365,12 @@ func (v *Job) getRender(ctx context.Context) (*PluginActiveRender, error) {
 		return zero, err
 	}
 	ret := newPluginActiveRender(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetDevice(_arg *PluginActiveDevice) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11458,7 +12379,7 @@ func (v *Job) SetDevice(_arg *PluginActiveDevice) error {
 }
 
 func (v *Job) GetDevice() *PluginActiveDevice {
-	ret, err := v.getDevice(context.Background())
+	ret, err := v.getDevice(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11472,11 +12393,12 @@ func (v *Job) getDevice(ctx context.Context) (*PluginActiveDevice, error) {
 		return zero, err
 	}
 	ret := newPluginActiveDevice(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetLoadimage(_arg *PluginActiveLoadImage) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11485,7 +12407,7 @@ func (v *Job) SetLoadimage(_arg *PluginActiveLoadImage) error {
 }
 
 func (v *Job) GetLoadimage() *PluginActiveLoadImage {
-	ret, err := v.getLoadimage(context.Background())
+	ret, err := v.getLoadimage(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11499,11 +12421,12 @@ func (v *Job) getLoadimage(ctx context.Context) (*PluginActiveLoadImage, error) 
 		return zero, err
 	}
 	ret := newPluginActiveLoadImage(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetCallbacks(_arg *DeviceCallbacks) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11512,7 +12435,7 @@ func (v *Job) SetCallbacks(_arg *DeviceCallbacks) error {
 }
 
 func (v *Job) GetCallbacks() *DeviceCallbacks {
-	ret, err := v.getCallbacks(context.Background())
+	ret, err := v.getCallbacks(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11526,11 +12449,12 @@ func (v *Job) getCallbacks(ctx context.Context) (*DeviceCallbacks, error) {
 		return zero, err
 	}
 	ret := newDeviceCallbacks(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetDeviceDpi(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11539,7 +12463,7 @@ func (v *Job) SetDeviceDpi(_arg *PointFloat) error {
 }
 
 func (v *Job) GetDeviceDpi() *PointFloat {
-	ret, err := v.getDeviceDpi(context.Background())
+	ret, err := v.getDeviceDpi(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11553,11 +12477,12 @@ func (v *Job) getDeviceDpi(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetDeviceSetsDpi(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11566,7 +12491,7 @@ func (v *Job) SetDeviceSetsDpi(_arg bool) error {
 }
 
 func (v *Job) GetDeviceSetsDpi() bool {
-	ret, err := v.getDeviceSetsDpi(context.Background())
+	ret, err := v.getDeviceSetsDpi(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11584,7 +12509,7 @@ func (v *Job) getDeviceSetsDpi(ctx context.Context) (bool, error) {
 }
 
 func (v *Job) SetDisplay(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11593,7 +12518,7 @@ func (v *Job) SetDisplay(_arg any) error {
 }
 
 func (v *Job) GetDisplay() any {
-	ret, err := v.getDisplay(context.Background())
+	ret, err := v.getDisplay(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11611,7 +12536,7 @@ func (v *Job) getDisplay(ctx context.Context) (any, error) {
 }
 
 func (v *Job) SetScreen(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11620,7 +12545,7 @@ func (v *Job) SetScreen(_arg int64) error {
 }
 
 func (v *Job) GetScreen() int64 {
-	ret, err := v.getScreen(context.Background())
+	ret, err := v.getScreen(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11638,7 +12563,7 @@ func (v *Job) getScreen(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetContext(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11647,7 +12572,7 @@ func (v *Job) SetContext(_arg any) error {
 }
 
 func (v *Job) GetContext() any {
-	ret, err := v.getContext(context.Background())
+	ret, err := v.getContext(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11665,7 +12590,7 @@ func (v *Job) getContext(ctx context.Context) (any, error) {
 }
 
 func (v *Job) SetExternalContext(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11674,7 +12599,7 @@ func (v *Job) SetExternalContext(_arg bool) error {
 }
 
 func (v *Job) GetExternalContext() bool {
-	ret, err := v.getExternalContext(context.Background())
+	ret, err := v.getExternalContext(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11692,7 +12617,7 @@ func (v *Job) getExternalContext(ctx context.Context) (bool, error) {
 }
 
 func (v *Job) SetImagedata(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11701,7 +12626,7 @@ func (v *Job) SetImagedata(_arg string) error {
 }
 
 func (v *Job) GetImagedata() string {
-	ret, err := v.getImagedata(context.Background())
+	ret, err := v.getImagedata(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11722,7 +12647,7 @@ func (v *Job) getImagedata(ctx context.Context) (string, error) {
 }
 
 func (v *Job) SetFlags(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11731,7 +12656,7 @@ func (v *Job) SetFlags(_arg int64) error {
 }
 
 func (v *Job) GetFlags() int64 {
-	ret, err := v.getFlags(context.Background())
+	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11749,7 +12674,7 @@ func (v *Job) getFlags(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetNumLayers(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11758,7 +12683,7 @@ func (v *Job) SetNumLayers(_arg int64) error {
 }
 
 func (v *Job) GetNumLayers() int64 {
-	ret, err := v.getNumLayers(context.Background())
+	ret, err := v.getNumLayers(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11776,7 +12701,7 @@ func (v *Job) getNumLayers(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetLayerNum(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11785,7 +12710,7 @@ func (v *Job) SetLayerNum(_arg int64) error {
 }
 
 func (v *Job) GetLayerNum() int64 {
-	ret, err := v.getLayerNum(context.Background())
+	ret, err := v.getLayerNum(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11803,7 +12728,7 @@ func (v *Job) getLayerNum(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetPagesArraySize(_arg *Point) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11812,7 +12737,7 @@ func (v *Job) SetPagesArraySize(_arg *Point) error {
 }
 
 func (v *Job) GetPagesArraySize() *Point {
-	ret, err := v.getPagesArraySize(context.Background())
+	ret, err := v.getPagesArraySize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11826,11 +12751,12 @@ func (v *Job) getPagesArraySize(ctx context.Context) (*Point, error) {
 		return zero, err
 	}
 	ret := newPoint(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetPagesArrayFirst(_arg *Point) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11839,7 +12765,7 @@ func (v *Job) SetPagesArrayFirst(_arg *Point) error {
 }
 
 func (v *Job) GetPagesArrayFirst() *Point {
-	ret, err := v.getPagesArrayFirst(context.Background())
+	ret, err := v.getPagesArrayFirst(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11853,11 +12779,12 @@ func (v *Job) getPagesArrayFirst(ctx context.Context) (*Point, error) {
 		return zero, err
 	}
 	ret := newPoint(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetPagesArrayMajor(_arg *Point) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11866,7 +12793,7 @@ func (v *Job) SetPagesArrayMajor(_arg *Point) error {
 }
 
 func (v *Job) GetPagesArrayMajor() *Point {
-	ret, err := v.getPagesArrayMajor(context.Background())
+	ret, err := v.getPagesArrayMajor(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11880,11 +12807,12 @@ func (v *Job) getPagesArrayMajor(ctx context.Context) (*Point, error) {
 		return zero, err
 	}
 	ret := newPoint(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetPagesArrayMinor(_arg *Point) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11893,7 +12821,7 @@ func (v *Job) SetPagesArrayMinor(_arg *Point) error {
 }
 
 func (v *Job) GetPagesArrayMinor() *Point {
-	ret, err := v.getPagesArrayMinor(context.Background())
+	ret, err := v.getPagesArrayMinor(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11907,11 +12835,12 @@ func (v *Job) getPagesArrayMinor(ctx context.Context) (*Point, error) {
 		return zero, err
 	}
 	ret := newPoint(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetPagesArrayElem(_arg *Point) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11920,7 +12849,7 @@ func (v *Job) SetPagesArrayElem(_arg *Point) error {
 }
 
 func (v *Job) GetPagesArrayElem() *Point {
-	ret, err := v.getPagesArrayElem(context.Background())
+	ret, err := v.getPagesArrayElem(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11934,11 +12863,12 @@ func (v *Job) getPagesArrayElem(ctx context.Context) (*Point, error) {
 		return zero, err
 	}
 	ret := newPoint(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetNumPages(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11947,7 +12877,7 @@ func (v *Job) SetNumPages(_arg int64) error {
 }
 
 func (v *Job) GetNumPages() int64 {
-	ret, err := v.getNumPages(context.Background())
+	ret, err := v.getNumPages(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11965,7 +12895,7 @@ func (v *Job) getNumPages(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetBb(_arg *BoxFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -11974,7 +12904,7 @@ func (v *Job) SetBb(_arg *BoxFloat) error {
 }
 
 func (v *Job) GetBb() *BoxFloat {
-	ret, err := v.getBb(context.Background())
+	ret, err := v.getBb(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -11988,11 +12918,12 @@ func (v *Job) getBb(ctx context.Context) (*BoxFloat, error) {
 		return zero, err
 	}
 	ret := newBoxFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetPad(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12001,7 +12932,7 @@ func (v *Job) SetPad(_arg *PointFloat) error {
 }
 
 func (v *Job) GetPad() *PointFloat {
-	ret, err := v.getPad(context.Background())
+	ret, err := v.getPad(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12015,11 +12946,12 @@ func (v *Job) getPad(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetClip(_arg *BoxFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12028,7 +12960,7 @@ func (v *Job) SetClip(_arg *BoxFloat) error {
 }
 
 func (v *Job) GetClip() *BoxFloat {
-	ret, err := v.getClip(context.Background())
+	ret, err := v.getClip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12042,11 +12974,12 @@ func (v *Job) getClip(ctx context.Context) (*BoxFloat, error) {
 		return zero, err
 	}
 	ret := newBoxFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetPageBox(_arg *BoxFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12055,7 +12988,7 @@ func (v *Job) SetPageBox(_arg *BoxFloat) error {
 }
 
 func (v *Job) GetPageBox() *BoxFloat {
-	ret, err := v.getPageBox(context.Background())
+	ret, err := v.getPageBox(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12069,11 +13002,12 @@ func (v *Job) getPageBox(ctx context.Context) (*BoxFloat, error) {
 		return zero, err
 	}
 	ret := newBoxFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetPageSize(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12082,7 +13016,7 @@ func (v *Job) SetPageSize(_arg *PointFloat) error {
 }
 
 func (v *Job) GetPageSize() *PointFloat {
-	ret, err := v.getPageSize(context.Background())
+	ret, err := v.getPageSize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12096,11 +13030,12 @@ func (v *Job) getPageSize(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetFocus(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12109,7 +13044,7 @@ func (v *Job) SetFocus(_arg *PointFloat) error {
 }
 
 func (v *Job) GetFocus() *PointFloat {
-	ret, err := v.getFocus(context.Background())
+	ret, err := v.getFocus(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12123,11 +13058,12 @@ func (v *Job) getFocus(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetZoom(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12136,7 +13072,7 @@ func (v *Job) SetZoom(_arg float64) error {
 }
 
 func (v *Job) GetZoom() float64 {
-	ret, err := v.getZoom(context.Background())
+	ret, err := v.getZoom(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12157,7 +13093,7 @@ func (v *Job) getZoom(ctx context.Context) (float64, error) {
 }
 
 func (v *Job) SetRotation(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12166,7 +13102,7 @@ func (v *Job) SetRotation(_arg int64) error {
 }
 
 func (v *Job) GetRotation() int64 {
-	ret, err := v.getRotation(context.Background())
+	ret, err := v.getRotation(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12184,7 +13120,7 @@ func (v *Job) getRotation(ctx context.Context) (int64, error) {
 }
 
 func (v *Job) SetView(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12193,7 +13129,7 @@ func (v *Job) SetView(_arg *PointFloat) error {
 }
 
 func (v *Job) GetView() *PointFloat {
-	ret, err := v.getView(context.Background())
+	ret, err := v.getView(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12207,11 +13143,12 @@ func (v *Job) getView(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetCanvasBox(_arg *BoxFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12220,7 +13157,7 @@ func (v *Job) SetCanvasBox(_arg *BoxFloat) error {
 }
 
 func (v *Job) GetCanvasBox() *BoxFloat {
-	ret, err := v.getCanvasBox(context.Background())
+	ret, err := v.getCanvasBox(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12234,11 +13171,12 @@ func (v *Job) getCanvasBox(ctx context.Context) (*BoxFloat, error) {
 		return zero, err
 	}
 	ret := newBoxFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetMargin(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12247,7 +13185,7 @@ func (v *Job) SetMargin(_arg *PointFloat) error {
 }
 
 func (v *Job) GetMargin() *PointFloat {
-	ret, err := v.getMargin(context.Background())
+	ret, err := v.getMargin(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12261,11 +13199,12 @@ func (v *Job) getMargin(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetDpi(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12274,7 +13213,7 @@ func (v *Job) SetDpi(_arg *PointFloat) error {
 }
 
 func (v *Job) GetDpi() *PointFloat {
-	ret, err := v.getDpi(context.Background())
+	ret, err := v.getDpi(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12288,11 +13227,12 @@ func (v *Job) getDpi(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetWidth(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12301,7 +13241,7 @@ func (v *Job) SetWidth(_arg uint64) error {
 }
 
 func (v *Job) GetWidth() uint64 {
-	ret, err := v.getWidth(context.Background())
+	ret, err := v.getWidth(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12319,7 +13259,7 @@ func (v *Job) getWidth(ctx context.Context) (uint64, error) {
 }
 
 func (v *Job) SetHeight(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12328,7 +13268,7 @@ func (v *Job) SetHeight(_arg uint64) error {
 }
 
 func (v *Job) GetHeight() uint64 {
-	ret, err := v.getHeight(context.Background())
+	ret, err := v.getHeight(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12346,7 +13286,7 @@ func (v *Job) getHeight(ctx context.Context) (uint64, error) {
 }
 
 func (v *Job) SetPageBoundingBox(_arg *Box) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12355,7 +13295,7 @@ func (v *Job) SetPageBoundingBox(_arg *Box) error {
 }
 
 func (v *Job) GetPageBoundingBox() *Box {
-	ret, err := v.getPageBoundingBox(context.Background())
+	ret, err := v.getPageBoundingBox(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12369,11 +13309,12 @@ func (v *Job) getPageBoundingBox(ctx context.Context) (*Box, error) {
 		return zero, err
 	}
 	ret := newBox(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetBoundingBox(_arg *Box) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12382,7 +13323,7 @@ func (v *Job) SetBoundingBox(_arg *Box) error {
 }
 
 func (v *Job) GetBoundingBox() *Box {
-	ret, err := v.getBoundingBox(context.Background())
+	ret, err := v.getBoundingBox(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12396,11 +13337,12 @@ func (v *Job) getBoundingBox(ctx context.Context) (*Box, error) {
 		return zero, err
 	}
 	ret := newBox(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetScale(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12409,7 +13351,7 @@ func (v *Job) SetScale(_arg *PointFloat) error {
 }
 
 func (v *Job) GetScale() *PointFloat {
-	ret, err := v.getScale(context.Background())
+	ret, err := v.getScale(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12423,11 +13365,12 @@ func (v *Job) getScale(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetTranslation(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12436,7 +13379,7 @@ func (v *Job) SetTranslation(_arg *PointFloat) error {
 }
 
 func (v *Job) GetTranslation() *PointFloat {
-	ret, err := v.getTranslation(context.Background())
+	ret, err := v.getTranslation(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12450,11 +13393,12 @@ func (v *Job) getTranslation(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetDevscale(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12463,7 +13407,7 @@ func (v *Job) SetDevscale(_arg *PointFloat) error {
 }
 
 func (v *Job) GetDevscale() *PointFloat {
-	ret, err := v.getDevscale(context.Background())
+	ret, err := v.getDevscale(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12477,11 +13421,12 @@ func (v *Job) getDevscale(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetFitMode(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12490,7 +13435,7 @@ func (v *Job) SetFitMode(_arg bool) error {
 }
 
 func (v *Job) GetFitMode() bool {
-	ret, err := v.getFitMode(context.Background())
+	ret, err := v.getFitMode(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12508,7 +13453,7 @@ func (v *Job) getFitMode(ctx context.Context) (bool, error) {
 }
 
 func (v *Job) SetNeedsRefresh(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12517,7 +13462,7 @@ func (v *Job) SetNeedsRefresh(_arg bool) error {
 }
 
 func (v *Job) GetNeedsRefresh() bool {
-	ret, err := v.getNeedsRefresh(context.Background())
+	ret, err := v.getNeedsRefresh(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12535,7 +13480,7 @@ func (v *Job) getNeedsRefresh(ctx context.Context) (bool, error) {
 }
 
 func (v *Job) SetClick(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12544,7 +13489,7 @@ func (v *Job) SetClick(_arg bool) error {
 }
 
 func (v *Job) GetClick() bool {
-	ret, err := v.getClick(context.Background())
+	ret, err := v.getClick(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12562,7 +13507,7 @@ func (v *Job) getClick(ctx context.Context) (bool, error) {
 }
 
 func (v *Job) SetHasGrown(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12571,7 +13516,7 @@ func (v *Job) SetHasGrown(_arg bool) error {
 }
 
 func (v *Job) GetHasGrown() bool {
-	ret, err := v.getHasGrown(context.Background())
+	ret, err := v.getHasGrown(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12589,7 +13534,7 @@ func (v *Job) getHasGrown(ctx context.Context) (bool, error) {
 }
 
 func (v *Job) SetHasBeenRendered(_arg bool) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toBoolWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12598,7 +13543,7 @@ func (v *Job) SetHasBeenRendered(_arg bool) error {
 }
 
 func (v *Job) GetHasBeenRendered() bool {
-	ret, err := v.getHasBeenRendered(context.Background())
+	ret, err := v.getHasBeenRendered(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12616,7 +13561,7 @@ func (v *Job) getHasBeenRendered(ctx context.Context) (bool, error) {
 }
 
 func (v *Job) SetButton(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12625,7 +13570,7 @@ func (v *Job) SetButton(_arg uint64) error {
 }
 
 func (v *Job) GetButton() uint64 {
-	ret, err := v.getButton(context.Background())
+	ret, err := v.getButton(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12643,7 +13588,7 @@ func (v *Job) getButton(ctx context.Context) (uint64, error) {
 }
 
 func (v *Job) SetPointer(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12652,7 +13597,7 @@ func (v *Job) SetPointer(_arg *PointFloat) error {
 }
 
 func (v *Job) GetPointer() *PointFloat {
-	ret, err := v.getPointer(context.Background())
+	ret, err := v.getPointer(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12666,11 +13611,12 @@ func (v *Job) getPointer(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetOldpointer(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12679,7 +13625,7 @@ func (v *Job) SetOldpointer(_arg *PointFloat) error {
 }
 
 func (v *Job) GetOldpointer() *PointFloat {
-	ret, err := v.getOldpointer(context.Background())
+	ret, err := v.getOldpointer(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12693,11 +13639,12 @@ func (v *Job) getOldpointer(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Job) SetCurrentObj(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12706,7 +13653,7 @@ func (v *Job) SetCurrentObj(_arg any) error {
 }
 
 func (v *Job) GetCurrentObj() any {
-	ret, err := v.getCurrentObj(context.Background())
+	ret, err := v.getCurrentObj(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12724,7 +13671,7 @@ func (v *Job) getCurrentObj(ctx context.Context) (any, error) {
 }
 
 func (v *Job) SetSelectedObj(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12733,7 +13680,7 @@ func (v *Job) SetSelectedObj(_arg any) error {
 }
 
 func (v *Job) GetSelectedObj() any {
-	ret, err := v.getSelectedObj(context.Background())
+	ret, err := v.getSelectedObj(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12751,7 +13698,7 @@ func (v *Job) getSelectedObj(ctx context.Context) (any, error) {
 }
 
 func (v *Job) SetActiveTooltip(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12760,7 +13707,7 @@ func (v *Job) SetActiveTooltip(_arg string) error {
 }
 
 func (v *Job) GetActiveTooltip() string {
-	ret, err := v.getActiveTooltip(context.Background())
+	ret, err := v.getActiveTooltip(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12781,7 +13728,7 @@ func (v *Job) getActiveTooltip(ctx context.Context) (string, error) {
 }
 
 func (v *Job) SetSelectedHref(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12790,7 +13737,7 @@ func (v *Job) SetSelectedHref(_arg string) error {
 }
 
 func (v *Job) GetSelectedHref() string {
-	ret, err := v.getSelectedHref(context.Background())
+	ret, err := v.getSelectedHref(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12812,8 +13759,27 @@ func (v *Job) getSelectedHref(ctx context.Context) (string, error) {
 
 type Point struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Point) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Point) withToken(token *callToken) *Point {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPoint(ctx context.Context) (*Point, error) {
 	o, err := mod.newObject(ctx, "Point")
 	if err != nil {
@@ -12844,7 +13810,7 @@ func newPointSlice(v []uint64) []*Point {
 	return ret
 }
 func (v *Point) SetX(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12853,7 +13819,7 @@ func (v *Point) SetX(_arg int64) error {
 }
 
 func (v *Point) GetX() int64 {
-	ret, err := v.getX(context.Background())
+	ret, err := v.getX(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12871,7 +13837,7 @@ func (v *Point) getX(ctx context.Context) (int64, error) {
 }
 
 func (v *Point) SetY(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12880,7 +13846,7 @@ func (v *Point) SetY(_arg int64) error {
 }
 
 func (v *Point) GetY() int64 {
-	ret, err := v.getY(context.Background())
+	ret, err := v.getY(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12899,8 +13865,27 @@ func (v *Point) getY(ctx context.Context) (int64, error) {
 
 type BoxFloat struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *BoxFloat) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *BoxFloat) withToken(token *callToken) *BoxFloat {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewBoxFloat(ctx context.Context) (*BoxFloat, error) {
 	o, err := mod.newObject(ctx, "BoxFloat")
 	if err != nil {
@@ -12931,7 +13916,7 @@ func newBoxFloatSlice(v []uint64) []*BoxFloat {
 	return ret
 }
 func (v *BoxFloat) SetLl(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12940,7 +13925,7 @@ func (v *BoxFloat) SetLl(_arg *PointFloat) error {
 }
 
 func (v *BoxFloat) GetLl() *PointFloat {
-	ret, err := v.getLl(context.Background())
+	ret, err := v.getLl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12954,11 +13939,12 @@ func (v *BoxFloat) getLl(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *BoxFloat) SetUr(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -12967,7 +13953,7 @@ func (v *BoxFloat) SetUr(_arg *PointFloat) error {
 }
 
 func (v *BoxFloat) GetUr() *PointFloat {
-	ret, err := v.getUr(context.Background())
+	ret, err := v.getUr(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -12981,13 +13967,33 @@ func (v *BoxFloat) getUr(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type Box struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Box) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Box) withToken(token *callToken) *Box {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewBox(ctx context.Context) (*Box, error) {
 	o, err := mod.newObject(ctx, "Box")
 	if err != nil {
@@ -13018,7 +14024,7 @@ func newBoxSlice(v []uint64) []*Box {
 	return ret
 }
 func (v *Box) SetLl(_arg *Point) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13027,7 +14033,7 @@ func (v *Box) SetLl(_arg *Point) error {
 }
 
 func (v *Box) GetLl() *Point {
-	ret, err := v.getLl(context.Background())
+	ret, err := v.getLl(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13041,11 +14047,12 @@ func (v *Box) getLl(ctx context.Context) (*Point, error) {
 		return zero, err
 	}
 	ret := newPoint(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Box) SetUr(_arg *Point) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13054,7 +14061,7 @@ func (v *Box) SetUr(_arg *Point) error {
 }
 
 func (v *Box) GetUr() *Point {
-	ret, err := v.getUr(context.Background())
+	ret, err := v.getUr(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13068,13 +14075,33 @@ func (v *Box) getUr(ctx context.Context) (*Point, error) {
 		return zero, err
 	}
 	ret := newPoint(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type Color struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Color) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Color) withToken(token *callToken) *Color {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewColor(ctx context.Context) (*Color, error) {
 	o, err := mod.newObject(ctx, "Color")
 	if err != nil {
@@ -13105,7 +14132,7 @@ func newColorSlice(v []uint64) []*Color {
 	return ret
 }
 func (v *Color) SetRgbaDouble(_arg []float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13114,7 +14141,7 @@ func (v *Color) SetRgbaDouble(_arg []float64) error {
 }
 
 func (v *Color) GetRgbaDouble() []float64 {
-	ret, err := v.getRgbaDouble(context.Background())
+	ret, err := v.getRgbaDouble(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13139,7 +14166,7 @@ func (v *Color) getRgbaDouble(ctx context.Context) ([]float64, error) {
 }
 
 func (v *Color) SetHsva(_arg []float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13148,7 +14175,7 @@ func (v *Color) SetHsva(_arg []float64) error {
 }
 
 func (v *Color) GetHsva() []float64 {
-	ret, err := v.getHsva(context.Background())
+	ret, err := v.getHsva(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13173,7 +14200,7 @@ func (v *Color) getHsva(ctx context.Context) ([]float64, error) {
 }
 
 func (v *Color) SetRgbaUint(_arg []uint) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUintArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13182,7 +14209,7 @@ func (v *Color) SetRgbaUint(_arg []uint) error {
 }
 
 func (v *Color) GetRgbaUint() []uint {
-	ret, err := v.getRgbaUint(context.Background())
+	ret, err := v.getRgbaUint(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13204,7 +14231,7 @@ func (v *Color) getRgbaUint(ctx context.Context) ([]uint, error) {
 }
 
 func (v *Color) SetRgbaInt(_arg []int) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13213,7 +14240,7 @@ func (v *Color) SetRgbaInt(_arg []int) error {
 }
 
 func (v *Color) GetRgbaInt() []int {
-	ret, err := v.getRgbaInt(context.Background())
+	ret, err := v.getRgbaInt(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13235,7 +14262,7 @@ func (v *Color) getRgbaInt(ctx context.Context) ([]int, error) {
 }
 
 func (v *Color) SetString(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13244,7 +14271,7 @@ func (v *Color) SetString(_arg string) error {
 }
 
 func (v *Color) GetString() string {
-	ret, err := v.getString(context.Background())
+	ret, err := v.getString(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13265,7 +14292,7 @@ func (v *Color) getString(ctx context.Context) (string, error) {
 }
 
 func (v *Color) SetIndex(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13274,7 +14301,7 @@ func (v *Color) SetIndex(_arg int64) error {
 }
 
 func (v *Color) GetIndex() int64 {
-	ret, err := v.getIndex(context.Background())
+	ret, err := v.getIndex(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13292,7 +14319,7 @@ func (v *Color) getIndex(ctx context.Context) (int64, error) {
 }
 
 func (v *Color) SetType(_arg ColorType) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13301,7 +14328,7 @@ func (v *Color) SetType(_arg ColorType) error {
 }
 
 func (v *Color) GetType() ColorType {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13320,8 +14347,27 @@ func (v *Color) getType(ctx context.Context) (ColorType, error) {
 
 type PointFloat struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PointFloat) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PointFloat) withToken(token *callToken) *PointFloat {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPointFloat(ctx context.Context) (*PointFloat, error) {
 	o, err := mod.newObject(ctx, "PointFloat")
 	if err != nil {
@@ -13352,7 +14398,7 @@ func newPointFloatSlice(v []uint64) []*PointFloat {
 	return ret
 }
 func (v *PointFloat) SetX(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13361,7 +14407,7 @@ func (v *PointFloat) SetX(_arg float64) error {
 }
 
 func (v *PointFloat) GetX() float64 {
-	ret, err := v.getX(context.Background())
+	ret, err := v.getX(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13382,7 +14428,7 @@ func (v *PointFloat) getX(ctx context.Context) (float64, error) {
 }
 
 func (v *PointFloat) SetY(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13391,7 +14437,7 @@ func (v *PointFloat) SetY(_arg float64) error {
 }
 
 func (v *PointFloat) GetY() float64 {
-	ret, err := v.getY(context.Background())
+	ret, err := v.getY(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13413,8 +14459,27 @@ func (v *PointFloat) getY(ctx context.Context) (float64, error) {
 
 type PluginActiveDevice struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginActiveDevice) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginActiveDevice) withToken(token *callToken) *PluginActiveDevice {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginActiveDevice(ctx context.Context) (*PluginActiveDevice, error) {
 	o, err := mod.newObject(ctx, "PluginActiveDevice")
 	if err != nil {
@@ -13445,7 +14510,7 @@ func newPluginActiveDeviceSlice(v []uint64) []*PluginActiveDevice {
 	return ret
 }
 func (v *PluginActiveDevice) SetEngine(_arg *DeviceEngine) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13454,7 +14519,7 @@ func (v *PluginActiveDevice) SetEngine(_arg *DeviceEngine) error {
 }
 
 func (v *PluginActiveDevice) GetEngine() *DeviceEngine {
-	ret, err := v.getEngine(context.Background())
+	ret, err := v.getEngine(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13468,11 +14533,12 @@ func (v *PluginActiveDevice) getEngine(ctx context.Context) (*DeviceEngine, erro
 		return zero, err
 	}
 	ret := newDeviceEngine(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginActiveDevice) SetId(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13481,7 +14547,7 @@ func (v *PluginActiveDevice) SetId(_arg int64) error {
 }
 
 func (v *PluginActiveDevice) GetId() int64 {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13499,7 +14565,7 @@ func (v *PluginActiveDevice) getId(ctx context.Context) (int64, error) {
 }
 
 func (v *PluginActiveDevice) SetFeatures(_arg *DeviceFeatures) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13508,7 +14574,7 @@ func (v *PluginActiveDevice) SetFeatures(_arg *DeviceFeatures) error {
 }
 
 func (v *PluginActiveDevice) GetFeatures() *DeviceFeatures {
-	ret, err := v.getFeatures(context.Background())
+	ret, err := v.getFeatures(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13522,11 +14588,12 @@ func (v *PluginActiveDevice) getFeatures(ctx context.Context) (*DeviceFeatures, 
 		return zero, err
 	}
 	ret := newDeviceFeatures(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginActiveDevice) SetType(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13535,7 +14602,7 @@ func (v *PluginActiveDevice) SetType(_arg string) error {
 }
 
 func (v *PluginActiveDevice) GetType() string {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13557,8 +14624,27 @@ func (v *PluginActiveDevice) getType(ctx context.Context) (string, error) {
 
 type PluginActiveRender struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginActiveRender) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginActiveRender) withToken(token *callToken) *PluginActiveRender {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginActiveRender(ctx context.Context) (*PluginActiveRender, error) {
 	o, err := mod.newObject(ctx, "PluginActiveRender")
 	if err != nil {
@@ -13589,7 +14675,7 @@ func newPluginActiveRenderSlice(v []uint64) []*PluginActiveRender {
 	return ret
 }
 func (v *PluginActiveRender) SetEngine(_arg *RenderEngine) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13598,7 +14684,7 @@ func (v *PluginActiveRender) SetEngine(_arg *RenderEngine) error {
 }
 
 func (v *PluginActiveRender) GetEngine() *RenderEngine {
-	ret, err := v.getEngine(context.Background())
+	ret, err := v.getEngine(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13612,11 +14698,12 @@ func (v *PluginActiveRender) getEngine(ctx context.Context) (*RenderEngine, erro
 		return zero, err
 	}
 	ret := newRenderEngine(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginActiveRender) SetId(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13625,7 +14712,7 @@ func (v *PluginActiveRender) SetId(_arg int64) error {
 }
 
 func (v *PluginActiveRender) GetId() int64 {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13643,7 +14730,7 @@ func (v *PluginActiveRender) getId(ctx context.Context) (int64, error) {
 }
 
 func (v *PluginActiveRender) SetFeatures(_arg *RenderFeatures) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13652,7 +14739,7 @@ func (v *PluginActiveRender) SetFeatures(_arg *RenderFeatures) error {
 }
 
 func (v *PluginActiveRender) GetFeatures() *RenderFeatures {
-	ret, err := v.getFeatures(context.Background())
+	ret, err := v.getFeatures(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13666,11 +14753,12 @@ func (v *PluginActiveRender) getFeatures(ctx context.Context) (*RenderFeatures, 
 		return zero, err
 	}
 	ret := newRenderFeatures(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *PluginActiveRender) SetType(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13679,7 +14767,7 @@ func (v *PluginActiveRender) SetType(_arg string) error {
 }
 
 func (v *PluginActiveRender) GetType() string {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13701,8 +14789,27 @@ func (v *PluginActiveRender) getType(ctx context.Context) (string, error) {
 
 type DeviceEngine struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DeviceEngine) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DeviceEngine) withToken(token *callToken) *DeviceEngine {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDeviceEngine(ctx context.Context) (*DeviceEngine, error) {
 	o, err := mod.newObject(ctx, "DeviceEngine")
 	if err != nil {
@@ -13736,7 +14843,7 @@ func (v *DeviceEngine) SetInitialize(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.DeviceEngine_Initialize == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceEngine_Initialize before")
 	}
-	mod.callbackFuncMap.DeviceEngine_Initialize[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceEngine_Initialize[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceEngine_initialize", v.getPtr())
 }
 
@@ -13744,7 +14851,7 @@ func (v *DeviceEngine) SetFormat(ctx context.Context, arg *CallbackFunc[func(con
 	if mod.lookupFuncMap.DeviceEngine_Format == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceEngine_Format before")
 	}
-	mod.callbackFuncMap.DeviceEngine_Format[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceEngine_Format[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceEngine_format", v.getPtr())
 }
 
@@ -13752,14 +14859,33 @@ func (v *DeviceEngine) SetFinalize(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.DeviceEngine_Finalize == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceEngine_Finalize before")
 	}
-	mod.callbackFuncMap.DeviceEngine_Finalize[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DeviceEngine_Finalize[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "DeviceEngine_finalize", v.getPtr())
 }
 
 type PostscriptAlias struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PostscriptAlias) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PostscriptAlias) withToken(token *callToken) *PostscriptAlias {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPostscriptAlias(ctx context.Context) (*PostscriptAlias, error) {
 	o, err := mod.newObject(ctx, "PostscriptAlias")
 	if err != nil {
@@ -13790,7 +14916,7 @@ func newPostscriptAliasSlice(v []uint64) []*PostscriptAlias {
 	return ret
 }
 func (v *PostscriptAlias) SetName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13799,7 +14925,7 @@ func (v *PostscriptAlias) SetName(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetName() string {
-	ret, err := v.getName(context.Background())
+	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13820,7 +14946,7 @@ func (v *PostscriptAlias) getName(ctx context.Context) (string, error) {
 }
 
 func (v *PostscriptAlias) SetFamily(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13829,7 +14955,7 @@ func (v *PostscriptAlias) SetFamily(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetFamily() string {
-	ret, err := v.getFamily(context.Background())
+	ret, err := v.getFamily(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13850,7 +14976,7 @@ func (v *PostscriptAlias) getFamily(ctx context.Context) (string, error) {
 }
 
 func (v *PostscriptAlias) SetWeight(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13859,7 +14985,7 @@ func (v *PostscriptAlias) SetWeight(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetWeight() string {
-	ret, err := v.getWeight(context.Background())
+	ret, err := v.getWeight(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13880,7 +15006,7 @@ func (v *PostscriptAlias) getWeight(ctx context.Context) (string, error) {
 }
 
 func (v *PostscriptAlias) SetStretch(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13889,7 +15015,7 @@ func (v *PostscriptAlias) SetStretch(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetStretch() string {
-	ret, err := v.getStretch(context.Background())
+	ret, err := v.getStretch(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13910,7 +15036,7 @@ func (v *PostscriptAlias) getStretch(ctx context.Context) (string, error) {
 }
 
 func (v *PostscriptAlias) SetStyle(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13919,7 +15045,7 @@ func (v *PostscriptAlias) SetStyle(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetStyle() string {
-	ret, err := v.getStyle(context.Background())
+	ret, err := v.getStyle(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13940,7 +15066,7 @@ func (v *PostscriptAlias) getStyle(ctx context.Context) (string, error) {
 }
 
 func (v *PostscriptAlias) SetXfigCode(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13949,7 +15075,7 @@ func (v *PostscriptAlias) SetXfigCode(_arg int64) error {
 }
 
 func (v *PostscriptAlias) GetXfigCode() int64 {
-	ret, err := v.getXfigCode(context.Background())
+	ret, err := v.getXfigCode(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13967,7 +15093,7 @@ func (v *PostscriptAlias) getXfigCode(ctx context.Context) (int64, error) {
 }
 
 func (v *PostscriptAlias) SetSvgFontFamily(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -13976,7 +15102,7 @@ func (v *PostscriptAlias) SetSvgFontFamily(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetSvgFontFamily() string {
-	ret, err := v.getSvgFontFamily(context.Background())
+	ret, err := v.getSvgFontFamily(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -13997,7 +15123,7 @@ func (v *PostscriptAlias) getSvgFontFamily(ctx context.Context) (string, error) 
 }
 
 func (v *PostscriptAlias) SetSvgFontWeight(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14006,7 +15132,7 @@ func (v *PostscriptAlias) SetSvgFontWeight(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetSvgFontWeight() string {
-	ret, err := v.getSvgFontWeight(context.Background())
+	ret, err := v.getSvgFontWeight(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14027,7 +15153,7 @@ func (v *PostscriptAlias) getSvgFontWeight(ctx context.Context) (string, error) 
 }
 
 func (v *PostscriptAlias) SetSvgFontStyle(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14036,7 +15162,7 @@ func (v *PostscriptAlias) SetSvgFontStyle(_arg string) error {
 }
 
 func (v *PostscriptAlias) GetSvgFontStyle() string {
-	ret, err := v.getSvgFontStyle(context.Background())
+	ret, err := v.getSvgFontStyle(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14058,8 +15184,27 @@ func (v *PostscriptAlias) getSvgFontStyle(ctx context.Context) (string, error) {
 
 type TextFont struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *TextFont) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *TextFont) withToken(token *callToken) *TextFont {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewTextFont(ctx context.Context) (*TextFont, error) {
 	o, err := mod.newObject(ctx, "TextFont")
 	if err != nil {
@@ -14090,7 +15235,7 @@ func newTextFontSlice(v []uint64) []*TextFont {
 	return ret
 }
 func (v *TextFont) SetName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14099,7 +15244,7 @@ func (v *TextFont) SetName(_arg string) error {
 }
 
 func (v *TextFont) GetName() string {
-	ret, err := v.getName(context.Background())
+	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14120,7 +15265,7 @@ func (v *TextFont) getName(ctx context.Context) (string, error) {
 }
 
 func (v *TextFont) SetColor(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14129,7 +15274,7 @@ func (v *TextFont) SetColor(_arg string) error {
 }
 
 func (v *TextFont) GetColor() string {
-	ret, err := v.getColor(context.Background())
+	ret, err := v.getColor(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14150,7 +15295,7 @@ func (v *TextFont) getColor(ctx context.Context) (string, error) {
 }
 
 func (v *TextFont) SetPostscriptAlias(_arg *PostscriptAlias) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14159,7 +15304,7 @@ func (v *TextFont) SetPostscriptAlias(_arg *PostscriptAlias) error {
 }
 
 func (v *TextFont) GetPostscriptAlias() *PostscriptAlias {
-	ret, err := v.getPostscriptAlias(context.Background())
+	ret, err := v.getPostscriptAlias(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14173,11 +15318,12 @@ func (v *TextFont) getPostscriptAlias(ctx context.Context) (*PostscriptAlias, er
 		return zero, err
 	}
 	ret := newPostscriptAlias(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *TextFont) SetSize(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14186,7 +15332,7 @@ func (v *TextFont) SetSize(_arg float64) error {
 }
 
 func (v *TextFont) GetSize() float64 {
-	ret, err := v.getSize(context.Background())
+	ret, err := v.getSize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14207,7 +15353,7 @@ func (v *TextFont) getSize(ctx context.Context) (float64, error) {
 }
 
 func (v *TextFont) SetFlags(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14216,7 +15362,7 @@ func (v *TextFont) SetFlags(_arg uint64) error {
 }
 
 func (v *TextFont) GetFlags() uint64 {
-	ret, err := v.getFlags(context.Background())
+	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14234,7 +15380,7 @@ func (v *TextFont) getFlags(ctx context.Context) (uint64, error) {
 }
 
 func (v *TextFont) SetCount(_arg uint64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toUint64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14243,7 +15389,7 @@ func (v *TextFont) SetCount(_arg uint64) error {
 }
 
 func (v *TextFont) GetCount() uint64 {
-	ret, err := v.getCount(context.Background())
+	ret, err := v.getCount(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14262,8 +15408,27 @@ func (v *TextFont) getCount(ctx context.Context) (uint64, error) {
 
 type Textspan struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Textspan) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Textspan) withToken(token *callToken) *Textspan {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewTextspan(ctx context.Context) (*Textspan, error) {
 	o, err := mod.newObject(ctx, "Textspan")
 	if err != nil {
@@ -14294,7 +15459,7 @@ func newTextspanSlice(v []uint64) []*Textspan {
 	return ret
 }
 func (v *Textspan) SetStr(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14303,7 +15468,7 @@ func (v *Textspan) SetStr(_arg string) error {
 }
 
 func (v *Textspan) GetStr() string {
-	ret, err := v.getStr(context.Background())
+	ret, err := v.getStr(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14324,7 +15489,7 @@ func (v *Textspan) getStr(ctx context.Context) (string, error) {
 }
 
 func (v *Textspan) SetFont(_arg *TextFont) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14333,7 +15498,7 @@ func (v *Textspan) SetFont(_arg *TextFont) error {
 }
 
 func (v *Textspan) GetFont() *TextFont {
-	ret, err := v.getFont(context.Background())
+	ret, err := v.getFont(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14347,11 +15512,12 @@ func (v *Textspan) getFont(ctx context.Context) (*TextFont, error) {
 		return zero, err
 	}
 	ret := newTextFont(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Textspan) SetYOffsetLayout(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14360,7 +15526,7 @@ func (v *Textspan) SetYOffsetLayout(_arg float64) error {
 }
 
 func (v *Textspan) GetYOffsetLayout() float64 {
-	ret, err := v.getYOffsetLayout(context.Background())
+	ret, err := v.getYOffsetLayout(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14381,7 +15547,7 @@ func (v *Textspan) getYOffsetLayout(ctx context.Context) (float64, error) {
 }
 
 func (v *Textspan) SetYOffsetCenterLine(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14390,7 +15556,7 @@ func (v *Textspan) SetYOffsetCenterLine(_arg float64) error {
 }
 
 func (v *Textspan) GetYOffsetCenterLine() float64 {
-	ret, err := v.getYOffsetCenterLine(context.Background())
+	ret, err := v.getYOffsetCenterLine(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14411,7 +15577,7 @@ func (v *Textspan) getYOffsetCenterLine(ctx context.Context) (float64, error) {
 }
 
 func (v *Textspan) SetSize(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14420,7 +15586,7 @@ func (v *Textspan) SetSize(_arg *PointFloat) error {
 }
 
 func (v *Textspan) GetSize() *PointFloat {
-	ret, err := v.getSize(context.Background())
+	ret, err := v.getSize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14434,11 +15600,12 @@ func (v *Textspan) getSize(ctx context.Context) (*PointFloat, error) {
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Textspan) SetJust(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14447,7 +15614,7 @@ func (v *Textspan) SetJust(_arg int64) error {
 }
 
 func (v *Textspan) GetJust() int64 {
-	ret, err := v.getJust(context.Background())
+	ret, err := v.getJust(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14466,8 +15633,27 @@ func (v *Textspan) getJust(ctx context.Context) (int64, error) {
 
 type RenderEngine struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *RenderEngine) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *RenderEngine) withToken(token *callToken) *RenderEngine {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewRenderEngine(ctx context.Context) (*RenderEngine, error) {
 	o, err := mod.newObject(ctx, "RenderEngine")
 	if err != nil {
@@ -14501,7 +15687,7 @@ func (v *RenderEngine) SetBeginJob(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_BeginJob == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginJob before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginJob[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginJob[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_job", v.getPtr())
 }
 
@@ -14509,7 +15695,7 @@ func (v *RenderEngine) SetEndJob(ctx context.Context, arg *CallbackFunc[func(con
 	if mod.lookupFuncMap.RenderEngine_EndJob == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndJob before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndJob[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndJob[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_job", v.getPtr())
 }
 
@@ -14517,7 +15703,7 @@ func (v *RenderEngine) SetBeginGraph(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.RenderEngine_BeginGraph == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginGraph before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginGraph[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginGraph[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_graph", v.getPtr())
 }
 
@@ -14525,7 +15711,7 @@ func (v *RenderEngine) SetEndGraph(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_EndGraph == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndGraph before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndGraph[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndGraph[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_graph", v.getPtr())
 }
 
@@ -14533,7 +15719,7 @@ func (v *RenderEngine) SetBeginLayer(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.RenderEngine_BeginLayer == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginLayer before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginLayer[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginLayer[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_layer", v.getPtr())
 }
 
@@ -14541,7 +15727,7 @@ func (v *RenderEngine) SetEndLayer(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_EndLayer == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndLayer before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndLayer[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndLayer[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_layer", v.getPtr())
 }
 
@@ -14549,7 +15735,7 @@ func (v *RenderEngine) SetBeginPage(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.RenderEngine_BeginPage == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginPage before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginPage[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginPage[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_page", v.getPtr())
 }
 
@@ -14557,7 +15743,7 @@ func (v *RenderEngine) SetEndPage(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.RenderEngine_EndPage == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndPage before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndPage[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndPage[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_page", v.getPtr())
 }
 
@@ -14565,7 +15751,7 @@ func (v *RenderEngine) SetBeginCluster(ctx context.Context, arg *CallbackFunc[fu
 	if mod.lookupFuncMap.RenderEngine_BeginCluster == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginCluster before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginCluster[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginCluster[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_cluster", v.getPtr())
 }
 
@@ -14573,7 +15759,7 @@ func (v *RenderEngine) SetEndCluster(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.RenderEngine_EndCluster == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndCluster before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndCluster[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndCluster[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_cluster", v.getPtr())
 }
 
@@ -14581,7 +15767,7 @@ func (v *RenderEngine) SetBeginNodes(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.RenderEngine_BeginNodes == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginNodes before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginNodes[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginNodes[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_nodes", v.getPtr())
 }
 
@@ -14589,7 +15775,7 @@ func (v *RenderEngine) SetEndNodes(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_EndNodes == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndNodes before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndNodes[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndNodes[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_nodes", v.getPtr())
 }
 
@@ -14597,7 +15783,7 @@ func (v *RenderEngine) SetBeginEdges(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.RenderEngine_BeginEdges == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginEdges before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginEdges[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginEdges[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_edges", v.getPtr())
 }
 
@@ -14605,7 +15791,7 @@ func (v *RenderEngine) SetEndEdges(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_EndEdges == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndEdges before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndEdges[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndEdges[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_edges", v.getPtr())
 }
 
@@ -14613,7 +15799,7 @@ func (v *RenderEngine) SetBeginNode(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.RenderEngine_BeginNode == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginNode before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginNode[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginNode[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_node", v.getPtr())
 }
 
@@ -14621,7 +15807,7 @@ func (v *RenderEngine) SetEndNode(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.RenderEngine_EndNode == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndNode before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndNode[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndNode[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_node", v.getPtr())
 }
 
@@ -14629,7 +15815,7 @@ func (v *RenderEngine) SetBeginEdge(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.RenderEngine_BeginEdge == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginEdge before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginEdge[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginEdge[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_edge", v.getPtr())
 }
 
@@ -14637,7 +15823,7 @@ func (v *RenderEngine) SetEndEdge(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.RenderEngine_EndEdge == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndEdge before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndEdge[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndEdge[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_edge", v.getPtr())
 }
 
@@ -14645,7 +15831,7 @@ func (v *RenderEngine) SetBeginAnchor(ctx context.Context, arg *CallbackFunc[fun
 	if mod.lookupFuncMap.RenderEngine_BeginAnchor == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginAnchor before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginAnchor[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginAnchor[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_anchor", v.getPtr())
 }
 
@@ -14653,7 +15839,7 @@ func (v *RenderEngine) SetEndAnchor(ctx context.Context, arg *CallbackFunc[func(
 	if mod.lookupFuncMap.RenderEngine_EndAnchor == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndAnchor before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndAnchor[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndAnchor[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_anchor", v.getPtr())
 }
 
@@ -14661,7 +15847,7 @@ func (v *RenderEngine) SetBeginLabel(ctx context.Context, arg *CallbackFunc[func
 	if mod.lookupFuncMap.RenderEngine_BeginLabel == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginLabel before")
 	}
-	mod.callbackFuncMap.RenderEngine_BeginLabel[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginLabel[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_label", v.getPtr())
 }
 
@@ -14669,7 +15855,7 @@ func (v *RenderEngine) SetEndLabel(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_EndLabel == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndLabel before")
 	}
-	mod.callbackFuncMap.RenderEngine_EndLabel[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndLabel[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_label", v.getPtr())
 }
 
@@ -14677,7 +15863,7 @@ func (v *RenderEngine) SetTextspan(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_Textspan == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Textspan before")
 	}
-	mod.callbackFuncMap.RenderEngine_Textspan[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Textspan[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_textspan", v.getPtr())
 }
 
@@ -14685,7 +15871,7 @@ func (v *RenderEngine) SetResolveColor(ctx context.Context, arg *CallbackFunc[fu
 	if mod.lookupFuncMap.RenderEngine_ResolveColor == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_ResolveColor before")
 	}
-	mod.callbackFuncMap.RenderEngine_ResolveColor[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_ResolveColor[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_resolve_color", v.getPtr())
 }
 
@@ -14693,7 +15879,7 @@ func (v *RenderEngine) SetEllipse(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.RenderEngine_Ellipse == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Ellipse before")
 	}
-	mod.callbackFuncMap.RenderEngine_Ellipse[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Ellipse[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_ellipse", v.getPtr())
 }
 
@@ -14701,7 +15887,7 @@ func (v *RenderEngine) SetPolygon(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.RenderEngine_Polygon == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Polygon before")
 	}
-	mod.callbackFuncMap.RenderEngine_Polygon[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Polygon[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_polygon", v.getPtr())
 }
 
@@ -14709,7 +15895,7 @@ func (v *RenderEngine) SetBeziercurve(ctx context.Context, arg *CallbackFunc[fun
 	if mod.lookupFuncMap.RenderEngine_Beziercurve == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Beziercurve before")
 	}
-	mod.callbackFuncMap.RenderEngine_Beziercurve[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Beziercurve[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_beziercurve", v.getPtr())
 }
 
@@ -14717,7 +15903,7 @@ func (v *RenderEngine) SetPolyline(ctx context.Context, arg *CallbackFunc[func(c
 	if mod.lookupFuncMap.RenderEngine_Polyline == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Polyline before")
 	}
-	mod.callbackFuncMap.RenderEngine_Polyline[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Polyline[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_polyline", v.getPtr())
 }
 
@@ -14725,7 +15911,7 @@ func (v *RenderEngine) SetComment(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.RenderEngine_Comment == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Comment before")
 	}
-	mod.callbackFuncMap.RenderEngine_Comment[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Comment[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_comment", v.getPtr())
 }
 
@@ -14733,14 +15919,33 @@ func (v *RenderEngine) SetLibraryShape(ctx context.Context, arg *CallbackFunc[fu
 	if mod.lookupFuncMap.RenderEngine_LibraryShape == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_LibraryShape before")
 	}
-	mod.callbackFuncMap.RenderEngine_LibraryShape[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_LibraryShape[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_library_shape", v.getPtr())
 }
 
 type FormatterEngine struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *FormatterEngine) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *FormatterEngine) withToken(token *callToken) *FormatterEngine {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func newFormatterEngine(ptr uint64) *FormatterEngine {
 	if ptr == 0 {
 		return nil
@@ -14765,8 +15970,27 @@ func newFormatterEngineSlice(v []uint64) []*FormatterEngine {
 
 type LayoutEngine struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *LayoutEngine) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *LayoutEngine) withToken(token *callToken) *LayoutEngine {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewLayoutEngine(ctx context.Context) (*LayoutEngine, error) {
 	o, err := mod.newObject(ctx, "LayoutEngine")
 	if err != nil {
@@ -14800,7 +16024,7 @@ func (v *LayoutEngine) SetLayout(ctx context.Context, arg *CallbackFunc[func(con
 	if mod.lookupFuncMap.LayoutEngine_Layout == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_LayoutEngine_Layout before")
 	}
-	mod.callbackFuncMap.LayoutEngine_Layout[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.LayoutEngine_Layout[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "LayoutEngine_layout", v.getPtr())
 }
 
@@ -14808,14 +16032,33 @@ func (v *LayoutEngine) SetCleanup(ctx context.Context, arg *CallbackFunc[func(co
 	if mod.lookupFuncMap.LayoutEngine_Cleanup == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_LayoutEngine_Cleanup before")
 	}
-	mod.callbackFuncMap.LayoutEngine_Cleanup[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.LayoutEngine_Cleanup[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "LayoutEngine_cleanup", v.getPtr())
 }
 
 type TextLayoutEngine struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *TextLayoutEngine) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *TextLayoutEngine) withToken(token *callToken) *TextLayoutEngine {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewTextLayoutEngine(ctx context.Context) (*TextLayoutEngine, error) {
 	o, err := mod.newObject(ctx, "TextLayoutEngine")
 	if err != nil {
@@ -14849,14 +16092,33 @@ func (v *TextLayoutEngine) SetTextlayout(ctx context.Context, arg *CallbackFunc[
 	if mod.lookupFuncMap.TextLayoutEngine_TextLayout == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_TextLayoutEngine_TextLayout before")
 	}
-	mod.callbackFuncMap.TextLayoutEngine_TextLayout[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.TextLayoutEngine_TextLayout[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "TextLayoutEngine_textlayout", v.getPtr())
 }
 
 type LoadImageEngine struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *LoadImageEngine) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *LoadImageEngine) withToken(token *callToken) *LoadImageEngine {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewLoadImageEngine(ctx context.Context) (*LoadImageEngine, error) {
 	o, err := mod.newObject(ctx, "LoadImageEngine")
 	if err != nil {
@@ -14890,14 +16152,33 @@ func (v *LoadImageEngine) SetLoadImage(ctx context.Context, arg *CallbackFunc[fu
 	if mod.lookupFuncMap.LoadImageEngine_LoadImage == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_LoadImageEngine_LoadImage before")
 	}
-	mod.callbackFuncMap.LoadImageEngine_LoadImage[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.LoadImageEngine_LoadImage[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "LoadImageEngine_load_image", v.getPtr())
 }
 
 type Engine struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Engine) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Engine) withToken(token *callToken) *Engine {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewEngine(ctx context.Context) (*Engine, error) {
 	o, err := mod.newObject(ctx, "Engine")
 	if err != nil {
@@ -14930,8 +16211,27 @@ func newEngineSlice(v []uint64) []*Engine {
 
 type LayoutFeatures struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *LayoutFeatures) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *LayoutFeatures) withToken(token *callToken) *LayoutFeatures {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewLayoutFeatures(ctx context.Context) (*LayoutFeatures, error) {
 	o, err := mod.newObject(ctx, "LayoutFeatures")
 	if err != nil {
@@ -14962,7 +16262,7 @@ func newLayoutFeaturesSlice(v []uint64) []*LayoutFeatures {
 	return ret
 }
 func (v *LayoutFeatures) SetFlags(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -14971,7 +16271,7 @@ func (v *LayoutFeatures) SetFlags(_arg int64) error {
 }
 
 func (v *LayoutFeatures) GetFlags() int64 {
-	ret, err := v.getFlags(context.Background())
+	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -14990,8 +16290,27 @@ func (v *LayoutFeatures) getFlags(ctx context.Context) (int64, error) {
 
 type DeviceFeatures struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *DeviceFeatures) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *DeviceFeatures) withToken(token *callToken) *DeviceFeatures {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewDeviceFeatures(ctx context.Context) (*DeviceFeatures, error) {
 	o, err := mod.newObject(ctx, "DeviceFeatures")
 	if err != nil {
@@ -15022,7 +16341,7 @@ func newDeviceFeaturesSlice(v []uint64) []*DeviceFeatures {
 	return ret
 }
 func (v *DeviceFeatures) SetFlags(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15031,7 +16350,7 @@ func (v *DeviceFeatures) SetFlags(_arg int64) error {
 }
 
 func (v *DeviceFeatures) GetFlags() int64 {
-	ret, err := v.getFlags(context.Background())
+	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15049,7 +16368,7 @@ func (v *DeviceFeatures) getFlags(ctx context.Context) (int64, error) {
 }
 
 func (v *DeviceFeatures) SetDefaultMargin(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15058,7 +16377,7 @@ func (v *DeviceFeatures) SetDefaultMargin(_arg *PointFloat) error {
 }
 
 func (v *DeviceFeatures) GetDefaultMargin() *PointFloat {
-	ret, err := v.getDefaultMargin(context.Background())
+	ret, err := v.getDefaultMargin(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15072,11 +16391,12 @@ func (v *DeviceFeatures) getDefaultMargin(ctx context.Context) (*PointFloat, err
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *DeviceFeatures) SetDefaultPagesize(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15085,7 +16405,7 @@ func (v *DeviceFeatures) SetDefaultPagesize(_arg *PointFloat) error {
 }
 
 func (v *DeviceFeatures) GetDefaultPagesize() *PointFloat {
-	ret, err := v.getDefaultPagesize(context.Background())
+	ret, err := v.getDefaultPagesize(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15099,11 +16419,12 @@ func (v *DeviceFeatures) getDefaultPagesize(ctx context.Context) (*PointFloat, e
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *DeviceFeatures) SetDefaultDpi(_arg *PointFloat) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15112,7 +16433,7 @@ func (v *DeviceFeatures) SetDefaultDpi(_arg *PointFloat) error {
 }
 
 func (v *DeviceFeatures) GetDefaultDpi() *PointFloat {
-	ret, err := v.getDefaultDpi(context.Background())
+	ret, err := v.getDefaultDpi(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15126,13 +16447,33 @@ func (v *DeviceFeatures) getDefaultDpi(ctx context.Context) (*PointFloat, error)
 		return zero, err
 	}
 	ret := newPointFloat(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 type RenderFeatures struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *RenderFeatures) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *RenderFeatures) withToken(token *callToken) *RenderFeatures {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewRenderFeatures(ctx context.Context) (*RenderFeatures, error) {
 	o, err := mod.newObject(ctx, "RenderFeatures")
 	if err != nil {
@@ -15163,7 +16504,7 @@ func newRenderFeaturesSlice(v []uint64) []*RenderFeatures {
 	return ret
 }
 func (v *RenderFeatures) SetFlags(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15172,7 +16513,7 @@ func (v *RenderFeatures) SetFlags(_arg int64) error {
 }
 
 func (v *RenderFeatures) GetFlags() int64 {
-	ret, err := v.getFlags(context.Background())
+	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15190,7 +16531,7 @@ func (v *RenderFeatures) getFlags(ctx context.Context) (int64, error) {
 }
 
 func (v *RenderFeatures) SetDefaultPad(_arg float64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toDoubleWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15199,7 +16540,7 @@ func (v *RenderFeatures) SetDefaultPad(_arg float64) error {
 }
 
 func (v *RenderFeatures) GetDefaultPad() float64 {
-	ret, err := v.getDefaultPad(context.Background())
+	ret, err := v.getDefaultPad(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15220,7 +16561,7 @@ func (v *RenderFeatures) getDefaultPad(ctx context.Context) (float64, error) {
 }
 
 func (v *RenderFeatures) SetKnownColors(_arg []string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15229,7 +16570,7 @@ func (v *RenderFeatures) SetKnownColors(_arg []string) error {
 }
 
 func (v *RenderFeatures) GetKnownColors() []string {
-	ret, err := v.getKnownColors(context.Background())
+	ret, err := v.getKnownColors(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15254,7 +16595,7 @@ func (v *RenderFeatures) getKnownColors(ctx context.Context) ([]string, error) {
 }
 
 func (v *RenderFeatures) SetSizeKnownColors(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15263,7 +16604,7 @@ func (v *RenderFeatures) SetSizeKnownColors(_arg int64) error {
 }
 
 func (v *RenderFeatures) GetSizeKnownColors() int64 {
-	ret, err := v.getSizeKnownColors(context.Background())
+	ret, err := v.getSizeKnownColors(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15281,7 +16622,7 @@ func (v *RenderFeatures) getSizeKnownColors(ctx context.Context) (int64, error) 
 }
 
 func (v *RenderFeatures) SetColorType(_arg ColorType) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15290,7 +16631,7 @@ func (v *RenderFeatures) SetColorType(_arg ColorType) error {
 }
 
 func (v *RenderFeatures) GetColorType() ColorType {
-	ret, err := v.getColorType(context.Background())
+	ret, err := v.getColorType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15309,8 +16650,27 @@ func (v *RenderFeatures) getColorType(ctx context.Context) (ColorType, error) {
 
 type Features struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Features) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Features) withToken(token *callToken) *Features {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewFeatures(ctx context.Context) (*Features, error) {
 	o, err := mod.newObject(ctx, "Features")
 	if err != nil {
@@ -15343,8 +16703,27 @@ func newFeaturesSlice(v []uint64) []*Features {
 
 type PluginInstalled struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginInstalled) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginInstalled) withToken(token *callToken) *PluginInstalled {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginInstalled(ctx context.Context) (*PluginInstalled, error) {
 	o, err := mod.newObject(ctx, "PluginInstalled")
 	if err != nil {
@@ -15375,7 +16754,7 @@ func newPluginInstalledSlice(v []uint64) []*PluginInstalled {
 	return ret
 }
 func (v *PluginInstalled) SetId(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15384,7 +16763,7 @@ func (v *PluginInstalled) SetId(_arg int64) error {
 }
 
 func (v *PluginInstalled) GetId() int64 {
-	ret, err := v.getId(context.Background())
+	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15402,7 +16781,7 @@ func (v *PluginInstalled) getId(ctx context.Context) (int64, error) {
 }
 
 func (v *PluginInstalled) SetType(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15411,7 +16790,7 @@ func (v *PluginInstalled) SetType(_arg string) error {
 }
 
 func (v *PluginInstalled) GetType() string {
-	ret, err := v.getType(context.Background())
+	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15432,7 +16811,7 @@ func (v *PluginInstalled) getType(ctx context.Context) (string, error) {
 }
 
 func (v *PluginInstalled) SetQuality(_arg int64) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toInt64WasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15441,7 +16820,7 @@ func (v *PluginInstalled) SetQuality(_arg int64) error {
 }
 
 func (v *PluginInstalled) GetQuality() int64 {
-	ret, err := v.getQuality(context.Background())
+	ret, err := v.getQuality(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15459,7 +16838,7 @@ func (v *PluginInstalled) getQuality(ctx context.Context) (int64, error) {
 }
 
 func (v *PluginInstalled) SetEngine(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15468,7 +16847,7 @@ func (v *PluginInstalled) SetEngine(_arg any) error {
 }
 
 func (v *PluginInstalled) GetEngine() any {
-	ret, err := v.getEngine(context.Background())
+	ret, err := v.getEngine(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15486,7 +16865,7 @@ func (v *PluginInstalled) getEngine(ctx context.Context) (any, error) {
 }
 
 func (v *PluginInstalled) SetFeatures(_arg any) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toAnyWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15495,7 +16874,7 @@ func (v *PluginInstalled) SetFeatures(_arg any) error {
 }
 
 func (v *PluginInstalled) GetFeatures() any {
-	ret, err := v.getFeatures(context.Background())
+	ret, err := v.getFeatures(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15514,8 +16893,27 @@ func (v *PluginInstalled) getFeatures(ctx context.Context) (any, error) {
 
 type PluginAPI struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginAPI) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginAPI) withToken(token *callToken) *PluginAPI {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginAPI(ctx context.Context) (*PluginAPI, error) {
 	o, err := mod.newObject(ctx, "PluginAPI")
 	if err != nil {
@@ -15546,7 +16944,7 @@ func newPluginAPISlice(v []uint64) []*PluginAPI {
 	return ret
 }
 func (v *PluginAPI) SetApi(_arg API) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toIntWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15555,7 +16953,7 @@ func (v *PluginAPI) SetApi(_arg API) error {
 }
 
 func (v *PluginAPI) GetApi() API {
-	ret, err := v.getApi(context.Background())
+	ret, err := v.getApi(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15573,7 +16971,7 @@ func (v *PluginAPI) getApi(ctx context.Context) (API, error) {
 }
 
 func (v *PluginAPI) SetTypes(_arg []*PluginInstalled) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15582,7 +16980,7 @@ func (v *PluginAPI) SetTypes(_arg []*PluginInstalled) error {
 }
 
 func (v *PluginAPI) GetTypes() []*PluginInstalled {
-	ret, err := v.getTypes(context.Background())
+	ret, err := v.getTypes(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15600,13 +16998,35 @@ func (v *PluginAPI) getTypes(ctx context.Context) ([]*PluginInstalled, error) {
 		return zero, err
 	}
 	ret := newPluginInstalledSlice(slice)
+	for _, e := range ret {
+		e.withToken(v.token)
+	}
 	return ret, nil
 }
 
 type PluginLibrary struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
 }
 
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *PluginLibrary) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *PluginLibrary) withToken(token *callToken) *PluginLibrary {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
 func NewPluginLibrary(ctx context.Context) (*PluginLibrary, error) {
 	o, err := mod.newObject(ctx, "PluginLibrary")
 	if err != nil {
@@ -15637,7 +17057,7 @@ func newPluginLibrarySlice(v []uint64) []*PluginLibrary {
 	return ret
 }
 func (v *PluginLibrary) SetPackageName(_arg string) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toStringWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15646,7 +17066,7 @@ func (v *PluginLibrary) SetPackageName(_arg string) error {
 }
 
 func (v *PluginLibrary) GetPackageName() string {
-	ret, err := v.getPackageName(context.Background())
+	ret, err := v.getPackageName(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15667,7 +17087,7 @@ func (v *PluginLibrary) getPackageName(ctx context.Context) (string, error) {
 }
 
 func (v *PluginLibrary) SetApis(_arg []*PluginAPI) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := mod.toObjectArrayWasmValue(ctx, _arg)
 	if err != nil {
 		return err
@@ -15676,7 +17096,7 @@ func (v *PluginLibrary) SetApis(_arg []*PluginAPI) error {
 }
 
 func (v *PluginLibrary) GetApis() []*PluginAPI {
-	ret, err := v.getApis(context.Background())
+	ret, err := v.getApis(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -15694,6 +17114,9 @@ func (v *PluginLibrary) getApis(ctx context.Context) ([]*PluginAPI, error) {
 		return zero, err
 	}
 	ret := newPluginAPISlice(slice)
+	for _, e := range ret {
+		e.withToken(v.token)
+	}
 	return ret, nil
 }
 
@@ -16154,6 +17577,7 @@ func (v API) String() string {
 
 func (v *Graph) Close(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_close", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -16164,6 +17588,7 @@ func (v *Graph) Close(ctx context.Context) (int, error) {
 
 func (v *Graph) IsSimple(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_isSimple", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -16174,6 +17599,7 @@ func (v *Graph) IsSimple(ctx context.Context) (int, error) {
 
 func (v *Graph) Node(ctx context.Context, _arg0 string, _arg1 int) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16187,11 +17613,13 @@ func (v *Graph) Node(ctx context.Context, _arg0 string, _arg1 int) (*Node, error
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) IdNode(ctx context.Context, _arg0 uint64, _arg1 int) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toUint64WasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16205,11 +17633,13 @@ func (v *Graph) IdNode(ctx context.Context, _arg0 uint64, _arg1 int) (*Node, err
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SubNode(ctx context.Context, _arg0 *Node, _arg1 int) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16223,21 +17653,25 @@ func (v *Graph) SubNode(ctx context.Context, _arg0 *Node, _arg1 int) (*Node, err
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) FirstNode(ctx context.Context) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_firstNode", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) NextNode(ctx context.Context, _arg0 *Node) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16247,21 +17681,25 @@ func (v *Graph) NextNode(ctx context.Context, _arg0 *Node) (*Node, error) {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) LastNode(ctx context.Context) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_lastNode", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) PrevNode(ctx context.Context, _arg0 *Node) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16271,11 +17709,13 @@ func (v *Graph) PrevNode(ctx context.Context, _arg0 *Node) (*Node, error) {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SubRep(ctx context.Context, _arg0 *Node) (*SubNode, error) {
 	var zero *SubNode
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16285,11 +17725,13 @@ func (v *Graph) SubRep(ctx context.Context, _arg0 *Node) (*SubNode, error) {
 		return zero, err
 	}
 	ret := newSubNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Node) Before(ctx context.Context, _arg0 *Node) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16304,6 +17746,7 @@ func (v *Node) Before(ctx context.Context, _arg0 *Node) (int, error) {
 
 func (v *Graph) Edge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 string, _arg3 int) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16325,31 +17768,37 @@ func (v *Graph) Edge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 string
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Edge) Head(ctx context.Context) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Edge_head", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Edge) Tail(ctx context.Context) (*Node, error) {
 	var zero *Node
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Edge_tail", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newNode(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) IdEdge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 uint64, _arg3 int) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16371,11 +17820,13 @@ func (v *Graph) IdEdge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 uint
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) SubEdge(ctx context.Context, _arg0 *Edge, _arg1 int) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16389,11 +17840,13 @@ func (v *Graph) SubEdge(ctx context.Context, _arg0 *Edge, _arg1 int) (*Edge, err
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) FirstIn(ctx context.Context, _arg0 *Node) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16403,11 +17856,13 @@ func (v *Graph) FirstIn(ctx context.Context, _arg0 *Node) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) NextIn(ctx context.Context, _arg0 *Edge) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16417,11 +17872,13 @@ func (v *Graph) NextIn(ctx context.Context, _arg0 *Edge) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) FirstOut(ctx context.Context, _arg0 *Node) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16431,11 +17888,13 @@ func (v *Graph) FirstOut(ctx context.Context, _arg0 *Node) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) NextOut(ctx context.Context, _arg0 *Edge) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16445,11 +17904,13 @@ func (v *Graph) NextOut(ctx context.Context, _arg0 *Edge) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) FirstEdge(ctx context.Context, _arg0 *Node) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16459,11 +17920,13 @@ func (v *Graph) FirstEdge(ctx context.Context, _arg0 *Node) (*Edge, error) {
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) NextEdge(ctx context.Context, _arg0 *Edge, _arg1 *Node) (*Edge, error) {
 	var zero *Edge
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16477,11 +17940,13 @@ func (v *Graph) NextEdge(ctx context.Context, _arg0 *Edge, _arg1 *Node) (*Edge, 
 		return zero, err
 	}
 	ret := newEdge(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) Contains(ctx context.Context, _arg0 any) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toAnyWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16496,6 +17961,7 @@ func (v *Graph) Contains(ctx context.Context, _arg0 any) (int, error) {
 
 func (v *Node) ReLabel(ctx context.Context, _arg0 string) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16510,6 +17976,7 @@ func (v *Node) ReLabel(ctx context.Context, _arg0 string) (int, error) {
 
 func (v *Graph) Delete(ctx context.Context, _arg0 any) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toAnyWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16524,6 +17991,7 @@ func (v *Graph) Delete(ctx context.Context, _arg0 any) (int, error) {
 
 func (v *Graph) DeleteSubGraph(ctx context.Context, _arg0 *Graph) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16538,6 +18006,7 @@ func (v *Graph) DeleteSubGraph(ctx context.Context, _arg0 *Graph) (int, error) {
 
 func (v *Graph) DeleteNode(ctx context.Context, _arg0 *Node) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16552,6 +18021,7 @@ func (v *Graph) DeleteNode(ctx context.Context, _arg0 *Node) (int, error) {
 
 func (v *Graph) DeleteEdge(ctx context.Context, _arg0 *Edge) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16566,6 +18036,7 @@ func (v *Graph) DeleteEdge(ctx context.Context, _arg0 *Edge) (int, error) {
 
 func (v *Graph) Strdup(ctx context.Context, _arg0 string) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16583,6 +18054,7 @@ func (v *Graph) Strdup(ctx context.Context, _arg0 string) (string, error) {
 
 func (v *Graph) StrdupHTML(ctx context.Context, _arg0 string) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16600,6 +18072,7 @@ func (v *Graph) StrdupHTML(ctx context.Context, _arg0 string) (string, error) {
 
 func (v *Graph) StrdupText(ctx context.Context, _arg0 string) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16617,6 +18090,7 @@ func (v *Graph) StrdupText(ctx context.Context, _arg0 string) (string, error) {
 
 func (v *Graph) StrBind(ctx context.Context, _arg0 string) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16634,6 +18108,7 @@ func (v *Graph) StrBind(ctx context.Context, _arg0 string) (string, error) {
 
 func (v *Graph) StrBindText(ctx context.Context, _arg0 string) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16651,6 +18126,7 @@ func (v *Graph) StrBindText(ctx context.Context, _arg0 string) (string, error) {
 
 func (v *Graph) StrBindHTML(ctx context.Context, _arg0 string) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16668,6 +18144,7 @@ func (v *Graph) StrBindHTML(ctx context.Context, _arg0 string) (string, error) {
 
 func (v *Graph) StrFree(ctx context.Context, _arg0 string, _arg1 bool) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16686,6 +18163,7 @@ func (v *Graph) StrFree(ctx context.Context, _arg0 string, _arg1 bool) (int, err
 
 func (v *Graph) Attr(ctx context.Context, _arg0 int, _arg1 string, _arg2 string) (*Sym, error) {
 	var zero *Sym
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toIntWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16703,11 +18181,13 @@ func (v *Graph) Attr(ctx context.Context, _arg0 int, _arg1 string, _arg2 string)
 		return zero, err
 	}
 	ret := newSym(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) AttrText(ctx context.Context, _arg0 int, _arg1 string, _arg2 string) (*Sym, error) {
 	var zero *Sym
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toIntWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16725,11 +18205,13 @@ func (v *Graph) AttrText(ctx context.Context, _arg0 int, _arg1 string, _arg2 str
 		return zero, err
 	}
 	ret := newSym(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) AttrHTML(ctx context.Context, _arg0 int, _arg1 string, _arg2 string) (*Sym, error) {
 	var zero *Sym
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toIntWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16747,11 +18229,13 @@ func (v *Graph) AttrHTML(ctx context.Context, _arg0 int, _arg1 string, _arg2 str
 		return zero, err
 	}
 	ret := newSym(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) NextAttr(ctx context.Context, _arg0 int, _arg1 *Sym) (*Sym, error) {
 	var zero *Sym
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toIntWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16765,10 +18249,12 @@ func (v *Graph) NextAttr(ctx context.Context, _arg0 int, _arg1 *Sym) (*Sym, erro
 		return zero, err
 	}
 	ret := newSym(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) Init(ctx context.Context, _arg0 int, _arg1 string, _arg2 int, _arg3 int) error {
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toIntWasmValue(ctx, _arg0)
 	if err != nil {
 		return err
@@ -16792,6 +18278,7 @@ func (v *Graph) Init(ctx context.Context, _arg0 int, _arg1 string, _arg2 int, _a
 }
 
 func (v *Graph) Clean(ctx context.Context, _arg0 int, _arg1 string) error {
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toIntWasmValue(ctx, _arg0)
 	if err != nil {
 		return err
@@ -16808,6 +18295,7 @@ func (v *Graph) Clean(ctx context.Context, _arg0 int, _arg1 string) error {
 
 func (v *Graph) SubGraph(ctx context.Context, _arg0 string, _arg1 int) (*Graph, error) {
 	var zero *Graph
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16821,11 +18309,13 @@ func (v *Graph) SubGraph(ctx context.Context, _arg0 string, _arg1 int) (*Graph, 
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) IdSubGraph(ctx context.Context, _arg0 uint64) (*Graph, error) {
 	var zero *Graph
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toUint64WasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16835,41 +18325,49 @@ func (v *Graph) IdSubGraph(ctx context.Context, _arg0 uint64) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) FirstSubGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_firstSubGraph", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) NextSubGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_nextSubGraph", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) Parent(ctx context.Context) (*Graph, error) {
 	var zero *Graph
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_parent", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Graph) NodeNum(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_nodeNum", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -16880,6 +18378,7 @@ func (v *Graph) NodeNum(ctx context.Context) (int, error) {
 
 func (v *Graph) EdgeNum(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_edgeNum", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -16890,6 +18389,7 @@ func (v *Graph) EdgeNum(ctx context.Context) (int, error) {
 
 func (v *Graph) SubGraphNum(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_subGraphNum", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -16900,6 +18400,7 @@ func (v *Graph) SubGraphNum(ctx context.Context) (int, error) {
 
 func (v *Graph) Degree(ctx context.Context, _arg0 *Node, _arg1 int, _arg2 int) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16922,6 +18423,7 @@ func (v *Graph) Degree(ctx context.Context, _arg0 *Node, _arg1 int, _arg2 int) (
 
 func (v *Graph) CountUniqueEdges(ctx context.Context, _arg0 *Node, _arg1 int, _arg2 int) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16944,6 +18446,7 @@ func (v *Graph) CountUniqueEdges(ctx context.Context, _arg0 *Node, _arg1 int, _a
 
 func (v *Dict) Close(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Dict_close", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -16954,6 +18457,7 @@ func (v *Dict) Close(ctx context.Context) (int, error) {
 
 func (v *Dict) View(ctx context.Context, _arg0 *Dict) (*Dict, error) {
 	var zero *Dict
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16963,11 +18467,13 @@ func (v *Dict) View(ctx context.Context, _arg0 *Dict) (*Dict, error) {
 		return zero, err
 	}
 	ret := newDict(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) Disc(ctx context.Context, _arg0 *DictDisc) (*DictDisc, error) {
 	var zero *DictDisc
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16977,11 +18483,13 @@ func (v *Dict) Disc(ctx context.Context, _arg0 *DictDisc) (*DictDisc, error) {
 		return zero, err
 	}
 	ret := newDictDisc(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) Method(ctx context.Context, _arg0 *DictMethod) (*DictMethod, error) {
 	var zero *DictMethod
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -16991,31 +18499,37 @@ func (v *Dict) Method(ctx context.Context, _arg0 *DictMethod) (*DictMethod, erro
 		return zero, err
 	}
 	ret := newDictMethod(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) Flatten(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Dict_flatten", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) Extract(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Dict_extract", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newDictLink(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Dict) Restore(ctx context.Context, _arg0 *DictLink) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17030,10 +18544,11 @@ func (v *Dict) Restore(ctx context.Context, _arg0 *DictLink) (int, error) {
 
 func (v *Dict) Walk(ctx context.Context, _arg0 *CallbackFunc[func(context.Context, any, any) (int, error)], _arg1 any) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	if mod.lookupFuncMap.DictWalk == nil {
 		return zero, fmt.Errorf("cannot find lookup function. you must call Register_DictWalk before")
 	}
-	mod.callbackFuncMap.DictWalk[_arg0.funcID] = _arg0.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.DictWalk[_arg0.funcID] = _arg0.cb })
 	arg0, err := mod.toFuncWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17052,6 +18567,7 @@ func (v *Dict) Walk(ctx context.Context, _arg0 *CallbackFunc[func(context.Contex
 
 func (v *Dict) Renew(ctx context.Context, _arg0 any) (any, error) {
 	var zero any
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toAnyWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17066,6 +18582,7 @@ func (v *Dict) Renew(ctx context.Context, _arg0 any) (any, error) {
 
 func (v *Dict) Size(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Dict_size", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -17076,6 +18593,7 @@ func (v *Dict) Size(ctx context.Context) (int, error) {
 
 func (v *Dict) Stat(ctx context.Context, _arg0 *DictStat, _arg1 int) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17094,6 +18612,7 @@ func (v *Dict) Stat(ctx context.Context, _arg0 *DictStat, _arg1 int) (int, error
 
 func (v *Context) Info(ctx context.Context) ([]string, error) {
 	var zero []string
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Context_info", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -17111,6 +18630,7 @@ func (v *Context) Info(ctx context.Context) ([]string, error) {
 
 func (v *Context) Version(ctx context.Context) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Context_version", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -17124,6 +18644,7 @@ func (v *Context) Version(ctx context.Context) (string, error) {
 
 func (v *Context) BuildDate(ctx context.Context) (string, error) {
 	var zero string
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Context_buildDate", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -17137,6 +18658,7 @@ func (v *Context) BuildDate(ctx context.Context) (string, error) {
 
 func (v *Context) ParseArgs(ctx context.Context, _arg0 int, _arg1 []string) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toIntWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17155,26 +18677,31 @@ func (v *Context) ParseArgs(ctx context.Context, _arg0 int, _arg1 []string) (int
 
 func (v *Context) NextInputGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Context_nextInputGraph", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Context) PluginsGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Context_pluginsGraph", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newGraph(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Context) Layout(ctx context.Context, _arg0 *Graph, _arg1 string) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17193,6 +18720,7 @@ func (v *Context) Layout(ctx context.Context, _arg0 *Graph, _arg1 string) (int, 
 
 func (v *Context) LayoutJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17206,6 +18734,7 @@ func (v *Context) LayoutJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 }
 
 func (v *Graph) AttachAttrs(ctx context.Context) error {
+	ctx = v.callContext(ctx)
 	if err := mod.call(ctx, "Graph_attachAttrs", v.getPtr()); err != nil {
 		return err
 	}
@@ -17214,6 +18743,7 @@ func (v *Graph) AttachAttrs(ctx context.Context) error {
 
 func (v *Context) Render(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 *File) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17236,6 +18766,7 @@ func (v *Context) Render(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 
 
 func (v *Context) RenderFilename(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 string) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17258,6 +18789,7 @@ func (v *Context) RenderFilename(ctx context.Context, _arg0 *Graph, _arg1 string
 
 func (v *Context) RenderContext(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 any) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17280,6 +18812,7 @@ func (v *Context) RenderContext(ctx context.Context, _arg0 *Graph, _arg1 string,
 
 func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 *string, _arg3 *uint) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17301,7 +18834,7 @@ func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _a
 		return zero, err
 	}
 	{
-		p, err := mod.readU32(arg2)
+		p, err := mod.readU32(ctx, arg2)
 		if err != nil {
 			return zero, err
 		}
@@ -17312,7 +18845,7 @@ func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _a
 		*_arg2 = value
 	}
 	{
-		p, err := mod.readU32(arg3)
+		p, err := mod.readU32(ctx, arg3)
 		if err != nil {
 			return zero, err
 		}
@@ -17325,6 +18858,7 @@ func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _a
 
 func (v *Context) RenderJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17338,6 +18872,7 @@ func (v *Context) RenderJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 }
 
 func (v *Context) Finalize(ctx context.Context) error {
+	ctx = v.callContext(ctx)
 	if err := mod.call(ctx, "Context_finalize", v.getPtr()); err != nil {
 		return err
 	}
@@ -17346,6 +18881,7 @@ func (v *Context) Finalize(ctx context.Context) error {
 
 func (v *Context) FreeContext(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Context_freeContext", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -17356,6 +18892,7 @@ func (v *Context) FreeContext(ctx context.Context) (int, error) {
 
 func (v *Context) FreeLayout(ctx context.Context, _arg0 *Graph) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17370,6 +18907,7 @@ func (v *Context) FreeLayout(ctx context.Context, _arg0 *Graph) (int, error) {
 
 func (v *Context) PluginList(ctx context.Context, _arg0 string, _arg1 *int) ([]string, error) {
 	var zero []string
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toStringWasmValue(ctx, _arg0)
 	if err != nil {
 		return zero, err
@@ -17383,7 +18921,7 @@ func (v *Context) PluginList(ctx context.Context, _arg0 string, _arg1 *int) ([]s
 		return zero, err
 	}
 	{
-		p, err := mod.readU32(arg1)
+		p, err := mod.readU32(ctx, arg1)
 		if err != nil {
 			return zero, err
 		}
@@ -17402,6 +18940,7 @@ func (v *Context) PluginList(ctx context.Context, _arg0 string, _arg1 *int) ([]s
 }
 
 func (v *Context) AddLibrary(ctx context.Context, _arg0 *PluginLibrary) error {
+	ctx = v.callContext(ctx)
 	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
 	if err != nil {
 		return err
@@ -17414,6 +18953,7 @@ func (v *Context) AddLibrary(ctx context.Context, _arg0 *PluginLibrary) error {
 
 func (v *Graph) ToolTred(ctx context.Context) (int, error) {
 	var zero int
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Graph_toolTred", v.getPtr())
 	if err != nil {
 		return zero, err
@@ -17424,15 +18964,18 @@ func (v *Graph) ToolTred(ctx context.Context) (int, error) {
 
 func (v *Context) Clone(ctx context.Context) (*Context, error) {
 	var zero *Context
+	ctx = v.callContext(ctx)
 	p, err := mod.callWithRet(ctx, "Context_clone", v.getPtr())
 	if err != nil {
 		return zero, err
 	}
 	ret := newContext(p)
+	ret.withToken(v.token)
 	return ret, nil
 }
 
 func (v *Context) FreeClonedContext(ctx context.Context) error {
+	ctx = v.callContext(ctx)
 	if err := mod.call(ctx, "Context_freeClonedContext", v.getPtr()); err != nil {
 		return err
 	}
@@ -18155,7 +19698,7 @@ func SetErrorf(ctx context.Context, _arg0 *CallbackFunc[func(context.Context, st
 	if mod.lookupFuncMap.UserRef == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_UserRef before")
 	}
-	mod.callbackFuncMap.UserRef[_arg0.funcID] = _arg0.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.UserRef[_arg0.funcID] = _arg0.cb })
 	arg0, err := mod.toFuncWasmValue(ctx, _arg0)
 	if err != nil {
 		return err

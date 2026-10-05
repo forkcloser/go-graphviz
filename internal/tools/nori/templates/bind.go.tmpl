@@ -3,6 +3,7 @@
 package wasm
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"errors"
@@ -29,6 +30,8 @@ type WasmModule struct {
 	fs  *WasmFileSystem
 	lookupFuncMap *LookupFuncMap
 	callbackFuncMap *CallbackFuncMap
+	// lock serializes every call into the module (see reentrantLock).
+	lock reentrantLock
 	// callbackErr is the first error a Go callback returned during the
 	// exported call in progress. A host function must not panic: the panic
 	// unwinds through Graphviz's C frames and leaves its state half-updated,
@@ -135,6 +138,7 @@ func init() {
 				mod.failCallback(err)
 				return
 			}
+			{{- template "inheritToken" (map "Dst" (printf "arg%d" .Index) "Value" .Value "Token" "tokenOf(ctx)") }}
 			{{- end }}
 
 			funcID, err := mod.lookupFuncMap.{{ .Name }}({{- range .Args}}arg{{ .Index }},{{- end }})
@@ -207,7 +211,7 @@ func init() {
 }
 
 func (m *WasmModule) getEnumValue(ctx context.Context, value string) int {
-	ret, err := mod.ExportedFunction("wasm_bridge_get_" + value).Call(ctx)
+	ret, err := mod.invoke(ctx, "wasm_bridge_get_" + value)
 	if err != nil {
 		panic(err)
 	}
@@ -236,12 +240,36 @@ func getCompilationCache() wazero.CompilationCache {
 	return cache
 }
 
-func (m *WasmModule) ExportedFunction(name string) api.Function {
-	return m.mod.ExportedFunction(name)
+// registerCallback runs a write to the callback maps under the module's
+// lock, since host functions read them under it.
+func (m *WasmModule) registerCallback(write func()) {
+	_, leave := m.lock.enter(context.Background())
+	defer leave()
+	write()
+}
+
+// invoke runs one exported function under the module's lock: one call at a
+// time, process-wide, since Graphviz is single-threaded and wazero's Call
+// is not goroutine-safe. The lock is re-entrant on the goroutine holding
+// it, which is how a host function (Go code Graphviz called) reaches back
+// into the module.
+func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([]uint64, error) {
+	ctx, leave := m.lock.enter(ctx)
+	defer leave()
+	ret, err := m.mod.ExportedFunction(name).Call(ctx, args...)
+	if err != nil {
+		// A trap can follow from a callback's failure (its out-parameters
+		// were never written), so a parked error is returned with it.
+		return nil, errors.Join(err, m.takeCallbackError())
+	}
+	if err := m.takeCallbackError(); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (m *WasmModule) malloc(ctx context.Context, size uint64) (uint64, error) {
-	ret, err := m.ExportedFunction("malloc").Call(ctx, size)
+	ret, err := m.invoke(ctx, "malloc", size)
 	if err != nil {
 		return 0, err
 	}
@@ -249,14 +277,14 @@ func (m *WasmModule) malloc(ctx context.Context, size uint64) (uint64, error) {
 }
 
 func (m *WasmModule) free(ctx context.Context, p uint64) error {
-	if _, err := m.ExportedFunction("free").Call(ctx, p); err != nil {
+	if _, err := m.invoke(ctx, "free", p); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *WasmModule) newObject(ctx context.Context, name string) (uint64, error) {
-	ret, err := mod.ExportedFunction("wasm_bridge_new_" + name).Call(ctx)
+	ret, err := m.invoke(ctx, "wasm_bridge_new_" + name)
 	if err != nil {
 		return 0, err
 	}
@@ -264,14 +292,14 @@ func (m *WasmModule) newObject(ctx context.Context, name string) (uint64, error)
 }
 
 func (m *WasmModule) setField(ctx context.Context, name string, recv, arg uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_" + name).Call(ctx, recv, arg); err != nil {
+	if _, err := m.invoke(ctx, "wasm_bridge_set_" + name, recv, arg); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *WasmModule) setFieldFunction(ctx context.Context, name string, recv uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_" + name).Call(ctx, recv); err != nil {
+	if _, err := m.invoke(ctx, "wasm_bridge_set_" + name, recv); err != nil {
 		return err
 	}
 	return nil
@@ -288,10 +316,10 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 		}
 	}()
 
-	if _, err := m.ExportedFunction("wasm_bridge_get_" + name).Call(ctx, recv, retPtr); err != nil {
+	if _, err := m.invoke(ctx, "wasm_bridge_get_" + name, recv, retPtr); err != nil {
 		return 0, err
 	}
-	p, err := m.readU32(retPtr)
+	p, err := m.readU32(ctx, retPtr)
 	if err != nil {
 		return 0, err
 	}
@@ -302,12 +330,8 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 // function ran comes back from here, after Graphviz has unwound normally;
 // a wazero error (a trap, a panic in a callback) comes back as is.
 func (m *WasmModule) call(ctx context.Context, name string, args ...uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_" + name).Call(ctx, args...); err != nil {
-		// A trap can follow from a callback's failure (its out-parameters
-		// were never written), so a parked error is returned with it.
-		return errors.Join(err, m.takeCallbackError())
-	}
-	return m.takeCallbackError()
+	_, err := m.invoke(ctx, "wasm_bridge_" + name, args...)
+	return err
 }
 
 func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint64) (r uint64, e error) {
@@ -324,25 +348,33 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 	if err := m.call(ctx, name, append(append([]uint64{}, args...), retPtr)...); err != nil {
 		return 0, err
 	}
-	p, err := m.readU32(retPtr)
+	p, err := m.readU32(ctx, retPtr)
 	if err != nil {
 		return 0, err
 	}
 	return p, nil
 }
 
-func (m *WasmModule) read(addr, length uint64) ([]byte, error) {
-	bytes, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
+// The memory helpers hold the lock too: another goroutine's call can grow
+// the memory, which moves it.
+func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, error) {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
+	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
 	if !ok {
 		return nil, fmt.Errorf(
 			`failed to read wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
 			addr, length, m.mod.Memory().Size(),
 		)
 	}
-	return bytes, nil
+	// Read returns a view of the module's memory, which another call may
+	// move or overwrite once the lock is released; the caller gets a copy.
+	return bytes.Clone(view), nil
 }
 
-func (m *WasmModule) readU32(addr uint64) (uint64, error) {
+func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
 	if !ok {
 		return 0, fmt.Errorf(
@@ -353,7 +385,9 @@ func (m *WasmModule) readU32(addr uint64) (uint64, error) {
 	return uint64(p), nil
 }
 
-func (m *WasmModule) write(p uint64, b []byte) error {
+func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
 		return fmt.Errorf(
 			`failed to write wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
@@ -363,7 +397,9 @@ func (m *WasmModule) write(p uint64, b []byte) error {
 	return nil
 }
 
-func (m *WasmModule) writeU32(p uint64, v uint32) error {
+func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
@@ -373,7 +409,9 @@ func (m *WasmModule) writeU32(p uint64, v uint32) error {
 	return nil
 }
 
-func (m *WasmModule) writeU64(p uint64, v uint64) error {
+func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
@@ -383,7 +421,9 @@ func (m *WasmModule) writeU64(p uint64, v uint64) error {
 	return nil
 }
 
-func (m *WasmModule) writeF64(p uint64, v float64) error {
+func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
+	_, leave := m.lock.enter(ctx)
+	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
@@ -402,24 +442,24 @@ func (m *WasmModule) NewPtr(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if err := m.writeU32(p, 0); err != nil {
+	if err := m.writeU32(ctx, p, 0); err != nil {
 		return 0, err
 	}
 	return p, nil
 }
 
 func (m *WasmModule) toSlice(ctx context.Context, p uint64) ([]uint64, error) {
-	length, err := m.readU32(p)
+	length, err := m.readU32(ctx, p)
 	if err != nil {
 		return nil, err
 	}
-	data, err := m.readU32(p+4)
+	data, err := m.readU32(ctx, p+4)
 	if err != nil {
 		return nil, err
 	}
 	var ret []uint64
 	for i := uint64(0); i < length; i++ {
-		p, err := m.readU32(data+8*i)
+		p, err := m.readU32(ctx, data+8*i)
 		if err != nil {
 			return nil, err
 		}
@@ -567,18 +607,18 @@ func (m *WasmModule) toString(ctx context.Context, p uint64) (string, error) {
 	if p == 0 {
 		return "", nil
 	}
-	dataAddr, err := m.readU32(p)
+	dataAddr, err := m.readU32(ctx, p)
 	if err != nil {
 		return "", err
 	}
-	length, err := m.readU32(p+4)
+	length, err := m.readU32(ctx, p+4)
 	if err != nil {
 		return "", err
 	}
 	if length == 0 {
 		return "", nil
 	}
-	bytes, err := m.read(dataAddr, length)
+	bytes, err := m.read(ctx, dataAddr, length)
 	if err != nil {
 		return "", err
 	}
@@ -697,7 +737,7 @@ func (m *WasmModule) toIntArrayWasmValue(ctx context.Context, v []int) (uint64, 
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -712,7 +752,7 @@ func (m *WasmModule) toInt32ArrayWasmValue(ctx context.Context, v []int32) (uint
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -727,7 +767,7 @@ func (m *WasmModule) toInt64ArrayWasmValue(ctx context.Context, v []int64) (uint
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -742,7 +782,7 @@ func (m *WasmModule) toUintArrayWasmValue(ctx context.Context, v []uint) (uint64
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -757,7 +797,7 @@ func (m *WasmModule) toUint32ArrayWasmValue(ctx context.Context, v []uint32) (ui
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, uint64(vv)); err != nil {
+		if err := m.writeU64(ctx, ptr, uint64(vv)); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -772,7 +812,7 @@ func (m *WasmModule) toUint64ArrayWasmValue(ctx context.Context, v []uint64) (ui
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeU64(ptr, vv); err != nil {
+		if err := m.writeU64(ctx, ptr, vv); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -787,7 +827,7 @@ func (m *WasmModule) toDoubleArrayWasmValue(ctx context.Context, v []float64) (u
 	}
 	ptr := ret
 	for _, vv := range v {
-		if err := m.writeF64(ptr, vv); err != nil {
+		if err := m.writeF64(ctx, ptr, vv); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -814,7 +854,7 @@ func (m *WasmModule) toFloatStringArrayWasmValue(ctx context.Context, v []float3
 		if err != nil {
 			return 0, err
 		}
-		if err := m.writeU64(ptr, f); err != nil {
+		if err := m.writeU64(ctx, ptr, f); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -833,7 +873,7 @@ func (m *WasmModule) toDoubleStringArrayWasmValue(ctx context.Context, v []float
 		if err != nil {
 			return 0, err
 		}
-		if err := m.writeU64(ptr, f); err != nil {
+		if err := m.writeU64(ctx, ptr, f); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -846,7 +886,7 @@ func (m *WasmModule) toStringWasmValue(ctx context.Context, s string) (uint64, e
 	if err != nil {
 		return 0, err
 	}
-	if err := m.write(ret, append([]byte(s), 0)); err != nil {
+	if err := m.write(ctx, ret, append([]byte(s), 0)); err != nil {
 		return 0, err
 	}
 	return ret, nil
@@ -862,20 +902,20 @@ func (m *WasmModule) toObjectArrayWasmValue(ctx context.Context, v any) (uint64,
 		return 0, err
 	}
 	rv := reflect.ValueOf(v)
-	if err := m.writeU32(ret, uint32(rv.Len())); err != nil {
+	if err := m.writeU32(ctx, ret, uint32(rv.Len())); err != nil {
 		return 0, err
 	}
 	data, err := m.malloc(ctx, uint64(8*rv.Len()))
 	if err != nil {
 		return 0, err
 	}
-	if err := m.writeU32(ret+4, uint32(data)); err != nil {
+	if err := m.writeU32(ctx, ret+4, uint32(data)); err != nil {
 		return 0, err
 	}
 	ptr := data
 	for i := 0; i < rv.Len(); i++ {
 		vv := rv.Index(i).Interface().(wasmStruct)
-		if err := m.writeU32(ptr, uint32(vv.getPtr())); err != nil {
+		if err := m.writeU32(ctx, ptr, uint32(vv.getPtr())); err != nil {
 			return 0, err
 		}
 		ptr += 8
@@ -888,6 +928,26 @@ func (m *WasmModule) toObjectArrayWasmValue(ctx context.Context, v any) (uint64,
 
 type {{ $msgName }} struct {
 	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
+}
+
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *{{ $msgName }}) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *{{ $msgName }}) withToken(token *callToken) *{{ $msgName }} {
+	if v != nil {
+		v.token = token
+	}
+	return v
 }
 {{- if .HasConstructor }}
 func New{{ $msgName }}(ctx context.Context) (*{{ $msgName }}, error) {
@@ -927,12 +987,12 @@ func (v *{{ $msgName }}) Set{{ .GoName }}(ctx context.Context, arg {{ .Value.GoI
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
 	}
-	mod.callbackFuncMap.{{ .Value.FuncName }}[arg.funcID] = arg.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "{{ .WasmName }}", v.getPtr())
 }
 {{- else }}
 func (v *{{ $msgName }}) Set{{ .GoName }}(_arg {{ .Value.GoType }}) error {
-	ctx := context.Background()
+	ctx := v.callContext(context.Background())
 	arg, err := {{ .Value.WasmTypeConverter }}(ctx, _arg)
 	if err != nil {
 		return err
@@ -941,7 +1001,7 @@ func (v *{{ $msgName }}) Set{{ .GoName }}(_arg {{ .Value.GoType }}) error {
 }
 
 func (v *{{ $msgName }}) Get{{ .GoName }}() {{ .Value.GoType }} {
-	ret, err := v.get{{ .GoName }}(context.Background())
+	ret, err := v.get{{ .GoName }}(v.callContext(context.Background()))
 	if err != nil {
 		panic(err)
 	}
@@ -955,6 +1015,7 @@ func (v *{{ $msgName }}) get{{ .GoName }}(ctx context.Context) ({{ .Value.GoType
 		return zero, err
 	}
 	{{- template "ToGoValue" . }}
+	{{- template "inheritToken" (map "Dst" .Dst "Value" .Value "Token" "v.token") }}
 	return {{ .Dst }}, nil
 }
 {{- end }}
@@ -985,12 +1046,13 @@ func (v {{ $enumName }}) String() string {
 {{- if .Return }}
 func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ .Value.GoInterfaceType }}{{- if not .IsLastArg -}}, {{ end -}}{{- end -}}) ({{ .Return.Value.GoType }}, error) {
 	var zero {{ .Return.Value.GoType }}
+	ctx = v.callContext(ctx)
 	{{- range .Args }}
 	{{- if .Value.IsFunction }}
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
 		return zero, fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
 	}
-	mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}
 	arg{{- .Index -}}, err := {{ .Value.WasmTypeConverter }}(ctx, _arg{{- .Index -}})
 	if err != nil {
@@ -1004,7 +1066,7 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 	{{- range .Args }}
 	{{- if .Value.IsPtrValue }}
 	{
-		p, err := mod.readU32(arg{{ .Index }})
+		p, err := mod.readU32(ctx, arg{{ .Index }})
 		if err != nil {
 			return zero, err
 		}
@@ -1013,16 +1075,18 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 	{{- end }}
 	{{- end }}
 	{{- template "ToGoValue" .Return }}
+	{{- template "inheritToken" (map "Dst" .Return.Dst "Value" .Return.Value "Token" "v.token") }}
 	return {{ .Return.Dst }}, nil
 }
 {{- else }}
 func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ .Value.GoInterfaceType }}{{- if not .IsLastArg -}}, {{ end -}}{{- end -}}) error {
+	ctx = v.callContext(ctx)
 	{{- range .Args }}
 	{{- if .Value.IsFunction }}
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
 	}
-	mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}
 	arg{{- .Index -}}, err := {{ .Value.WasmTypeConverter }}(ctx, _arg{{- .Index -}})
 	if err != nil {
@@ -1047,7 +1111,7 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
 		return zero, fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
 	}
-	mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}
 	arg{{- .Index -}}, err := {{ .Value.WasmTypeConverter }}(ctx, _arg{{- .Index -}})
 	if err != nil {
@@ -1061,7 +1125,7 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	{{- range .Args }}
 	{{- if .Value.IsPtrValue }}
 	{
-		p, err := mod.readU32(arg{{ .Index }})
+		p, err := mod.readU32(ctx, arg{{ .Index }})
 		if err != nil {
 			return zero, err
 		}
@@ -1079,7 +1143,7 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
 		return fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
 	}
-	mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb
+	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}
 	arg{{- .Index -}}, err := {{ .Value.WasmTypeConverter }}(ctx, _arg{{- .Index -}})
 	if err != nil {
@@ -1092,7 +1156,7 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	{{- range .Args }}
 	{{- if .Value.IsPtrValue }}
 	{
-		p, err := mod.readU32(arg{{ .Index }})
+		p, err := mod.readU32(ctx, arg{{ .Index }})
 		if err != nil {
 			return err
 		}
@@ -1146,4 +1210,16 @@ if err != nil {
 {{ .Dst }} := {{ .Value.GoTypeConverter }}({{ .Src }})
 {{- end }}
 
+{{- end }}
+
+{{- define "inheritToken" }}
+{{- if .Value.IsStruct }}
+{{- if .Value.IsSlice }}
+	for _, e := range {{ .Dst }} {
+		e.withToken({{ .Token }})
+	}
+{{- else }}
+	{{ .Dst }}.withToken({{ .Token }})
+{{- end }}
+{{- end }}
 {{- end }}

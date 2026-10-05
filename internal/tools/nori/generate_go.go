@@ -77,6 +77,11 @@ func (v *GoValue) IsSlice() bool {
 	return v.typ.IsRepeated
 }
 
+// IsStruct reports a message type: an object handle over the module's memory.
+func (v *GoValue) IsStruct() bool {
+	return v.typ.Kind == nori.TypeKind_STRUCT
+}
+
 func (v *GoValue) FuncName() string {
 	if !v.typ.IsFunction() {
 		return ""
