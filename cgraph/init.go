@@ -25,8 +25,11 @@ func init() {
 func setGlobalVars() error {
 	ctx := context.Background()
 
-	// Set MAX to prevent outputting internally generated errors or warnings with agerr to the stderr.
-	wasm.SetError(ctx, wasm.MAX)
+	// Graphviz's messages come to Go from here on: errors wait for the call
+	// that caused them, warnings go to the writer the user names.
+	if err := wasm.RouteMessages(ctx); err != nil {
+		return err
+	}
 
 	directed, err := wasm.NewGraphDescriptor(ctx)
 	if err != nil {

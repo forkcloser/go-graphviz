@@ -3,9 +3,100 @@ package wasm
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
+	"strings"
 	"sync"
 )
+
+// Graphviz reports through one function, agerrf, in fragments: the level
+// ("Error" or "Warning"), then ": ", then the text; a continuation line
+// (AGPREV) comes as text alone. The module routes that stream here rather
+// than to the guest's stderr, which wazero discards: the errors since the
+// last read wait for TakeLastError, and warnings go to the writer
+// SetWarningWriter names.
+var (
+	messageMu     sync.Mutex
+	messageLevel  string // the level of the message in progress
+	lastErrorText strings.Builder
+	warningWriter = io.Discard
+)
+
+// The fragments Graphviz's out() (lib/cgraph/agerror.c) emits before a
+// message's text: the level, then the separator. onMessage matches them
+// exactly, so a Graphviz release that changes out() breaks the tests that
+// read a message rather than silently misfiling the text.
+const (
+	levelError     = "Error"
+	levelWarning   = "Warning"
+	levelSeparator = ": "
+)
+
+// RouteMessages installs onMessage as Graphviz's message function. cgraph
+// calls it once at its own init, so every package that reaches Graphviz has
+// the route in place.
+func RouteMessages(ctx context.Context) error {
+	Register_UserRef(func(string) (uint64, error) { return 0, nil })
+
+	return SetErrorf(ctx, CreateCallbackFunc(onMessage, 0))
+}
+
+// onMessage receives one fragment of Graphviz's message stream.
+func onMessage(_ context.Context, fragment string) (int, error) {
+	messageMu.Lock()
+	defer messageMu.Unlock()
+
+	switch fragment {
+	case levelError, levelWarning:
+		// Errors accumulate until read, one per line, so two reported in
+		// one call both reach the caller.
+		if fragment == levelError && lastErrorText.Len() > 0 {
+			lastErrorText.WriteString("\n")
+		}
+
+		messageLevel = fragment
+	case levelSeparator:
+		// the separator after the level
+	default:
+		if messageLevel == levelError {
+			lastErrorText.WriteString(fragment)
+
+			return 0, nil
+		}
+	}
+
+	if messageLevel == levelWarning {
+		_, _ = io.WriteString(warningWriter, fragment)
+	}
+
+	return 0, nil
+}
+
+// TakeLastError returns the text of the errors Graphviz reported since the
+// last read, with their continuation lines, and clears it; "" when there
+// is none.
+func TakeLastError() string {
+	messageMu.Lock()
+	defer messageMu.Unlock()
+
+	text := lastErrorText.String()
+	lastErrorText.Reset()
+
+	return text
+}
+
+// SetWarningWriter names where Graphviz's warnings go, as the lines
+// Graphviz prints them ("Warning: ..."); nil drops them, the default.
+func SetWarningWriter(w io.Writer) {
+	messageMu.Lock()
+	defer messageMu.Unlock()
+
+	if w == nil {
+		w = io.Discard
+	}
+
+	warningWriter = w
+}
 
 func DefaultSymList(ctx context.Context) ([]*SymList, error) {
 	slot, err := mod.NewPtr(ctx)

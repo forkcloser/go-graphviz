@@ -145,3 +145,10 @@ func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
 func SetFileSystem(fsys fs.FS) {
 	wasm.SetWasmFileSystem(fsys)
 }
+
+// SetWarningWriter names where Graphviz's warnings go, as the lines Graphviz
+// prints them; nil drops them, which is the default. Errors are not written
+// there: the call that caused one returns it.
+func SetWarningWriter(w io.Writer) {
+	wasm.SetWarningWriter(w)
+}
