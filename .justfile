@@ -4,7 +4,7 @@
 import '.limen/just/main.just'
 
 # The FIRST recipe defined here becomes `just`'s default.
-lint: do::lint::default do::lint::go::default do::lint::go::deadcode
+lint: do::lint::default do::lint::go::default do::lint::go::deadcode examples
 fix: do::fix::go::default do::fix::default
 test: do::test::go::unit do::test::go::race
 security: do::security::default
@@ -33,3 +33,13 @@ bindings:
     mv bind.c internal/wasm/build/bind.c
     mv bind.go internal/wasm/bind.go
     gofmt -w internal/wasm/bind.go
+
+# The programs under _examples sit outside ./..., which skips directories
+# starting with an underscore, so nothing else compiles them; each is its
+# own main package, vetted here so the examples cannot stop compiling
+# unnoticed again.
+[doc('Vet the example programs under _examples')]
+examples:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    go vet ./_examples/simple ./_examples/rw
