@@ -36,11 +36,9 @@ func layoutAndFree(t *testing.T, dot []byte, rounds int) {
 			t.Fatalf("round %d: freeing the layout: %v", round, err)
 		}
 
-		// gvFreeContext returns the count of errors Graphviz has reported
-		// so far in the process, not a status, so Close reports a stale
-		// message after any earlier failed parse; the error plumbing PR
-		// that follows this one makes Close honest and checks it here.
-		_ = gctx.Close()
+		if err := gctx.Close(); err != nil {
+			t.Fatal(err)
+		}
 
 		if err := graph.Close(); err != nil {
 			t.Fatal(err)
@@ -54,7 +52,8 @@ func layoutAndFree(t *testing.T, dot []byte, rounds int) {
 // label called through whatever the allocator left there; the wasm build
 // carries the one-line fix (internal/wasm/build/build.sh). The crazy.gv
 // corpus file is the graph that showed it, two rounds being enough for the
-// allocator to hand the span array a dirty block.
+// allocator to hand the span array a dirty block. FreeLayout reports the
+// trap since callback errors and traps stopped being swallowed.
 func TestLabelEmptyFirstLine(t *testing.T) {
 	layoutAndFree(t, []byte(`digraph { label="\n\nfirst line empty"; a -> b }`), 20)
 

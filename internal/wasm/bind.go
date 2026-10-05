@@ -5,6 +5,7 @@ package wasm
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -28,6 +29,28 @@ type WasmModule struct {
 	fs              *WasmFileSystem
 	lookupFuncMap   *LookupFuncMap
 	callbackFuncMap *CallbackFuncMap
+	// callbackErr is the first error a Go callback returned during the
+	// exported call in progress. A host function must not panic: the panic
+	// unwinds through Graphviz's C frames and leaves its state half-updated,
+	// so the error is parked here, the remaining callbacks of the call are
+	// skipped, Graphviz finishes normally, and the entry point that made the
+	// call returns the parked error (see takeCallbackError).
+	callbackErr error
+}
+
+// failCallback parks the first error a callback returns; later ones are
+// dropped since they follow from the same failed call.
+func (m *WasmModule) failCallback(err error) {
+	if m.callbackErr == nil {
+		m.callbackErr = err
+	}
+}
+
+// takeCallbackError returns and clears the parked callback error.
+func (m *WasmModule) takeCallbackError() error {
+	err := m.callbackErr
+	m.callbackErr = nil
+	return err
 }
 
 type WasmFileSystem struct {
@@ -399,6 +422,10 @@ func init() {
 	env := r.NewHostModuleBuilder("env")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -406,7 +433,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*ClientDiscipline, error) {
 				var zero *ClientDiscipline
@@ -415,17 +443,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IDAllocator_Open(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Open[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -434,6 +464,10 @@ func init() {
 	).Export("wasm_bridge_IDAllocator_Open")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -441,7 +475,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (int, error) {
 				var zero int
@@ -450,7 +485,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (string, error) {
 				var zero string
@@ -462,7 +498,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (*uint64, error) {
 				var zero *uint64
@@ -473,7 +510,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg4, err := func() (int, error) {
 				var zero int
@@ -482,17 +520,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IDAllocator_Map(arg0, arg1, arg2, arg3, arg4)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Map[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -501,6 +541,10 @@ func init() {
 	).Export("wasm_bridge_IDAllocator_Map")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -508,7 +552,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (int, error) {
 				var zero int
@@ -517,7 +562,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (uint64, error) {
 				var zero uint64
@@ -526,16 +572,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IDAllocator_Free(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Free[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -544,6 +592,10 @@ func init() {
 	).Export("wasm_bridge_IDAllocator_Free")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -551,7 +603,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (int, error) {
 				var zero int
@@ -560,7 +613,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (uint64, error) {
 				var zero uint64
@@ -569,17 +623,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IDAllocator_Print(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Print[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -588,6 +644,10 @@ func init() {
 	).Export("wasm_bridge_IDAllocator_Print")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -595,16 +655,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IDAllocator_Close(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Close[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -613,6 +675,10 @@ func init() {
 	).Export("wasm_bridge_IDAllocator_Close")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -620,7 +686,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (int, error) {
 				var zero int
@@ -629,7 +696,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (any, error) {
 				var zero any
@@ -638,16 +706,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IDAllocator_IdRegister(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_IdRegister[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -656,6 +726,10 @@ func init() {
 	).Export("wasm_bridge_IDAllocator_IdRegister")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -663,7 +737,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -675,7 +750,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (int, error) {
 				var zero int
@@ -684,17 +760,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IOService_Afread(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IOService_Afread[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -703,6 +781,10 @@ func init() {
 	).Export("wasm_bridge_IOService_Afread")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -710,7 +792,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -722,17 +805,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IOService_Putstr(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IOService_Putstr[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -741,6 +826,10 @@ func init() {
 	).Export("wasm_bridge_IOService_Putstr")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -748,17 +837,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.IOService_Flush(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.IOService_Flush[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -767,6 +858,10 @@ func init() {
 	).Export("wasm_bridge_IOService_Flush")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -774,7 +869,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*Object, error) {
 				var zero *Object
@@ -783,7 +879,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (any, error) {
 				var zero any
@@ -792,16 +889,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.ClientEventCallback_ObjectFunc(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.ClientEventCallback_ObjectFunc[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -810,6 +909,10 @@ func init() {
 	).Export("wasm_bridge_ClientEventCallback_ObjectFunc")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -817,7 +920,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*Object, error) {
 				var zero *Object
@@ -826,7 +930,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (any, error) {
 				var zero any
@@ -835,7 +940,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (*Sym, error) {
 				var zero *Sym
@@ -844,16 +950,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.ClientEventCallback_ObjectUpdateFunc(arg0, arg1, arg2, arg3)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.ClientEventCallback_ObjectUpdateFunc[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -862,6 +970,10 @@ func init() {
 	).Export("wasm_bridge_ClientEventCallback_ObjectUpdateFunc")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -872,17 +984,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.UserRef(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.UserRef[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -891,6 +1005,10 @@ func init() {
 	).Export("wasm_bridge_UserRef")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Dict, error) {
 				var zero *Dict
 				_ = zero
@@ -898,7 +1016,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (any, error) {
 				var zero any
@@ -907,7 +1026,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (uint32, error) {
 				var zero uint32
@@ -916,7 +1036,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (*DictDisc, error) {
 				var zero *DictDisc
@@ -925,17 +1046,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DictMemory(arg0, arg1, arg2, arg3)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictMemory[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -944,6 +1067,10 @@ func init() {
 	).Export("wasm_bridge_DictMemory")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Dict, error) {
 				var zero *Dict
 				_ = zero
@@ -951,7 +1078,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (any, error) {
 				var zero any
@@ -960,7 +1088,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (int, error) {
 				var zero int
@@ -969,17 +1098,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DictSearch(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictSearch[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -988,6 +1119,10 @@ func init() {
 	).Export("wasm_bridge_DictSearch")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -995,7 +1130,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*DictDisc, error) {
 				var zero *DictDisc
@@ -1004,17 +1140,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DictMake(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictMake[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1023,6 +1161,10 @@ func init() {
 	).Export("wasm_bridge_DictMake")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1030,16 +1172,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DictFree(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictFree[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1048,6 +1192,10 @@ func init() {
 	).Export("wasm_bridge_DictFree")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1055,7 +1203,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (any, error) {
 				var zero any
@@ -1064,17 +1213,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DictCompare(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictCompare[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1083,6 +1234,10 @@ func init() {
 	).Export("wasm_bridge_DictCompare")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1090,7 +1245,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (any, error) {
 				var zero any
@@ -1099,17 +1255,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DictWalk(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictWalk[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1118,6 +1276,10 @@ func init() {
 	).Export("wasm_bridge_DictWalk")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*UserShape, error) {
 				var zero *UserShape
 				_ = zero
@@ -1125,16 +1287,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.UserShape_DataFree(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.UserShape_DataFree[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1143,6 +1307,10 @@ func init() {
 	).Export("wasm_bridge_UserShape_DataFree")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1150,16 +1318,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Refresh(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Refresh[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1168,6 +1338,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_Refresh")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1175,7 +1349,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (int, error) {
 				var zero int
@@ -1184,7 +1359,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (*PointFloat, error) {
 				var zero *PointFloat
@@ -1193,16 +1369,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_ButtonPress(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_ButtonPress[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1211,6 +1389,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_ButtonPress")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1218,7 +1400,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (int, error) {
 				var zero int
@@ -1227,7 +1410,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (*PointFloat, error) {
 				var zero *PointFloat
@@ -1236,16 +1420,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_ButtonRelease(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_ButtonRelease[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1254,6 +1440,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_ButtonRelease")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1261,7 +1451,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*PointFloat, error) {
 				var zero *PointFloat
@@ -1270,16 +1461,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Motion(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Motion[funcID]; exists {
 				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1288,6 +1481,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_Motion")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1295,7 +1492,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -1307,7 +1505,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (string, error) {
 				var zero string
@@ -1319,16 +1518,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Modify(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Modify[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1337,6 +1538,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_Modify")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1344,16 +1549,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Delete(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Delete[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1362,6 +1569,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_Delete")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1369,7 +1580,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -1381,7 +1593,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (string, error) {
 				var zero string
@@ -1393,16 +1606,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Read(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Read[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1411,6 +1626,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_Read")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1418,7 +1637,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -1430,16 +1650,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Layout(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Layout[funcID]; exists {
 				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1448,6 +1670,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_Layout")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1455,7 +1681,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -1467,7 +1694,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (string, error) {
 				var zero string
@@ -1479,16 +1707,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Render(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Render[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1497,6 +1727,10 @@ func init() {
 	).Export("wasm_bridge_DeviceCallbacks_Render")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1504,16 +1738,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceEngine_Initialize(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceEngine_Initialize[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1522,6 +1758,10 @@ func init() {
 	).Export("wasm_bridge_DeviceEngine_Initialize")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1529,16 +1769,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceEngine_Format(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceEngine_Format[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1547,6 +1789,10 @@ func init() {
 	).Export("wasm_bridge_DeviceEngine_Format")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1554,16 +1800,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.DeviceEngine_Finalize(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.DeviceEngine_Finalize[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1572,6 +1820,10 @@ func init() {
 	).Export("wasm_bridge_DeviceEngine_Finalize")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1579,16 +1831,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginJob(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginJob[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1597,6 +1851,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginJob")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1604,16 +1862,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndJob(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndJob[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1622,6 +1882,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndJob")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1629,16 +1893,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginGraph(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginGraph[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1647,6 +1913,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginGraph")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1654,16 +1924,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndGraph(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndGraph[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1672,6 +1944,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndGraph")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1679,7 +1955,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -1691,7 +1968,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (int, error) {
 				var zero int
@@ -1700,7 +1978,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (int, error) {
 				var zero int
@@ -1709,16 +1988,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginLayer(arg0, arg1, arg2, arg3)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginLayer[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1727,6 +2008,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginLayer")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1734,16 +2019,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndLayer(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndLayer[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1752,6 +2039,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndLayer")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1759,16 +2050,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginPage(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginPage[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1777,6 +2070,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginPage")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1784,16 +2081,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndPage(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndPage[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1802,6 +2101,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndPage")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1809,16 +2112,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginCluster(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginCluster[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1827,6 +2132,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginCluster")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1834,16 +2143,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndCluster(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndCluster[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1852,6 +2163,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndCluster")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1859,16 +2174,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNodes(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginNodes[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1877,6 +2194,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginNodes")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1884,16 +2205,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndNodes(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndNodes[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1902,6 +2225,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndNodes")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1909,16 +2236,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdges(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginEdges[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1927,6 +2256,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginEdges")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1934,16 +2267,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdges(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndEdges[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1952,6 +2287,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndEdges")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1959,16 +2298,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNode(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginNode[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -1977,6 +2318,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginNode")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1984,16 +2329,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndNode(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndNode[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2002,6 +2349,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndNode")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2009,16 +2360,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdge(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginEdge[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2027,6 +2380,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginEdge")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2034,16 +2391,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdge(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndEdge[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2052,6 +2411,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndEdge")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2059,7 +2422,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -2071,7 +2435,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (string, error) {
 				var zero string
@@ -2083,7 +2448,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (string, error) {
 				var zero string
@@ -2095,7 +2461,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg4, err := func() (string, error) {
 				var zero string
@@ -2107,16 +2474,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginAnchor(arg0, arg1, arg2, arg3, arg4)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginAnchor[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2125,6 +2494,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginAnchor")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2132,16 +2505,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndAnchor(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndAnchor[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2150,6 +2525,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndAnchor")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2157,7 +2536,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (LabelType, error) {
 				var zero LabelType
@@ -2166,16 +2546,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginLabel(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginLabel[funcID]; exists {
 				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2184,6 +2566,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_BeginLabel")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2191,16 +2577,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndLabel(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_EndLabel[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2209,6 +2597,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_EndLabel")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2216,7 +2608,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*PointFloat, error) {
 				var zero *PointFloat
@@ -2225,7 +2618,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (*Textspan, error) {
 				var zero *Textspan
@@ -2234,16 +2628,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_Textspan(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_Textspan[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2252,6 +2648,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_Textspan")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2259,7 +2659,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*Color, error) {
 				var zero *Color
@@ -2268,16 +2669,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_ResolveColor(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_ResolveColor[funcID]; exists {
 				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2286,6 +2689,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_ResolveColor")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2293,7 +2700,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
@@ -2306,7 +2714,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (int, error) {
 				var zero int
@@ -2315,16 +2724,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_Ellipse(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_Ellipse[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2333,6 +2744,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_Ellipse")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2340,7 +2755,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
@@ -2353,7 +2769,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (uint32, error) {
 				var zero uint32
@@ -2362,7 +2779,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (int, error) {
 				var zero int
@@ -2371,16 +2789,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_Polygon(arg0, arg1, arg2, arg3)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_Polygon[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2389,6 +2809,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_Polygon")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2396,7 +2820,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
@@ -2409,7 +2834,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (uint32, error) {
 				var zero uint32
@@ -2418,7 +2844,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (int, error) {
 				var zero int
@@ -2427,16 +2854,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_Beziercurve(arg0, arg1, arg2, arg3)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_Beziercurve[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2445,6 +2874,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_Beziercurve")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2452,7 +2885,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
@@ -2465,7 +2899,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (uint32, error) {
 				var zero uint32
@@ -2474,16 +2909,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_Polyline(arg0, arg1, arg2)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_Polyline[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2492,6 +2929,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_Polyline")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2499,7 +2940,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -2511,16 +2953,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_Comment(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_Comment[funcID]; exists {
 				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2529,6 +2973,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_Comment")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2536,7 +2984,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (string, error) {
 				var zero string
@@ -2548,7 +2997,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() ([]*PointFloat, error) {
 				var zero []*PointFloat
@@ -2561,7 +3011,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (uint32, error) {
 				var zero uint32
@@ -2570,7 +3021,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg4, err := func() (int, error) {
 				var zero int
@@ -2579,16 +3031,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.RenderEngine_LibraryShape(arg0, arg1, arg2, arg3, arg4)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.RenderEngine_LibraryShape[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2597,6 +3051,10 @@ func init() {
 	).Export("wasm_bridge_RenderEngine_LibraryShape")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -2604,16 +3062,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.LayoutEngine_Layout(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.LayoutEngine_Layout[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2622,6 +3082,10 @@ func init() {
 	).Export("wasm_bridge_LayoutEngine_Layout")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -2629,16 +3093,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.LayoutEngine_Cleanup(arg0)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.LayoutEngine_Cleanup[funcID]; exists {
 				if err := fn(ctx, arg0); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2647,6 +3113,10 @@ func init() {
 	).Export("wasm_bridge_LayoutEngine_Cleanup")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Textspan, error) {
 				var zero *Textspan
 				_ = zero
@@ -2654,7 +3124,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() ([]string, error) {
 				var zero []string
@@ -2670,17 +3141,19 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.TextLayoutEngine_TextLayout(arg0, arg1)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.TextLayoutEngine_TextLayout[funcID]; exists {
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -2689,6 +3162,10 @@ func init() {
 	).Export("wasm_bridge_TextLayoutEngine_TextLayout")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2696,7 +3173,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg1, err := func() (*UserShape, error) {
 				var zero *UserShape
@@ -2705,7 +3183,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg2, err := func() (*BoxFloat, error) {
 				var zero *BoxFloat
@@ -2714,7 +3193,8 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			arg3, err := func() (bool, error) {
 				var zero bool
@@ -2723,16 +3203,18 @@ func init() {
 				return ret, nil
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 
 			funcID, err := mod.lookupFuncMap.LoadImageEngine_LoadImage(arg0, arg1, arg2, arg3)
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.LoadImageEngine_LoadImage[funcID]; exists {
 				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 			}
 		}),
@@ -3019,7 +3501,9 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 		return 0, err
 	}
 	defer func() {
-		e = m.free(ctx, retPtr)
+		if ferr := m.free(ctx, retPtr); ferr != nil && e == nil {
+			e = ferr
+		}
 	}()
 
 	if _, err := m.ExportedFunction("wasm_bridge_get_"+name).Call(ctx, recv, retPtr); err != nil {
@@ -3032,11 +3516,16 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 	return p, nil
 }
 
+// call runs a bridge function. An error a Go callback returned while the
+// function ran comes back from here, after Graphviz has unwound normally;
+// a wazero error (a trap, a panic in a callback) comes back as is.
 func (m *WasmModule) call(ctx context.Context, name string, args ...uint64) error {
 	if _, err := mod.ExportedFunction("wasm_bridge_"+name).Call(ctx, args...); err != nil {
-		return err
+		// A trap can follow from a callback's failure (its out-parameters
+		// were never written), so a parked error is returned with it.
+		return errors.Join(err, m.takeCallbackError())
 	}
-	return nil
+	return m.takeCallbackError()
 }
 
 func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint64) (r uint64, e error) {
@@ -3045,7 +3534,9 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 		return 0, err
 	}
 	defer func() {
-		e = m.free(ctx, retPtr)
+		if ferr := m.free(ctx, retPtr); ferr != nil && e == nil {
+			e = ferr
+		}
 	}()
 
 	if err := m.call(ctx, name, append(append([]uint64{}, args...), retPtr)...); err != nil {

@@ -5,6 +5,7 @@ package wasm
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -28,6 +29,28 @@ type WasmModule struct {
 	fs  *WasmFileSystem
 	lookupFuncMap *LookupFuncMap
 	callbackFuncMap *CallbackFuncMap
+	// callbackErr is the first error a Go callback returned during the
+	// exported call in progress. A host function must not panic: the panic
+	// unwinds through Graphviz's C frames and leaves its state half-updated,
+	// so the error is parked here, the remaining callbacks of the call are
+	// skipped, Graphviz finishes normally, and the entry point that made the
+	// call returns the parked error (see takeCallbackError).
+	callbackErr error
+}
+
+// failCallback parks the first error a callback returns; later ones are
+// dropped since they follow from the same failed call.
+func (m *WasmModule) failCallback(err error) {
+	if m.callbackErr == nil {
+		m.callbackErr = err
+	}
+}
+
+// takeCallbackError returns and clears the parked callback error.
+func (m *WasmModule) takeCallbackError() error {
+	err := m.callbackErr
+	m.callbackErr = nil
+	return err
 }
 
 type WasmFileSystem struct {
@@ -90,6 +113,10 @@ func init() {
 	{{- range .ExportCallbackFunctions }}
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are skipped.
+				return
+			}
 			{{- range .Args }}
 			arg{{ .Index }}, err := func() ({{ .Value.GoType }}, error) {
 				var zero {{ .Value.GoType }}
@@ -105,23 +132,25 @@ func init() {
 				{{- end }}
 			}()
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			{{- end }}
 
 			funcID, err := mod.lookupFuncMap.{{ .Name }}({{- range .Args}}arg{{ .Index }},{{- end }})
 			if err != nil {
-				panic(err)
+				mod.failCallback(err)
+				return
 			}
 			if fn, exists := mod.callbackFuncMap.{{ .Name }}[funcID]; exists {
 				{{- if .Return }}
 				// TODO: must back returned value to wasm side.
 				if _, err := fn(ctx, {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 				{{- else }}
 				if err := fn(ctx, {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {
-					panic(err)
+					mod.failCallback(err)
 				}
 				{{- end }}
 			}
@@ -254,7 +283,9 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 		return 0, err
 	}
 	defer func() {
-		e = m.free(ctx, retPtr)
+		if ferr := m.free(ctx, retPtr); ferr != nil && e == nil {
+			e = ferr
+		}
 	}()
 
 	if _, err := m.ExportedFunction("wasm_bridge_get_" + name).Call(ctx, recv, retPtr); err != nil {
@@ -267,11 +298,16 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 	return p, nil
 }
 
+// call runs a bridge function. An error a Go callback returned while the
+// function ran comes back from here, after Graphviz has unwound normally;
+// a wazero error (a trap, a panic in a callback) comes back as is.
 func (m *WasmModule) call(ctx context.Context, name string, args ...uint64) error {
 	if _, err := mod.ExportedFunction("wasm_bridge_" + name).Call(ctx, args...); err != nil {
-		return err
+		// A trap can follow from a callback's failure (its out-parameters
+		// were never written), so a parked error is returned with it.
+		return errors.Join(err, m.takeCallbackError())
 	}
-	return nil
+	return m.takeCallbackError()
 }
 
 func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint64) (r uint64, e error) {
@@ -280,7 +316,9 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 		return 0, err
 	}
 	defer func() {
-		e = m.free(ctx, retPtr)
+		if ferr := m.free(ctx, retPtr); ferr != nil && e == nil {
+			e = ferr
+		}
 	}()
 
 	if err := m.call(ctx, name, append(append([]uint64{}, args...), retPtr)...); err != nil {
