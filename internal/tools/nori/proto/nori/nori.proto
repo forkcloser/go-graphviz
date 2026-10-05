@@ -4,7 +4,7 @@ package nori;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/goccy/nori/nori;nori";
+option go_package = "github.com/forkcloser/go-graphviz/internal/tools/nori/nori;nori";
 
 extend google.protobuf.FileOptions {
   FileRule file = 5000;

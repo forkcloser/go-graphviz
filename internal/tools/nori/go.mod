@@ -1,6 +1,6 @@
-module github.com/goccy/nori
+module github.com/forkcloser/go-graphviz/internal/tools/nori
 
-go 1.22.0
+go 1.26.0
 
 require (
 	github.com/bufbuild/protocompile v0.14.0

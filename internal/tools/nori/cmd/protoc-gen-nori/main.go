@@ -6,9 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/goccy/nori"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
+
+	"github.com/forkcloser/go-graphviz/internal/tools/nori"
 )
 
 func main() {
