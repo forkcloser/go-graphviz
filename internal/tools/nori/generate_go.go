@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/goccy/nori/nori"
+	"github.com/forkcloser/go-graphviz/internal/tools/nori/nori"
 )
 
 //go:embed templates/bind.go.tmpl

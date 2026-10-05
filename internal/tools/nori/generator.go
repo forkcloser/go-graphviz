@@ -7,12 +7,13 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/goccy/nori/nori"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/pluginpb"
+
+	"github.com/forkcloser/go-graphviz/internal/tools/nori/nori"
 )
 
 type File struct {
