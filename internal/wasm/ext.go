@@ -5,9 +5,127 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
+
+// reentrantLock serializes the module. Graphviz is single-threaded with
+// global state and wazero's Call is not goroutine-safe, so one call runs at
+// a time across every instance in the process. The goroutine inside a call
+// calls again from every host function Graphviz invokes, so the lock is
+// re-entrant for its holder, and it has to tell the holder from a waiting
+// goroutine cheaply: the outermost call mints a token into the context it
+// hands wazero, wazero hands that context to the host functions, the
+// handles they build carry it, and a call that arrives with the current
+// token is the holder's. A call without one takes the mutex, or, when that
+// is held, asks which goroutine it is on (the slow path: a handle made
+// outside the callback, or real contention).
+type reentrantLock struct {
+	mu     sync.Mutex
+	holder atomic.Int64              // the goroutine holding mu, 0 when none
+	token  atomic.Pointer[callToken] // the outermost call's token, nil when none
+	depth  int                       // the holder's nesting, touched only by the holder
+}
+
+// callToken identifies one outermost call; a context carries a pointer to it.
+type callToken struct{ _ byte }
+
+// callKey is the context key the token travels under.
+type callKey struct{}
+
+// tokenOf is the token ctx carries, nil when none.
+func tokenOf(ctx context.Context) *callToken {
+	tok, ok := ctx.Value(callKey{}).(*callToken)
+	if !ok {
+		return nil
+	}
+
+	return tok
+}
+
+// withToken is ctx carrying token; ctx's deadline, cancellation and values
+// stay its own.
+func withToken(ctx context.Context, token *callToken) context.Context {
+	if tokenOf(ctx) == token {
+		return ctx
+	}
+
+	return context.WithValue(ctx, callKey{}, token)
+}
+
+// enter takes the lock for a call made under ctx and returns the context to
+// run it with, which carries the token, and the matching leave.
+func (l *reentrantLock) enter(ctx context.Context) (context.Context, func()) {
+	if tok := tokenOf(ctx); tok != nil && tok == l.token.Load() {
+		return ctx, func() {}
+	}
+
+	l.lock()
+
+	if l.depth == 1 {
+		l.token.Store(new(callToken))
+	}
+
+	return withToken(ctx, l.token.Load()), l.unlock
+}
+
+func (l *reentrantLock) lock() {
+	if l.mu.TryLock() {
+		l.holder.Store(goroutineID())
+		l.depth = 1
+
+		return
+	}
+
+	current := goroutineID()
+	if l.holder.Load() == current {
+		l.depth++
+
+		return
+	}
+
+	l.mu.Lock()
+	l.holder.Store(current)
+	l.depth = 1
+}
+
+func (l *reentrantLock) unlock() {
+	l.depth--
+	if l.depth == 0 {
+		l.token.Store(nil)
+		l.holder.Store(0)
+		l.mu.Unlock()
+	}
+}
+
+// goroutineID is the running goroutine's number, read from the first line
+// of its stack trace ("goroutine N [..."); the runtime offers no other way
+// to tell goroutines apart, and the lock asks only when it is contended.
+func goroutineID() int64 {
+	var buf [64]byte
+
+	n := runtime.Stack(buf[:], false)
+	line := buf[:n]
+
+	const (
+		prefix = "goroutine "
+		base   = 10
+	)
+
+	var number int64
+
+	for _, c := range line[len(prefix):] {
+		if c < '0' || c > '9' {
+			break
+		}
+
+		number = number*base + int64(c-'0')
+	}
+
+	return number
+}
 
 // Graphviz reports through one function, agerrf, in fragments: the level
 // ("Error" or "Warning"), then ": ", then the text; a continuation line
@@ -104,11 +222,11 @@ func DefaultSymList(ctx context.Context) ([]*SymList, error) {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_SymList_default").Call(ctx, slot); err != nil {
+	if _, err = mod.invoke(ctx, "wasm_bridge_SymList_default", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_SymList_default: %w", err)
 	}
 
-	ptr, err := mod.readU32(slot)
+	ptr, err := mod.readU32(ctx, slot)
 	if err != nil {
 		return nil, err
 	}
@@ -127,11 +245,11 @@ func PluginAPIZero(ctx context.Context) (*PluginAPI, error) {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_PluginAPI_zero").Call(ctx, slot); err != nil {
+	if _, err = mod.invoke(ctx, "wasm_bridge_PluginAPI_zero", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_PluginAPI_zero: %w", err)
 	}
 
-	ptr, err := mod.readU32(slot)
+	ptr, err := mod.readU32(ctx, slot)
 	if err != nil {
 		return nil, err
 	}
@@ -145,11 +263,11 @@ func PluginInstalledZero(ctx context.Context) (*PluginInstalled, error) {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_PluginInstalled_zero").Call(ctx, slot); err != nil {
+	if _, err = mod.invoke(ctx, "wasm_bridge_PluginInstalled_zero", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_PluginInstalled_zero: %w", err)
 	}
 
-	ptr, err := mod.readU32(slot)
+	ptr, err := mod.readU32(ctx, slot)
 	if err != nil {
 		return nil, err
 	}
@@ -163,11 +281,11 @@ func SymListZero(ctx context.Context) (*SymList, error) {
 		return nil, err
 	}
 
-	if _, err = mod.ExportedFunction("wasm_bridge_SymList_zero").Call(ctx, slot); err != nil {
+	if _, err = mod.invoke(ctx, "wasm_bridge_SymList_zero", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_SymList_zero: %w", err)
 	}
 
-	ptr, err := mod.readU32(slot)
+	ptr, err := mod.readU32(ctx, slot)
 	if err != nil {
 		return nil, err
 	}
