@@ -91,8 +91,7 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
-	rgba := job.Object().PenColor().RGBAUint()
-	r.setRGB(rgba)
+	r.setColor(job.Object().PenColor())
 
 	textFont := span.Font()
 
@@ -128,28 +127,10 @@ func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, points []*PointFloa
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
-	r.setPenStyle(job)
 	radiusX := r.toX(job, points[1].X()-points[0].X())
 	radiusY := r.toY(job, points[1].Y()-points[0].Y())
-
-	var paint *Color
-	if filled {
-		paint = job.Object().FillColor()
-
-		r.ctx.FillPreserve()
-	} else {
-		paint = job.Object().PenColor()
-	}
-
-	rgba := paint.RGBAUint()
-	r.setRGB(rgba)
 	r.ctx.DrawEllipse(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()), radiusX, radiusY)
-
-	if filled {
-		r.ctx.Fill()
-	} else {
-		r.ctx.Stroke()
-	}
+	r.paint(job, filled)
 
 	return nil
 }
@@ -158,17 +139,6 @@ func (r *ImageRenderer) Polygon(_ context.Context, job *Job, points []*PointFloa
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
-	r.setPenStyle(job)
-
-	var paint *Color
-	if filled {
-		paint = job.Object().FillColor()
-	} else {
-		paint = job.Object().PenColor()
-	}
-
-	rgba := paint.RGBAUint()
-	r.setRGB(rgba)
 	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
 	for i := 1; i < len(points); i++ {
@@ -176,12 +146,7 @@ func (r *ImageRenderer) Polygon(_ context.Context, job *Job, points []*PointFloa
 	}
 
 	r.ctx.ClosePath()
-
-	if filled {
-		r.ctx.Fill()
-	} else {
-		r.ctx.Stroke()
-	}
+	r.paint(job, filled)
 
 	return nil
 }
@@ -190,16 +155,13 @@ func (r *ImageRenderer) Polyline(_ context.Context, job *Job, points []*PointFlo
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
-	r.setPenStyle(job)
-	rgba := job.Object().PenColor().RGBAUint()
-	r.setRGB(rgba)
 	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
 	for i := 1; i < len(points); i++ {
 		r.ctx.LineTo(r.toX(job, points[i].X()), r.toY(job, -points[i].Y()))
 	}
 
-	r.ctx.Stroke()
+	r.paint(job, false)
 
 	return nil
 }
@@ -208,19 +170,6 @@ func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, points []*Point
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
-	r.setPenStyle(job)
-
-	var paint *Color
-	if filled {
-		paint = job.Object().FillColor()
-
-		r.ctx.FillPreserve()
-	} else {
-		paint = job.Object().PenColor()
-	}
-
-	rgba := paint.RGBAUint()
-	r.setRGB(rgba)
 	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
 	for i := 1; i < len(points); i += 3 {
@@ -234,11 +183,7 @@ func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, points []*Point
 		)
 	}
 
-	if filled {
-		r.ctx.Fill()
-	} else {
-		r.ctx.Stroke()
-	}
+	r.paint(job, filled)
 
 	return nil
 }
@@ -293,6 +238,29 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 	return nil
 }
 
+// paint finishes the current path the way Graphviz's renderers do: the fill
+// colour inside when the shape is filled, then the pen along the edge in
+// the pen colour, width and style, unless the pen is none. Both colours
+// carry their alpha.
+func (r *ImageRenderer) paint(job *Job, filled bool) {
+	object := job.Object()
+
+	if filled {
+		r.setColor(object.FillColor())
+		r.ctx.FillPreserve()
+	}
+
+	if object.Pen() == PenNone {
+		r.ctx.ClearPath()
+
+		return
+	}
+
+	r.setPenStyle(job)
+	r.setColor(object.PenColor())
+	r.ctx.Stroke()
+}
+
 func (*ImageRenderer) toX(job *Job, x float64) float64 {
 	return job.Scale().X() * x
 }
@@ -301,12 +269,15 @@ func (*ImageRenderer) toY(job *Job, y float64) float64 {
 	return job.Scale().Y() * y
 }
 
-// setRGB sets the drawing colour from Graphviz's 8-bit channels.
-func (r *ImageRenderer) setRGB(rgba [4]uint) {
-	r.ctx.SetRGB(
+// setColor sets the drawing colour from Graphviz's 8-bit channels, alpha
+// included.
+func (r *ImageRenderer) setColor(color *Color) {
+	rgba := color.RGBAUint()
+	r.ctx.SetRGBA(
 		float64(rgba[0])/colorChannelMax,
 		float64(rgba[1])/colorChannelMax,
 		float64(rgba[2])/colorChannelMax,
+		float64(rgba[3])/colorChannelMax,
 	)
 }
 
@@ -389,9 +360,10 @@ func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *Point
 		return r.lookupFontFromTTFFile(fontSize, fontPath)
 	}
 
+	// "Helvetica-Bold-Oblique" is tried as Helvetica-Bold, then Helvetica.
 	parts := strings.Split(fontName, "-")
 	for i := len(parts) - 1; i > 0; i-- {
-		baseName := strings.Join(parts[:len(parts)-1], "-")
+		baseName := strings.Join(parts[:i], "-")
 
 		ttfFace, err := r.lookupFontFromTTFFile(fontSize, baseName+".ttf")
 		if err == nil {
@@ -488,16 +460,44 @@ func (*ImageRenderer) lookupFontFromTTCFile(
 	return nil, fmt.Errorf("%w: %s in %s", ErrFontNotFound, fontName, fontPath)
 }
 
+// The embedded Go Regular font, the face every unresolved font name falls
+// back to, parsed once; its faces are cached by size like any other.
+var (
+	goRegularOnce sync.Once
+	goRegular     *sfnt.Font
+	errGoRegular  error
+)
+
 func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, error) {
-	ft, err := opentype.Parse(goregular.TTF)
-	if err != nil {
-		return nil, fmt.Errorf("parsing the embedded Go Regular font: %w", err)
+	goRegularOnce.Do(func() {
+		goRegular, errGoRegular = opentype.Parse(goregular.TTF)
+	})
+
+	if errGoRegular != nil {
+		return nil, fmt.Errorf("parsing the embedded Go Regular font: %w", errGoRegular)
 	}
 
-	face, err := opentype.NewFace(ft, &opentype.FaceOptions{Size: textFont.Size() * job.Zoom()})
+	fontSize := textFont.Size() * job.Zoom()
+	cacheKey := fmt.Sprintf("goregular:%f", fontSize)
+
+	fontMu.RLock()
+
+	if cached, exists := fontCache[cacheKey]; exists {
+		fontMu.RUnlock()
+
+		return cached, nil
+	}
+
+	fontMu.RUnlock()
+
+	face, err := opentype.NewFace(goRegular, &opentype.FaceOptions{Size: fontSize})
 	if err != nil {
 		return nil, fmt.Errorf("face for the embedded Go Regular font: %w", err)
 	}
+
+	fontMu.Lock()
+	fontCache[cacheKey] = face
+	fontMu.Unlock()
 
 	return face, nil
 }
