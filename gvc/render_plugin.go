@@ -901,6 +901,14 @@ func (j *Job) SetHeight(v uint64) {
 	j.wasm.SetHeight(v)
 }
 
+// Rotation is how far the page is turned, in degrees: 90 for a graph laid
+// out with rotate=90 or landscape=true, otherwise 0. A render engine that
+// transforms coordinates itself applies it between the scale and the
+// translation.
+func (j *Job) Rotation() int {
+	return int(j.wasm.GetRotation())
+}
+
 type Translation = PointFloat
 
 func (j *Job) Translation() *Translation {

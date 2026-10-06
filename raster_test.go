@@ -12,6 +12,13 @@ import (
 func rasterCounts(t *testing.T, dot string, pick func(color.NRGBA) bool) int {
 	t.Helper()
 
+	return countPixels(rasterImage(t, dot), pick)
+}
+
+// rasterImage renders dot with the module's raster renderer.
+func rasterImage(t *testing.T, dot string) image.Image {
+	t.Helper()
+
 	ctx := t.Context()
 
 	g, err := graphviz.New(ctx)
@@ -33,7 +40,7 @@ func rasterCounts(t *testing.T, dot string, pick func(color.NRGBA) bool) int {
 		t.Fatal(err)
 	}
 
-	return countPixels(img, pick)
+	return img
 }
 
 func countPixels(img image.Image, pick func(color.NRGBA) bool) int {
