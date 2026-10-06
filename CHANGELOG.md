@@ -11,6 +11,57 @@ Graphviz 16 below.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-05
+
+### Fixed
+
+- PNG and JPEG output on amd64 draws edges as lines. The flag Graphviz
+  passes to say whether a shape is filled was read with bits it does not
+  set, which on amd64 marked every curve and outlined ellipse as filled:
+  edges came out as solid shapes over the nodes they join. A custom
+  render engine received the same wrong flags.
+- PNG and JPEG output draws text whose font comes from a TrueType file or
+  falls back to the embedded Go Regular. Since 0.3.0 such text was not
+  drawn at all, which left labels blank on Linux and Windows, where Times
+  is not installed.
+- Text in PNG and JPEG output sits on the baseline Graphviz's own
+  renderers use. Since 0.3.0 every line was drawn one font size too high,
+  so the first line of a node's label crossed the top of its box.
+- Parsing no longer overwrites a node's explicit empty label with `\N`:
+  an image node drawn without text keeps no text, and `Node.Label()` on
+  it returns `""`.
+- The options passed to `Graph` apply to the graph it opens only; a name
+  or graph type given for one graph no longer sticks to the instance for
+  every later `Graph` call.
+- A WebAssembly module that cannot be loaded no longer panics at import,
+  taking the program down before `main` runs: the first call into the
+  library returns the error.
+- One graph rendered from several goroutines at once renders correctly:
+  `Render`, `RenderImage` and `RenderFilename` hold the module from the
+  layout to the end of the render. Concurrent renders of the same graph
+  used to fail with "Layout was not done".
+- Fields of Graphviz's structures that are 64 bits wide read back whole;
+  a value above 2^32, such as an object tag's id, came back truncated to
+  its low 32 bits.
+
+### Changed
+
+- `RenderImage` returns the page the raster renderer drew instead of
+  encoding it to PNG and decoding it back, about 30% faster on a
+  mid-sized graph. The pixels are the same; the concrete type is the
+  renderer's `*image.RGBA`, where a decoded PNG with transparency was an
+  `*image.NRGBA`.
+- The compiled-code cache moves from a `go-graphviz` directory under the
+  shared temporary directory, created readable by everyone, to
+  `go-graphviz/wazero` under the user's cache directory, readable by that
+  user alone. The old directory is left in place and can be removed.
+
+### Removed
+
+- `github.com/corona10/goimagehash` and `github.com/nfnt/resize` from the
+  module's requirements. Only the tests used them, but they reached every
+  dependent module's graph.
+
 ## [0.3.0] - 2026-10-05
 
 ### Changed
