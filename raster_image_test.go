@@ -2,6 +2,9 @@ package graphviz_test
 
 import (
 	"bytes"
+	"encoding/binary"
+	"errors"
+	"hash/crc32"
 	"image"
 	"image/color"
 	"image/gif"
@@ -17,6 +20,7 @@ import (
 	"golang.org/x/image/bmp"
 
 	"github.com/forkcloser/go-graphviz"
+	"github.com/forkcloser/go-graphviz/gvc"
 )
 
 // solidImage is a w by h image of one colour.
@@ -214,5 +218,54 @@ func TestRasterNodeImageDecodedOnce(t *testing.T) {
 
 	if one, five := opens(1), opens(5); five != one {
 		t.Errorf("the image file opened %d times for five nodes, %d for one", five, one)
+	}
+}
+
+// declaringPNG is a 1 by 1 PNG whose header declares width by height.
+func declaringPNG(t *testing.T, width, height uint32) []byte {
+	t.Helper()
+
+	data := encodePNG(t, solidImage(1, 1, color.RGBA{R: 255, A: 255}))
+
+	// The IHDR chunk follows the 8-byte signature: length, type, then the
+	// width and height, and its CRC over type and data.
+	const ihdr, ihdrLength = 8, 13
+
+	binary.BigEndian.PutUint32(data[ihdr+8:], width)
+	binary.BigEndian.PutUint32(data[ihdr+12:], height)
+	binary.BigEndian.PutUint32(data[ihdr+8+ihdrLength:], crc32.ChecksumIEEE(data[ihdr+4:ihdr+8+ihdrLength]))
+
+	return data
+}
+
+// An image whose header declares more pixels than MaxImagePixels is
+// refused before it is decoded: the file and its name come from the
+// graph, and decoding a small file declaring 60000 by 60000 pixels would
+// allocate about 14 GB.
+func TestRasterNodeImageTooLarge(t *testing.T) {
+	graphviz.SetFileSystem(fstest.MapFS{"huge.png": {Data: declaringPNG(t, 60000, 60000)}})
+	t.Cleanup(func() { graphviz.SetFileSystem(nil) })
+
+	g, err := graphviz.New(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	// The node is fixed at an inch, so the page stays small and only the
+	// image declares a large size.
+	const dot = `digraph { a [shape=box label="" image="huge.png" width=1 height=1 fixedsize=true imagescale=true] }`
+
+	graph, err := graphviz.ParseBytes([]byte(dot))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	var out bytes.Buffer
+	if err = g.Render(t.Context(), graph, graphviz.PNG, &out); !errors.Is(err, gvc.ErrImageTooLarge) {
+		t.Fatalf("Render returned %v, want %v", err, gvc.ErrImageTooLarge)
 	}
 }

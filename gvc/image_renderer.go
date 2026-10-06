@@ -9,6 +9,7 @@ import (
 	_ "image/gif" // node images: Graphviz recognizes GIF
 	"image/jpeg"
 	"image/png"
+	"io/fs"
 	"math"
 	"sync"
 
@@ -38,6 +39,16 @@ const (
 	// rotate=90 or landscape=true.
 	landscape = 90
 )
+
+// ErrImageTooLarge is returned by the raster renderer for a node image
+// whose pixels, as its file declares them or at the size it is drawn,
+// exceed MaxImagePixels.
+var ErrImageTooLarge = errors.New("node image too large for the raster renderer")
+
+// MaxImagePixels is how many pixels a node image may have, decoded or
+// scaled: 64 megapixels, 256 MB as RGBA. The image file and the size it
+// is drawn at both come from the graph.
+const MaxImagePixels = 1 << 26
 
 // ErrRotation is returned by the raster renderer for a page turned by an
 // angle other than the two Graphviz uses, 0 and 90 degrees.
@@ -261,6 +272,10 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 		return nil
 	}
 
+	if !withinImageBudget(width, height) {
+		return fmt.Errorf("%w: %s drawn at %d by %d pixels", ErrImageTooLarge, shape.Name(), width, height)
+	}
+
 	img, err := r.nodeImage(shape.Name(), width, height)
 	if err != nil {
 		return err
@@ -302,21 +317,35 @@ func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, 
 }
 
 // decodeImage reads and decodes an image file through the file system
-// Graphviz sees.
+// Graphviz sees, once its header has shown it within MaxImagePixels: a
+// small file can declare dimensions whose decoding would take gigabytes.
 func decodeImage(name string) (image.Image, error) {
-	file, err := wasm.FileSystem().Open(name)
+	data, err := fs.ReadFile(wasm.FileSystem(), name)
 	if err != nil {
-		return nil, fmt.Errorf("opening image %s: %w", name, err)
+		return nil, fmt.Errorf("reading image %s: %w", name, err)
 	}
 
-	defer func() { _ = file.Close() }()
+	config, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("decoding image %s: %w", name, err)
+	}
 
-	img, _, err := image.Decode(file)
+	if !withinImageBudget(config.Width, config.Height) {
+		return nil, fmt.Errorf("%w: %s is %d by %d pixels", ErrImageTooLarge, name, config.Width, config.Height)
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("decoding image %s: %w", name, err)
 	}
 
 	return img, nil
+}
+
+// withinImageBudget reports whether width by height pixels is at most
+// MaxImagePixels, without overflowing.
+func withinImageBudget(width, height int) bool {
+	return width > 0 && height > 0 && width <= MaxImagePixels/height
 }
 
 // spanFace is the face a span is drawn with: the font loader's, when one
