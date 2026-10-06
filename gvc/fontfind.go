@@ -2,12 +2,9 @@ package gvc
 
 import (
 	"errors"
-	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 // ErrFontNotFound is returned when no font file answers to a requested name,
@@ -17,82 +14,6 @@ var ErrFontNotFound = errors.New("font not found")
 // fontSuffixes are the file types the raster renderer can load: TrueType,
 // TrueType collections and OpenType.
 var fontSuffixes = []string{".ttf", ".ttc", ".otf"}
-
-// findFont resolves a font name the way a user names fonts in a graph:
-// a path to an existing file is taken as is; otherwise the platform's font
-// directories are walked for a file whose name, with or without its
-// extension, is the requested one, case-insensitively.
-//
-// Pure Go, no build tags: a platform without known font directories (wasip1,
-// js, plan9) finds nothing and the caller falls back to the embedded default
-// face, which is the behaviour the dropped go-findfont dependency had.
-func findFont(name string) (string, error) {
-	if _, err := os.Stat(name); err == nil {
-		return name, nil
-	}
-
-	match := fontNameMatcher(filepath.Base(name))
-	for _, dir := range fontDirectories() {
-		if found := findFontInDir(dir, match); found != "" {
-			return found, nil
-		}
-	}
-
-	return "", fmt.Errorf("%w: %s", ErrFontNotFound, name)
-}
-
-// fontNameMatcher reports whether a file name is the requested font, by the
-// name as given, with any font suffix added, or with the given suffix
-// removed; case does not count.
-func fontNameMatcher(requested string) func(base string) bool {
-	want := strings.ToLower(requested)
-
-	wantBare := ""
-
-	for _, suffix := range fontSuffixes {
-		if strings.HasSuffix(want, suffix) {
-			wantBare = strings.TrimSuffix(want, suffix)
-
-			break
-		}
-	}
-
-	return func(base string) bool {
-		base = strings.ToLower(base)
-		if base == want || (wantBare != "" && base == wantBare) {
-			return true
-		}
-
-		for _, suffix := range fontSuffixes {
-			if base == want+suffix {
-				return true
-			}
-		}
-
-		return false
-	}
-}
-
-// findFontInDir walks one font directory and returns the first file the
-// matcher accepts, or "" when there is none; unreadable entries are skipped.
-func findFontInDir(dir string, match func(string) bool) string {
-	found := ""
-	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return nil //nolint:nilerr // an unreadable entry is skipped, not fatal
-		}
-
-		if match(d.Name()) {
-			found = path
-
-			return fs.SkipAll
-		}
-
-		return nil
-	})
-
-	return found
-}
 
 // fontDirectories lists where the running platform keeps fonts, user
 // directories first.

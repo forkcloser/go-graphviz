@@ -10,24 +10,14 @@ import (
 	"image/png"
 	"io"
 	"math"
-	"os"
-	"strings"
 	"sync"
 
 	"github.com/fogleman/gg"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/goregular"
-	"golang.org/x/image/font/opentype"
-	"golang.org/x/image/font/sfnt"
 
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
-)
-
-var (
-	fontMu    sync.RWMutex
-	fontCache = make(map[string]font.Face)
 )
 
 const (
@@ -144,37 +134,42 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 
 	r.setColor(job.Object().PenColor())
 
-	textFont := span.Font()
+	size, dpi := span.Font().Size()*job.Zoom(), resolution(job.DPI())
 
-	face, err := r.getFontFace(ctx, job, textFont)
-	if face == nil || err != nil {
-		defaultFont, err := r.defaultFontFace(job, textFont)
-		if err != nil {
-			return err
-		}
-
-		face = defaultFont
+	primary, err := r.spanFace(ctx, job, span.Font(), size, dpi)
+	if err != nil {
+		return err
 	}
 
-	pos.SetX(r.toX(job, pos.X()))
+	// A character the span's font lacks is drawn from a font that has it,
+	// so the span is drawn run by run, and justified by the width drawn:
+	// Graphviz's own renderers justify by the width their text layout
+	// measured, which is the width they draw.
+	runs := fonts.fallback().runs(span.Text(), primary, size, dpi)
+	width := advance(runs)
+
+	penX := r.toX(job, pos.X())
 
 	switch span.Just() {
 	case 'r':
-		pos.SetX(pos.X() - r.toX(job, span.Size().X()))
+		penX -= width
 	case 'l':
-		// skip
-	case 'n':
-		pos.SetX(pos.X() - r.toX(job, span.Size().X()/half))
+	default:
+		penX -= width / half
 	}
 
-	r.ctx.SetFontFace(face)
 	// The baseline goes where Graphviz's own renderers put it: the span's
 	// position raised by its centreline offset. yoffset_layout is the
 	// ascent of a text-layout plugin's logical rectangle; Graphviz 16's
 	// size estimate sets it to the font size (12 left it 0), and adding it
 	// lifted every line by one font size, the first out of its box.
 	y := r.toY(job, pos.Y()+span.YOffsetCenterLine())
-	r.ctx.DrawStringAnchored(span.Text(), pos.X(), -y, 0, 0)
+
+	for _, run := range runs {
+		r.ctx.SetFontFace(run.face)
+		r.ctx.DrawStringAnchored(run.text, penX, -y, 0, 0)
+		penX += advance([]textRun{run})
+	}
 
 	return nil
 }
@@ -294,6 +289,51 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 	return nil
 }
 
+// spanFace is the face a span is drawn with: the font loader's, when one
+// is set and answers, otherwise the installed or embedded font its name
+// resolves to, at size points and dpi dots per inch.
+func (*ImageRenderer) spanFace(
+	ctx context.Context,
+	job *Job,
+	textFont *TextFont,
+	size, dpi float64,
+) (font.Face, error) {
+	fontLoaderMu.RLock()
+
+	loader := fontLoader
+
+	fontLoaderMu.RUnlock()
+
+	if loader != nil {
+		face, err := loader(ctx, job, textFont)
+		if err != nil {
+			return nil, err
+		}
+
+		if face != nil {
+			return face, nil
+		}
+	}
+
+	loaded, err := fontFor(textFont)
+	if err != nil {
+		return nil, err
+	}
+
+	return loaded.face(size, dpi)
+}
+
+// resolution is the job's horizontal resolution, or the device default
+// when Graphviz left it unset: a face built without one has x/image's
+// scale size × DPI ÷ 72 of zero, and draws nothing.
+func resolution(dpi *PointFloat) float64 {
+	if dpi.X() <= 0 {
+		return defaultDeviceDPI
+	}
+
+	return dpi.X()
+}
+
 // page is the finished page: the canvas, turned back for a landscape page.
 func (r *ImageRenderer) page() *image.RGBA {
 	canvas := imageRGBA(r.ctx.Image())
@@ -392,208 +432,6 @@ func (r *ImageRenderer) setPenStyle(job *Job) {
 	}
 
 	r.ctx.SetLineWidth(object.PenWidth() * r.lineScale)
-}
-
-func (r *ImageRenderer) getFontFace(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
-	return r.lookupFontWithCache(ctx, job, textFont)
-}
-
-func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
-	fontSize := textFont.Size() * job.Zoom()
-	fontName := textFont.Name()
-	cacheKey := fmt.Sprintf("%s:%f:%f", fontName, fontSize, job.DPI().X())
-
-	fontMu.RLock()
-
-	if cached, exists := fontCache[cacheKey]; exists {
-		fontMu.RUnlock()
-		return cached, nil
-	}
-
-	fontMu.RUnlock()
-
-	fontLoaderMu.RLock()
-	defer fontLoaderMu.RUnlock()
-
-	if fontLoader != nil {
-		face, err := fontLoader(ctx, job, textFont)
-		if err != nil {
-			return nil, err
-		}
-
-		if face != nil {
-			return face, nil
-		}
-	}
-
-	face, err := r.lookupFont(fontName, fontSize, job.DPI())
-	if err != nil {
-		return nil, err
-	}
-
-	fontMu.Lock()
-	fontCache[cacheKey] = face
-	fontMu.Unlock()
-
-	return face, nil
-}
-
-func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *PointFloat) (font.Face, error) {
-	fontPath, err := findFont(fontName)
-	if err == nil {
-		return r.lookupFontFromTTFFile(fontSize, dpi, fontPath)
-	}
-
-	// "Helvetica-Bold-Oblique" is tried as Helvetica-Bold, then Helvetica.
-	parts := strings.Split(fontName, "-")
-	for i := len(parts) - 1; i > 0; i-- {
-		baseName := strings.Join(parts[:i], "-")
-
-		ttfFace, err := r.lookupFontFromTTFFile(fontSize, dpi, baseName+".ttf")
-		if err == nil {
-			return ttfFace, nil
-		}
-
-		if !errors.Is(err, ErrFontNotFound) {
-			return nil, err
-		}
-
-		ttcFace, err := r.lookupFontFromTTCFile(fontName, fontSize, dpi, baseName+".ttc")
-		if err == nil {
-			return ttcFace, nil
-		}
-
-		if !errors.Is(err, ErrFontNotFound) {
-			return nil, err
-		}
-	}
-
-	return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontName)
-}
-
-// faceOptions sizes a face for a job: the font size in points at the job's
-// resolution, the scale Graphviz lays the page out at. A face built
-// without a DPI has x/image's scale size × DPI ÷ 72 of zero, and draws
-// nothing; freetype, which the renderer used before, defaulted to 72.
-func faceOptions(size float64, dpi *PointFloat) *opentype.FaceOptions {
-	resolution := dpi.X()
-	if resolution <= 0 {
-		resolution = defaultDeviceDPI
-	}
-
-	return &opentype.FaceOptions{Size: size, DPI: resolution}
-}
-
-func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, dpi *PointFloat, fontPath string) (font.Face, error) {
-	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
-	fontData, err := os.ReadFile(fontPath)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontPath)
-	}
-
-	ft, err := opentype.Parse(fontData)
-	if err != nil {
-		return nil, fmt.Errorf("parsing font %s: %w", fontPath, err)
-	}
-
-	face, err := opentype.NewFace(ft, faceOptions(fontSize, dpi))
-	if err != nil {
-		return nil, fmt.Errorf("face for %s: %w", fontPath, err)
-	}
-
-	return face, nil
-}
-
-func (*ImageRenderer) lookupFontFromTTCFile(
-	fontName string,
-	fontSize float64,
-	dpi *PointFloat,
-	fontPath string,
-) (font.Face, error) {
-	parts := strings.Split(fontName, "-")
-
-	fontPath, err := findFont(fontPath)
-	if err != nil {
-		return nil, err // already ErrFontNotFound with the name
-	}
-
-	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
-	fontData, err := os.ReadFile(fontPath)
-	if err != nil {
-		return nil, fmt.Errorf("reading font collection %s: %w", fontPath, err)
-	}
-
-	collection, err := opentype.ParseCollection(fontData)
-	if err != nil {
-		return nil, fmt.Errorf("parsing font collection %s: %w", fontPath, err)
-	}
-
-	for index := range collection.NumFonts() {
-		member, err := collection.Font(index)
-		if err != nil {
-			return nil, fmt.Errorf("font %d of collection %s: %w", index, fontPath, err)
-		}
-
-		var buf sfnt.Buffer
-
-		name, err := member.Name(&buf, sfnt.NameIDFull)
-		if err != nil {
-			return nil, fmt.Errorf("name of font %d of collection %s: %w", index, fontPath, err)
-		}
-
-		if strings.Join(parts, " ") == name {
-			face, err := opentype.NewFace(member, faceOptions(fontSize, dpi))
-			if err != nil {
-				return nil, fmt.Errorf("face for %s from collection %s: %w", fontName, fontPath, err)
-			}
-
-			return face, nil
-		}
-	}
-
-	return nil, fmt.Errorf("%w: %s in %s", ErrFontNotFound, fontName, fontPath)
-}
-
-// The embedded Go Regular font, the face every unresolved font name falls
-// back to, parsed once; its faces are cached by size like any other.
-var (
-	goRegularOnce sync.Once
-	goRegular     *sfnt.Font
-	errGoRegular  error
-)
-
-func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, error) {
-	goRegularOnce.Do(func() {
-		goRegular, errGoRegular = opentype.Parse(goregular.TTF)
-	})
-
-	if errGoRegular != nil {
-		return nil, fmt.Errorf("parsing the embedded Go Regular font: %w", errGoRegular)
-	}
-
-	fontSize := textFont.Size() * job.Zoom()
-	cacheKey := fmt.Sprintf("goregular:%f:%f", fontSize, job.DPI().X())
-
-	fontMu.RLock()
-
-	if cached, exists := fontCache[cacheKey]; exists {
-		fontMu.RUnlock()
-
-		return cached, nil
-	}
-
-	fontMu.RUnlock()
-
-	face, err := opentype.NewFace(goRegular, faceOptions(fontSize, job.DPI()))
-	if err != nil {
-		return nil, fmt.Errorf("face for the embedded Go Regular font: %w", err)
-	}
-
-	fontMu.Lock()
-	fontCache[cacheKey] = face
-	fontMu.Unlock()
-
-	return face, nil
 }
 
 const (
