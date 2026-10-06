@@ -37,7 +37,8 @@ type svgPage struct {
 }
 
 // svgTransform is the graph group's transform: a point p of the graph lands
-// at scale × (p + (tx, ty)) on the page, unless the page is rotated.
+// at scale × (p + (tx, ty)) on the page, turned by -90 degrees first when
+// the page is rotated (a landscape page).
 type svgTransform struct {
 	scale   float64
 	tx, ty  float64
@@ -125,6 +126,19 @@ func parseTransform(transform string) svgTransform {
 	return parsed
 }
 
+// toPixel takes a point of the graph group to a pixel of img, a rendering
+// of the whole page.
+func (page svgPage) toPixel(img image.Rectangle, x, y float64) (px, py float64) {
+	u, v := x+page.tx, y+page.ty
+	if page.rotated {
+		// rotate(-90) takes (u, v) to (v, -u).
+		u, v = v, -u
+	}
+
+	return page.scale * u * float64(img.Dx()) / page.width,
+		page.scale * v * float64(img.Dy()) / page.height
+}
+
 func points(value string) float64 { return number(strings.TrimSuffix(value, "pt")) }
 
 func number(value string) float64 {
@@ -143,8 +157,6 @@ func number(value string) float64 {
 // that difference; outlines, edges and fills are in both renders.
 func inkBand(withText, withoutText image.Image, page svgPage, text svgText) (ink, area int) {
 	bounds := withText.Bounds()
-	scaleX := page.scale * float64(bounds.Dx()) / page.width
-	scaleY := page.scale * float64(bounds.Dy()) / page.height
 
 	// A rough width for the run of glyphs; only its middle is searched, so
 	// a font wider or narrower than Graphviz's estimate still lands in it.
@@ -159,10 +171,10 @@ func inkBand(withText, withoutText image.Image, page svgPage, text svgText) (ink
 	}
 
 	half := max(0.15*text.size, 0.3*width)
-	left := int((centre - half + page.tx) * scaleX)
-	right := int((centre + half + page.tx) * scaleX)
-	top := int((text.y - 0.75*text.size + page.ty) * scaleY)
-	bottom := int((text.y - 0.05*text.size + page.ty) * scaleY)
+	x0, y0 := page.toPixel(bounds, centre-half, text.y-0.75*text.size)
+	x1, y1 := page.toPixel(bounds, centre+half, text.y-0.05*text.size)
+	left, right := int(min(x0, x1)), int(max(x0, x1))
+	top, bottom := int(min(y0, y1)), int(max(y0, y1))
 
 	for y := max(top, bounds.Min.Y); y <= min(bottom, bounds.Max.Y-1); y++ {
 		for x := max(left, bounds.Min.X); x <= min(right, bounds.Max.X-1); x++ {
@@ -360,10 +372,6 @@ func crossCheckText(t *testing.T, path string) {
 	page, err := parseSVG(svg.Bytes())
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	if page.rotated {
-		t.Skip("rotated page")
 	}
 
 	img, err := g.RenderImage(t.Context(), graph)

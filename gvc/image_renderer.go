@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"image/png"
 	"io"
 	"math"
 	"os"
@@ -42,7 +43,14 @@ const (
 	// lanczosLobes is the support of the Lanczos kernel in pixels (three
 	// lobes), the resampling filter node images have always used here.
 	lanczosLobes = 3.0
+	// landscape is the rotation, in degrees, of a page laid out with
+	// rotate=90 or landscape=true.
+	landscape = 90
 )
+
+// ErrRotation is returned by the raster renderer for a page turned by an
+// angle other than the two Graphviz uses, 0 and 90 degrees.
+var ErrRotation = errors.New("page rotation not supported by the raster renderer")
 
 // ErrPageTooLarge is returned by the raster renderer for a page whose width
 // or height does not fit the drawing context's int coordinates.
@@ -51,6 +59,13 @@ var ErrPageTooLarge = errors.New("page too large for the raster renderer")
 type ImageRenderer struct {
 	*DefaultRenderEngine
 	ctx *gg.Context
+	// scaleX and scaleY take a length in points along the canvas's axes to
+	// pixels, and lineScale takes a pen width or a dash; BeginPage sets
+	// them from the job. rotated says the canvas holds a landscape page
+	// drawn upright, which EndPage turns a quarter turn.
+	scaleX, scaleY float64
+	lineScale      float64
+	rotated        bool
 	// imageOnly skips encoding a page that only its image is wanted for,
 	// and last keeps that image; Context.RenderImage sets the first and
 	// reads the second while it holds the module, so no other render runs
@@ -59,23 +74,47 @@ type ImageRenderer struct {
 	last      image.Image
 }
 
+// BeginPage sets the canvas up the way Graphviz's Cairo renderer sets its
+// page: a point p of the graph lands at scale × rotate(-rotation) ×
+// ((p.x, -p.y) + (tx, -ty)). Pen widths and dashes are lengths in that
+// space too, so they shrink and grow with the page.
+//
+// gg cannot turn glyphs, so a landscape page (rotation 90) is drawn upright
+// on a canvas with the sides swapped and turned when it is finished: there
+// a point lands at (height + sy × (p.x + tx), sx × (-p.y - ty)), and the
+// finished page's pixel (X, Y) is the canvas's (height-1-Y, X).
 func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	width, height := job.Width(), job.Height()
 	if width > math.MaxInt32 || height > math.MaxInt32 {
 		return fmt.Errorf("%w: %d by %d points", ErrPageTooLarge, width, height)
 	}
 
-	gctx := gg.NewContext(int(width), int(height))
-	translation := job.Translation()
-	gctx.Translate(r.toX(job, translation.X()), r.toY(job, -translation.Y()))
-	r.ctx = gctx
+	scale, translation := job.Scale(), job.Translation()
+	r.lineScale = math.Sqrt(math.Abs(scale.X() * scale.Y()))
+
+	switch rotation := job.Rotation(); rotation {
+	case 0:
+		r.rotated = false
+		r.scaleX, r.scaleY = scale.X(), scale.Y()
+		r.ctx = gg.NewContext(int(width), int(height))
+		r.ctx.Translate(r.scaleX*translation.X(), -r.scaleY*translation.Y())
+	case landscape:
+		r.rotated = true
+		r.scaleX, r.scaleY = scale.Y(), scale.X()
+		r.ctx = gg.NewContext(int(height), int(width))
+		r.ctx.Translate(float64(height)+r.scaleX*translation.X(), -r.scaleY*translation.Y())
+	default:
+		return fmt.Errorf("%w: %d degrees", ErrRotation, rotation)
+	}
 
 	return nil
 }
 
 func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
+	page := r.page()
+
 	if r.imageOnly {
-		r.last = r.ctx.Image()
+		r.last = page
 
 		return nil
 	}
@@ -84,12 +123,12 @@ func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 
 	switch {
 	case r.isPNG(job):
-		if err := r.ctx.EncodePNG(&buf); err != nil {
+		if err := png.Encode(&buf, page); err != nil {
 			return fmt.Errorf("encoding the page as PNG: %w", err)
 		}
 	case r.isJPG(job):
-		if err := r.encodeJPG(&buf); err != nil {
-			return err
+		if err := jpeg.Encode(&buf, page, &jpeg.Options{Quality: jpeg.DefaultQuality}); err != nil {
+			return fmt.Errorf("encoding the page as JPEG: %w", err)
 		}
 	}
 
@@ -240,19 +279,54 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 			img = resizeLanczos(img, int(width), int(height))
 			xPAD := defaultXPAD / half
 			yPAD := defaultYPAD / half
-			posX := (topLeftX + xPAD) * job.Scale().X()
-			posY := (topLeftY + yPAD) * job.Scale().Y()
+			posX := r.toX(job, topLeftX+xPAD)
+			posY := r.toY(job, topLeftY+yPAD)
 			r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
 
 			return nil
 		}
 	}
 
-	posX := topLeftX * job.Scale().X()
-	posY := topLeftY * job.Scale().Y()
+	posX := r.toX(job, topLeftX)
+	posY := r.toY(job, topLeftY)
 	r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
 
 	return nil
+}
+
+// page is the finished page: the canvas, turned back for a landscape page.
+func (r *ImageRenderer) page() *image.RGBA {
+	canvas := imageRGBA(r.ctx.Image())
+	if !r.rotated {
+		return canvas
+	}
+
+	bounds := canvas.Bounds()
+	width, height := bounds.Dy(), bounds.Dx()
+	turned := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	for y := range height {
+		for x := range width {
+			from := canvas.PixOffset(bounds.Min.X+height-1-y, bounds.Min.Y+x)
+			to := turned.PixOffset(x, y)
+			copy(turned.Pix[to:to+4], canvas.Pix[from:from+4])
+		}
+	}
+
+	return turned
+}
+
+// imageRGBA returns img as an *image.RGBA, copying it only when it is some
+// other type.
+func imageRGBA(img image.Image) *image.RGBA {
+	if rgba, ok := img.(*image.RGBA); ok {
+		return rgba
+	}
+
+	rgba := image.NewRGBA(img.Bounds())
+	draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Src)
+
+	return rgba
 }
 
 // paint finishes the current path the way Graphviz's renderers do: the fill
@@ -278,12 +352,13 @@ func (r *ImageRenderer) paint(job *Job, filled bool) {
 	r.ctx.Stroke()
 }
 
-func (*ImageRenderer) toX(job *Job, x float64) float64 {
-	return job.Scale().X() * x
+// toX and toY take a length in points along the canvas's axes to pixels.
+func (r *ImageRenderer) toX(_ *Job, x float64) float64 {
+	return r.scaleX * x
 }
 
-func (*ImageRenderer) toY(job *Job, y float64) float64 {
-	return job.Scale().Y() * y
+func (r *ImageRenderer) toY(_ *Job, y float64) float64 {
+	return r.scaleY * y
 }
 
 // setColor sets the drawing colour from Graphviz's 8-bit channels, alpha
@@ -306,25 +381,17 @@ func (*ImageRenderer) isJPG(job *Job) bool {
 	return job.OutputLangName() == "jpg"
 }
 
-func (r *ImageRenderer) encodeJPG(w io.Writer) error {
-	if err := jpeg.Encode(w, r.ctx.Image(), &jpeg.Options{Quality: jpeg.DefaultQuality}); err != nil {
-		return fmt.Errorf("encoding the page as JPEG: %w", err)
-	}
-
-	return nil
-}
-
 func (r *ImageRenderer) setPenStyle(job *Job) {
 	object := job.Object()
 	switch object.Pen() {
 	case PenDashed:
-		r.ctx.SetDash(dashLength)
+		r.ctx.SetDash(dashLength * r.lineScale)
 	case PenDotted:
-		r.ctx.SetDash(dotLength, dashLength)
+		r.ctx.SetDash(dotLength*r.lineScale, dashLength*r.lineScale)
 	case PenSolid, PenNone:
 	}
 
-	r.ctx.SetLineWidth(object.PenWidth())
+	r.ctx.SetLineWidth(object.PenWidth() * r.lineScale)
 }
 
 func (r *ImageRenderer) getFontFace(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
