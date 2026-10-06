@@ -43,3 +43,15 @@ examples:
     #!/usr/bin/env bash
     set -euo pipefail
     go vet ./_examples/simple ./_examples/rw
+
+# Compares this library's PNG output with a Graphviz installed on this
+# machine, over the test corpus: unhermetic, so never part of lint or test.
+# Pass the dot binary when it is not the dot on PATH. Side-by-side images
+# (ours, dot's, their difference) land in build/smoke.
+[doc('Compare PNG output with a local Graphviz dot (needs Graphviz installed)')]
+smoke dot="dot":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p build/smoke
+    GO_GRAPHVIZ_SMOKE=1 GO_GRAPHVIZ_DOT="{{ dot }}" GO_GRAPHVIZ_SMOKE_DIR="${PWD}/build/smoke" \
+        go test -count=1 -run '^TestDotSmoke$' -v .

@@ -1,0 +1,411 @@
+package graphviz_test
+
+import (
+	"bytes"
+	"encoding/xml"
+	"errors"
+	"fmt"
+	"image"
+	"image/color"
+	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/forkcloser/go-graphviz"
+)
+
+// svgText is one text element of an SVG rendering, in the SVG's points:
+// where its baseline starts, how it is anchored there, and its size.
+type svgText struct {
+	x, y    float64
+	anchor  string
+	size    float64
+	content string
+}
+
+// svgPage is what the cross-check needs from an SVG rendering: the page
+// size in points, the translation the graph group applies, and the texts.
+type svgPage struct {
+	svgTransform
+
+	width, height float64
+	texts         []svgText
+}
+
+// svgTransform is the graph group's transform: a point p of the graph lands
+// at scale × (p + (tx, ty)) on the page, unless the page is rotated.
+type svgTransform struct {
+	scale   float64
+	tx, ty  float64
+	rotated bool
+}
+
+// parseSVG reads an SVG rendering written by Graphviz.
+func parseSVG(data []byte) (svgPage, error) {
+	var page svgPage
+
+	decoder := xml.NewDecoder(bytes.NewReader(data))
+	decoder.Strict = false
+
+	var current *svgText
+
+	for {
+		token, err := decoder.Token()
+		if errors.Is(err, io.EOF) {
+			return page, nil
+		}
+
+		if err != nil {
+			return page, err
+		}
+
+		switch element := token.(type) {
+		case xml.StartElement:
+			attrs := map[string]string{}
+			for _, attr := range element.Attr {
+				attrs[attr.Name.Local] = attr.Value
+			}
+
+			switch element.Name.Local {
+			case "svg":
+				page.width = points(attrs["width"])
+				page.height = points(attrs["height"])
+			case "g":
+				if attrs["id"] == "graph0" {
+					page.svgTransform = parseTransform(attrs["transform"])
+				}
+			case "text":
+				current = &svgText{
+					x:      number(attrs["x"]),
+					y:      number(attrs["y"]),
+					anchor: attrs["text-anchor"],
+					size:   number(attrs["font-size"]),
+				}
+			}
+		case xml.CharData:
+			if current != nil {
+				current.content += string(element)
+			}
+		case xml.EndElement:
+			if element.Name.Local == "text" && current != nil {
+				if strings.TrimSpace(current.content) != "" {
+					page.texts = append(page.texts, *current)
+				}
+
+				current = nil
+			}
+		}
+	}
+}
+
+// parseTransform reads "scale(0.5 0.5) rotate(0) translate(4 405.01)".
+func parseTransform(transform string) svgTransform {
+	parsed := svgTransform{scale: 1}
+
+	if _, rest, ok := strings.Cut(transform, "scale("); ok {
+		if fields := strings.Fields(rest); len(fields) > 0 {
+			parsed.scale = number(fields[0])
+		}
+	}
+
+	if _, rest, ok := strings.Cut(transform, "rotate("); ok {
+		parsed.rotated = !strings.HasPrefix(rest, "0)")
+	}
+
+	if _, rest, ok := strings.Cut(transform, "translate("); ok {
+		if fields := strings.Fields(strings.TrimSuffix(rest, ")")); len(fields) == 2 {
+			parsed.tx, parsed.ty = number(fields[0]), number(strings.TrimSuffix(fields[1], ")"))
+		}
+	}
+
+	return parsed
+}
+
+func points(value string) float64 { return number(strings.TrimSuffix(value, "pt")) }
+
+func number(value string) float64 {
+	n, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+	if err != nil {
+		return 0
+	}
+
+	return n
+}
+
+// inkBand counts, in the band where the glyphs of text must lie (from a
+// little above its baseline to most of a font size above it, around its
+// anchor), the pixels where withText differs from withoutText: the same
+// graph rendered with every font transparent. Only the text itself makes
+// that difference; outlines, edges and fills are in both renders.
+func inkBand(withText, withoutText image.Image, page svgPage, text svgText) (ink, area int) {
+	bounds := withText.Bounds()
+	scaleX := page.scale * float64(bounds.Dx()) / page.width
+	scaleY := page.scale * float64(bounds.Dy()) / page.height
+
+	// A rough width for the run of glyphs; only its middle is searched, so
+	// a font wider or narrower than Graphviz's estimate still lands in it.
+	width := 0.5 * text.size * float64(len([]rune(text.content)))
+	centre := text.x
+
+	switch text.anchor {
+	case "start":
+		centre += width / 2
+	case "end":
+		centre -= width / 2
+	}
+
+	half := max(0.15*text.size, 0.3*width)
+	left := int((centre - half + page.tx) * scaleX)
+	right := int((centre + half + page.tx) * scaleX)
+	top := int((text.y - 0.75*text.size + page.ty) * scaleY)
+	bottom := int((text.y - 0.05*text.size + page.ty) * scaleY)
+
+	for y := max(top, bounds.Min.Y); y <= min(bottom, bounds.Max.Y-1); y++ {
+		for x := max(left, bounds.Min.X); x <= min(right, bounds.Max.X-1); x++ {
+			area++
+
+			a, okA := color.NRGBAModel.Convert(withText.At(x, y)).(color.NRGBA)
+			b, okB := color.NRGBAModel.Convert(withoutText.At(x, y)).(color.NRGBA)
+
+			if okA && okB && distance(a, b) > inkContrast {
+				ink++
+			}
+		}
+	}
+
+	return ink, area
+}
+
+func distance(a, b color.NRGBA) int {
+	d := func(x, y uint8) int {
+		if x > y {
+			return int(x - y)
+		}
+
+		return int(y - x)
+	}
+
+	return d(a.R, b.R) + d(a.G, b.G) + d(a.B, b.B)
+}
+
+// inkContrast is how far, summed over the three channels, a pixel of the
+// render with text must be from the same pixel without it to count as ink:
+// above rounding, low enough for dark text on a dark fill.
+const inkContrast = 48
+
+// renderTextless renders data with every font transparent, the twin the
+// cross-check subtracts: the layout, fills and lines are the same, the text
+// is gone.
+func renderTextless(t *testing.T, g *graphviz.Graphviz, data []byte) image.Image {
+	t.Helper()
+
+	graph, err := graphviz.ParseBytes(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	if hideErr := hideText(graph); hideErr != nil {
+		t.Fatal(hideErr)
+	}
+
+	img, err := g.RenderImage(t.Context(), graph)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return img
+}
+
+// transparent is a fully transparent colour, spelled in hex: the name
+// "transparent" resolves within a node's colorscheme, where it is unknown
+// and falls back to black.
+const transparent = "#00000000"
+
+// hideText makes the text of graph, its subgraphs, nodes and edges
+// transparent, head and tail labels included.
+func hideText(graph *graphviz.Graph) error {
+	for _, name := range []string{"fontcolor", "labelfontcolor"} {
+		if err := graph.SafeSet(name, transparent, transparent); err != nil {
+			return err
+		}
+	}
+
+	for sub, err := graph.FirstSubGraph(); sub != nil || err != nil; sub, err = sub.NextSubGraph() {
+		if err != nil {
+			return err
+		}
+
+		if err := hideText(sub); err != nil {
+			return err
+		}
+	}
+
+	for node, err := graph.FirstNode(); node != nil || err != nil; node, err = graph.NextNode(node) {
+		if err != nil {
+			return err
+		}
+
+		if err := node.SafeSet("fontcolor", transparent, transparent); err != nil {
+			return err
+		}
+
+		for edge, err := graph.FirstOut(node); edge != nil || err != nil; edge, err = graph.NextOut(edge) {
+			if err != nil {
+				return err
+			}
+
+			for _, name := range []string{"fontcolor", "labelfontcolor"} {
+				if err := edge.SafeSet(name, transparent, transparent); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// minInkShare is the least share of a text's band its glyphs must cover.
+// Measured on the corpus when the check was written, correctly drawn text
+// covers 8% of its band at the least (a label padded with spaces) and about
+// half typically, while a line drawn out of place leaves only a stray pixel
+// or two of a neighbour's descender, under 0.2%.
+const minInkShare = 0.04
+
+// minInkHeight is the smallest text, in pixels, the cross-check judges:
+// below it a scaled-down label blends into its fill and the band holds no
+// clear ink even where the glyphs are drawn.
+const minInkHeight = 6
+
+// knownGaps are texts the raster renderer does not draw today, by file and
+// text, with why. They are logged, not failed, so the gaps stay in view; a
+// gap that starts drawing passes like any other text.
+func knownGaps() map[string]map[string]string {
+	return map[string]map[string]string{
+		"testdata/directed/japanese.gv": {
+			"*": "no glyph fallback: neither the requested font nor Go Regular has CJK glyphs",
+		},
+		"testdata/directed/psfonttest.gv": {
+			"Symbol":       "symbol-encoded font (macOS): x/image maps no ASCII to it",
+			"ZapfDingbats": "symbol-encoded font (macOS): x/image maps no ASCII to it",
+		},
+	}
+}
+
+func knownGap(path, text string) (string, bool) {
+	gaps := knownGaps()[filepath.ToSlash(path)]
+	if reason, ok := gaps["*"]; ok {
+		return reason, true
+	}
+
+	reason, ok := gaps[text]
+
+	return reason, ok
+}
+
+// Every text Graphviz places in a rendering is drawn by the raster renderer
+// where Graphviz put it. Graphviz's own SVG renderer gives each text's
+// baseline from the same layout; the PNG must have ink in the band above
+// that baseline where the glyphs lie. A text drawn nowhere, or a line too
+// high or too low, leaves its band empty.
+func TestRasterTextMatchesSVG(t *testing.T) {
+	for _, dir := range testPaths {
+		if err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() {
+				return err
+			}
+
+			t.Run(path, func(t *testing.T) { crossCheckText(t, path) })
+
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func crossCheckText(t *testing.T, path string) {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graph, err := graphviz.ParseBytes(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	g, err := graphviz.New(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	var svg bytes.Buffer
+	if renderErr := g.Render(t.Context(), graph, graphviz.SVG, &svg); renderErr != nil {
+		t.Fatal(renderErr)
+	}
+
+	page, err := parseSVG(svg.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if page.rotated {
+		t.Skip("rotated page")
+	}
+
+	img, err := g.RenderImage(t.Context(), graph)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	textless := renderTextless(t, g, data)
+
+	pixelsPerPoint := page.scale * float64(img.Bounds().Dy()) / page.height
+
+	var missing []string
+
+	small := 0
+
+	for _, text := range page.texts {
+		if text.size*pixelsPerPoint < minInkHeight {
+			small++
+
+			continue
+		}
+
+		if ink, area := inkBand(img, textless, page, text); area == 0 || float64(ink) < minInkShare*float64(area) {
+			if reason, ok := knownGap(path, text.content); ok {
+				t.Logf("known gap, %q not drawn: %s", text.content, reason)
+
+				continue
+			}
+
+			missing = append(missing, fmt.Sprintf(
+				"%q at (%.0f, %.0f) size %.0f: %d of %d",
+				text.content, text.x, text.y, text.size, ink, area,
+			))
+		}
+	}
+
+	if small > 0 {
+		t.Logf("%d of %d texts under %d pixels high, too small to judge", small, len(page.texts), minInkHeight)
+	}
+
+	if len(missing) > 0 {
+		t.Errorf("%d of %d texts have too little ink where Graphviz placed them:\n  %s",
+			len(missing), len(page.texts), strings.Join(missing, "\n  "))
+	}
+}
