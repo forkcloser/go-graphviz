@@ -43,11 +43,17 @@ func DefaultPlugins(ctx context.Context) ([]Plugin, error) {
 		return nil, err
 	}
 
+	textLayoutPlugin, err := NewTextLayoutPlugin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return []Plugin{
 		pngRenderPlugin,
 		pngDevicePlugin,
 		jpgRenderPlugin,
 		jpgDevicePlugin,
 		pngLoadImagePlugin,
+		textLayoutPlugin,
 	}, nil
 }

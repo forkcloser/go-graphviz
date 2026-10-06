@@ -79,4 +79,8 @@ func init() {
 			return getLoadImageEnginePtr(job), nil
 		},
 	)
+
+	wasm.Register_TextLayoutEngine_TextLayout(
+		func(_ *wasm.Textspan, _ []string) (uint64, error) { return textLayouts.any(), nil },
+	)
 }
