@@ -15,6 +15,11 @@ Graphviz 16 below.
 
 ### Fixed
 
+- PNG and JPEG output on amd64 draws edges as lines. The flag Graphviz
+  passes to say whether a shape is filled was read with bits it does not
+  set, which on amd64 marked every curve and outlined ellipse as filled:
+  edges came out as solid shapes over the nodes they join. A custom
+  render engine received the same wrong flags.
 - PNG and JPEG output draws text whose font comes from a TrueType file or
   falls back to the embedded Go Regular. Since 0.3.0 such text was not
   drawn at all, which left labels blank on Linux and Windows, where Times
