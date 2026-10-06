@@ -3985,7 +3985,7 @@ func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (re
 	if _, err := m.invoke(ctx, "wasm_bridge_get_"+name, recv, retPtr); err != nil {
 		return 0, err
 	}
-	p, err := m.readU32(ctx, retPtr)
+	p, err := m.readU64(ctx, retPtr)
 	if err != nil {
 		return 0, err
 	}
@@ -4014,7 +4014,7 @@ func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint6
 	if err := m.call(ctx, name, append(append([]uint64{}, args...), retPtr)...); err != nil {
 		return 0, err
 	}
-	p, err := m.readU32(ctx, retPtr)
+	p, err := m.readU64(ctx, retPtr)
 	if err != nil {
 		return 0, err
 	}
@@ -4055,6 +4055,24 @@ func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
 		)
 	}
 	return uint64(p), nil
+}
+
+// readU64 reads a slot NewPtr allocated: the eight bytes the bridge wrote,
+// or a 32-bit value with the zeroed upper half.
+func (m *WasmModule) readU64(ctx context.Context, addr uint64) (uint64, error) {
+	if m.mod == nil {
+		return 0, m.unavailable()
+	}
+	_, leave, _ := m.lock.enter(ctx)
+	defer leave()
+	p, ok := m.mod.Memory().ReadUint64Le(uint32(addr))
+	if !ok {
+		return 0, fmt.Errorf(
+			`failed to read wasm memory: (ptr, size) = (%d, 8) and memory size is %d`,
+			addr, m.mod.Memory().Size(),
+		)
+	}
+	return p, nil
 }
 
 func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
@@ -4122,11 +4140,13 @@ func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
 // and a null there reads back as a nil object or an empty string instead of
 // whatever the allocator left.
 func (m *WasmModule) NewPtr(ctx context.Context) (uint64, error) {
-	p, err := m.malloc(ctx, 4)
+	// Eight bytes: the bridge writes a 64-bit field's value whole into the
+	// slot, and a pointer or a 32-bit value into its low half.
+	p, err := m.malloc(ctx, 8)
 	if err != nil {
 		return 0, err
 	}
-	if err := m.writeU32(ctx, p, 0); err != nil {
+	if err := m.writeU64(ctx, p, 0); err != nil {
 		return 0, err
 	}
 	return p, nil
@@ -19268,7 +19288,7 @@ func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _a
 		return zero, err
 	}
 	{
-		p, err := mod.readU32(ctx, arg2)
+		p, err := mod.readU64(ctx, arg2)
 		if err != nil {
 			return zero, err
 		}
@@ -19279,7 +19299,7 @@ func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _a
 		*_arg2 = value
 	}
 	{
-		p, err := mod.readU32(ctx, arg3)
+		p, err := mod.readU64(ctx, arg3)
 		if err != nil {
 			return zero, err
 		}
@@ -19357,7 +19377,7 @@ func (v *Context) PluginList(ctx context.Context, _arg0 string, _arg1 *int) ([]s
 		return zero, err
 	}
 	{
-		p, err := mod.readU32(ctx, arg1)
+		p, err := mod.readU64(ctx, arg1)
 		if err != nil {
 			return zero, err
 		}
