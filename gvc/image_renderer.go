@@ -51,6 +51,12 @@ var ErrPageTooLarge = errors.New("page too large for the raster renderer")
 type ImageRenderer struct {
 	*DefaultRenderEngine
 	ctx *gg.Context
+	// imageOnly skips encoding a page that only its image is wanted for,
+	// and last keeps that image; Context.RenderImage sets the first and
+	// reads the second while it holds the module, so no other render runs
+	// on the renderer in between.
+	imageOnly bool
+	last      image.Image
 }
 
 func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
@@ -68,6 +74,12 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 }
 
 func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
+	if r.imageOnly {
+		r.last = r.ctx.Image()
+
+		return nil
+	}
+
 	var buf bytes.Buffer
 
 	switch {

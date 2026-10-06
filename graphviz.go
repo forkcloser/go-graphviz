@@ -5,7 +5,11 @@
 //
 // One WebAssembly module serves the whole process, and Graphviz is
 // single-threaded, so calls are serialized: instances and graphs may be used
-// from any goroutine, and a call waits for the one in progress. A callback a
+// from any goroutine, and a call waits for the one in progress. Render,
+// RenderImage and RenderFilename hold the module from layout to the end of
+// the render, so the same graph may be rendered from several goroutines; a
+// caller sequencing gvc's Layout, RenderData and FreeLayout on a graph
+// itself must not let another goroutine render that graph in between. A callback a
 // render makes (a RenderEngine method, a FontLoader) runs inside that call
 // and may use the API on the same goroutine; another goroutine's call waits
 // until the render ends. The context and the handles a callback receives
@@ -16,7 +20,10 @@
 package graphviz
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"image"
 	"io"
 	"io/fs"
@@ -93,51 +100,52 @@ func (g *Graphviz) SetLayout(layout Layout) *Graphviz {
 	return g
 }
 
-func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io.Writer) (e error) {
-	defer func() {
-		if err := g.ctx.FreeLayout(ctx, graph); err != nil {
-			e = err
-		}
-	}()
+// Render lays graph out with the instance's layout engine, renders it in
+// format and writes the result to w.
+func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io.Writer) error {
+	var buf bytes.Buffer
 
-	if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
+	err := g.laidOut(ctx, graph, func(ctx context.Context) error {
+		return g.ctx.RenderData(ctx, graph, string(format), &buf)
+	})
+	if err != nil {
 		return err
 	}
 
-	return g.ctx.RenderData(ctx, graph, string(format), w)
-}
-
-func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (img image.Image, e error) {
-	defer func() {
-		if err := g.ctx.FreeLayout(ctx, graph); err != nil {
-			e = err
-		}
-	}()
-
-	if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
-		return nil, err
+	// Written after the module is released: a slow writer must not hold up
+	// every other render in the process.
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		return fmt.Errorf("writing the rendered %s: %w", format, err)
 	}
 
-	rendered, err := g.ctx.RenderImage(ctx, graph, string(PNG))
+	return nil
+}
+
+// RenderImage lays graph out with the instance's layout engine and returns
+// it drawn as an image.
+func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (image.Image, error) {
+	var img image.Image
+
+	err := g.laidOut(ctx, graph, func(ctx context.Context) error {
+		var err error
+
+		img, err = g.ctx.RenderImage(ctx, graph, string(PNG))
+
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return rendered, nil
+	return img, nil
 }
 
-func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Format, path string) (e error) {
-	defer func() {
-		if err := g.ctx.FreeLayout(ctx, graph); err != nil {
-			e = err
-		}
-	}()
-
-	if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
-		return err
-	}
-
-	return g.ctx.RenderFilename(ctx, graph, string(format), path)
+// RenderFilename lays graph out with the instance's layout engine and writes
+// it, rendered in format, to the file at path.
+func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Format, path string) error {
+	return g.laidOut(ctx, graph, func(ctx context.Context) error {
+		return g.ctx.RenderFilename(ctx, graph, string(format), path)
+	})
 }
 
 // Graph opens a new root graph, named and typed by the options given; the
@@ -155,6 +163,24 @@ func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
 	}
 
 	return graph, nil
+}
+
+// laidOut lays graph out, runs render, and frees the layout, holding the
+// module from the layout to the free: the layout lives on the graph, so a
+// render of the same graph from another goroutine must not lay it out again
+// or free it in between.
+func (g *Graphviz) laidOut(ctx context.Context, graph *Graph, render func(context.Context) error) error {
+	return wasm.Exclusive(ctx, func(ctx context.Context) (err error) {
+		defer func() {
+			err = errors.Join(err, g.ctx.FreeLayout(ctx, graph))
+		}()
+
+		if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
+			return err
+		}
+
+		return render(ctx)
+	})
 }
 
 func SetFileSystem(fsys fs.FS) {

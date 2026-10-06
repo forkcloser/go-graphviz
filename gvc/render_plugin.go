@@ -11,6 +11,7 @@ import (
 
 type RenderPlugin struct {
 	plugin *wasm.PluginAPI
+	typ    string // the format the plugin renders, as Graphviz names it
 	engine RenderEngine
 	funcID uint64       // the engine's address, the key its callbacks are registered under
 	uses   atomic.Int32 // the contexts the plugin is installed in
@@ -363,6 +364,7 @@ func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, e
 
 	return &RenderPlugin{
 		plugin: plg,
+		typ:    cfg.Type,
 		engine: cfg.RenderEngine,
 		funcID: wasm.WasmPtr(engine),
 	}, nil

@@ -70,3 +70,41 @@ func TestConcurrentInstances(t *testing.T) {
 
 	wg.Wait()
 }
+
+// One graph rendered from several goroutines at once: each render lays the
+// graph out, draws it and frees the layout without another render of the
+// same graph freeing it in between.
+func TestConcurrentRendersOfOneGraph(t *testing.T) {
+	ctx := t.Context()
+
+	g, err := graphviz.New(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	graph, err := graphviz.ParseBytes([]byte("digraph { a -> b -> c -> a; d -> a }"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	var wg sync.WaitGroup
+
+	for worker := range 4 {
+		wg.Go(func() {
+			for round := range 10 {
+				var buf bytes.Buffer
+				if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
+					t.Errorf("worker %d round %d: %v", worker, round, err)
+
+					return
+				}
+			}
+		})
+	}
+
+	wg.Wait()
+}

@@ -99,9 +99,16 @@ func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format st
 	return nil
 }
 
-func (c *Context) RenderImage(ctx context.Context, g *cgraph.Graph, format string) (image.Image, error) {
+// RenderImage renders g in format and returns the image. For PNG with the
+// module's own raster renderer, the page the renderer drew is returned as
+// is; any other format or renderer is rendered to bytes and decoded.
+func (c *Context) RenderImage(ctx context.Context, graph *cgraph.Graph, format string) (image.Image, error) {
+	if renderer := c.imageRenderer(format); renderer != nil && format == pngFormat {
+		return c.renderImageDirect(ctx, graph, format, renderer)
+	}
+
 	var buf bytes.Buffer
-	if err := c.RenderData(ctx, g, format, &buf); err != nil {
+	if err := c.RenderData(ctx, graph, format, &buf); err != nil {
 		return nil, err
 	}
 
@@ -152,6 +159,66 @@ func (c *Context) Clone(ctx context.Context) (*Context, error) {
 
 func (c *Context) FreeClonedContext(ctx context.Context) error {
 	return c.gvc.FreeClonedContext(ctx)
+}
+
+// pngFormat is the format RenderImage takes the drawn page for directly;
+// JPEG keeps its lossy round trip, which is what a JPEG caller asked for.
+const pngFormat = "png"
+
+// renderImageDirect renders g with renderer told to keep its page instead
+// of encoding it, holding the module so no other render runs on the
+// renderer before the page is read back.
+func (c *Context) renderImageDirect(
+	ctx context.Context,
+	graph *cgraph.Graph,
+	format string,
+	renderer *ImageRenderer,
+) (image.Image, error) {
+	var img image.Image
+
+	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
+		renderer.imageOnly = true
+		renderer.last = nil
+
+		defer func() {
+			renderer.imageOnly = false
+			renderer.last = nil
+		}()
+
+		if err := c.RenderData(ctx, graph, format, io.Discard); err != nil {
+			return err
+		}
+
+		img = renderer.last
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if img == nil {
+		return nil, fmt.Errorf("%w: the %s renderer drew no page", cgraph.ErrGraphviz, format)
+	}
+
+	return img, nil
+}
+
+// imageRenderer is the module's raster renderer installed for format in c,
+// or nil when c renders format with something else.
+func (c *Context) imageRenderer(format string) *ImageRenderer {
+	for _, plugin := range c.plugins {
+		render, ok := plugin.(*RenderPlugin)
+		if !ok || render.typ != format {
+			continue
+		}
+
+		if renderer, ok := render.engine.(*ImageRenderer); ok {
+			return renderer
+		}
+	}
+
+	return nil
 }
 
 func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error) {
