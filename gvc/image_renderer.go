@@ -117,7 +117,12 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 	}
 
 	r.ctx.SetFontFace(face)
-	y := r.toY(job, pos.Y()+span.YOffsetCenterLine()+span.YOffsetLayout())
+	// The baseline goes where Graphviz's own renderers put it: the span's
+	// position raised by its centreline offset. yoffset_layout is the
+	// ascent of a text-layout plugin's logical rectangle; Graphviz 16's
+	// size estimate sets it to the font size (12 left it 0), and adding it
+	// lifted every line by one font size, the first out of its box.
+	y := r.toY(job, pos.Y()+span.YOffsetCenterLine())
 	r.ctx.DrawStringAnchored(span.Text(), pos.X(), -y, 0, 0)
 
 	return nil
