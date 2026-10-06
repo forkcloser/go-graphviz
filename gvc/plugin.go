@@ -38,7 +38,10 @@ func DefaultPlugins(ctx context.Context) ([]Plugin, error) {
 		return nil, err
 	}
 
-	pngLoadImagePlugin, err := PNGLoadImagePlugin(ctx, pngRenderPlugin.RenderEngine())
+	loadImagePlugins, err := imageLoaders(ctx, map[string]RenderEngine{
+		pngFormat: pngRenderPlugin.RenderEngine(),
+		"jpg":     jpgRenderPlugin.RenderEngine(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -48,12 +51,37 @@ func DefaultPlugins(ctx context.Context) ([]Plugin, error) {
 		return nil, err
 	}
 
-	return []Plugin{
+	return append([]Plugin{
 		pngRenderPlugin,
 		pngDevicePlugin,
 		jpgRenderPlugin,
 		jpgDevicePlugin,
-		pngLoadImagePlugin,
 		textLayoutPlugin,
-	}, nil
+	}, loadImagePlugins...), nil
+}
+
+// imageLoaders makes an image-loading plugin for each image type Graphviz
+// recognizes and Go decodes, into each output: Graphviz looks a loader up
+// as the image's type and the renderer's, "jpeg:png" for a JPEG drawn into
+// a PNG, and the loader draws on that output's renderer.
+func imageLoaders(ctx context.Context, outputs map[string]RenderEngine) ([]Plugin, error) {
+	var plugins []Plugin
+
+	for _, imageType := range []string{pngFormat, "jpeg", "gif", "bmp", "webp"} {
+		for output, renderer := range outputs {
+			engine, ok := renderer.(LoadImageEngine)
+			if !ok {
+				continue
+			}
+
+			plugin, err := NewLoadImagePlugin(ctx, imageType+":"+output, engine)
+			if err != nil {
+				return nil, err
+			}
+
+			plugins = append(plugins, plugin)
+		}
+	}
+
+	return plugins, nil
 }
