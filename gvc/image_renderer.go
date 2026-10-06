@@ -9,7 +9,7 @@ import (
 	_ "image/gif" // node images: Graphviz recognizes GIF
 	"image/jpeg"
 	"image/png"
-	"io/fs"
+	"io"
 	"math"
 	"sync"
 
@@ -320,9 +320,9 @@ func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, 
 // Graphviz sees, once its header has shown it within MaxImagePixels: a
 // small file can declare dimensions whose decoding would take gigabytes.
 func decodeImage(name string) (image.Image, error) {
-	data, err := fs.ReadFile(wasm.FileSystem(), name)
+	data, err := readImageFile(name)
 	if err != nil {
-		return nil, fmt.Errorf("reading image %s: %w", name, err)
+		return nil, err
 	}
 
 	config, _, err := image.DecodeConfig(bytes.NewReader(data))
@@ -340,6 +340,44 @@ func decodeImage(name string) (image.Image, error) {
 	}
 
 	return img, nil
+}
+
+// maxImageFileBytes is the most an image file within MaxImagePixels takes:
+// four bytes a pixel, an uncompressed 32-bit BMP, and room for headers.
+const maxImageFileBytes = 4*MaxImagePixels + 1<<20
+
+// readImageFile reads an image file through the file system Graphviz sees,
+// no further than maxImageFileBytes: a larger file holds no image the
+// renderer would draw.
+func readImageFile(name string) ([]byte, error) {
+	file, err := wasm.FileSystem().Open(name)
+	if err != nil {
+		return nil, fmt.Errorf("opening image %s: %w", name, err)
+	}
+
+	defer func() { _ = file.Close() }()
+
+	data, err := readAtMost(file, maxImageFileBytes)
+	if err != nil {
+		return nil, fmt.Errorf("reading image %s: %w", name, err)
+	}
+
+	return data, nil
+}
+
+// readAtMost reads r to its end, failing with ErrImageTooLarge, after
+// reading one byte more, when it holds more than limit bytes.
+func readAtMost(r io.Reader, limit int64) ([]byte, error) {
+	data, err := io.ReadAll(io.LimitReader(r, limit+1))
+	if err != nil {
+		return nil, fmt.Errorf("reading: %w", err)
+	}
+
+	if int64(len(data)) > limit {
+		return nil, fmt.Errorf("%w: over %d bytes", ErrImageTooLarge, limit)
+	}
+
+	return data, nil
 }
 
 // withinImageBudget reports whether width by height pixels is at most
