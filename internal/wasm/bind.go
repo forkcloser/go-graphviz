@@ -523,6 +523,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -569,6 +574,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
+			stack[4] = uint64(uint32(stack[4]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -648,6 +661,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -701,6 +719,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -755,6 +778,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -788,6 +815,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -841,6 +874,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -898,6 +937,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -945,6 +989,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -979,6 +1027,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -1034,6 +1088,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -1100,6 +1161,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (string, error) {
 				var zero string
 				_ = zero
@@ -1137,6 +1202,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
 			arg0, err := func() (*Dict, error) {
 				var zero *Dict
 				_ = zero
@@ -1203,6 +1275,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Dict, error) {
 				var zero *Dict
 				_ = zero
@@ -1258,6 +1336,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1303,6 +1386,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1336,6 +1423,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1380,6 +1472,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (any, error) {
 				var zero any
 				_ = zero
@@ -1424,6 +1521,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*UserShape, error) {
 				var zero *UserShape
 				_ = zero
@@ -1458,6 +1559,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1492,6 +1597,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1548,6 +1659,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1604,6 +1721,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1650,6 +1772,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1710,6 +1838,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1744,6 +1876,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1804,6 +1942,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1851,6 +1994,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1911,6 +2060,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1945,6 +2098,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -1979,6 +2136,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2013,6 +2174,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2047,6 +2212,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2081,6 +2250,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2115,6 +2288,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2149,6 +2326,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2216,6 +2400,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2250,6 +2438,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2284,6 +2476,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2318,6 +2514,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2352,6 +2552,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2386,6 +2590,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2420,6 +2628,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2454,6 +2666,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2488,6 +2704,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2522,6 +2742,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2556,6 +2780,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2590,6 +2818,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2624,6 +2856,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2658,6 +2894,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
+			stack[4] = uint64(uint32(stack[4]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2744,6 +2988,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2778,6 +3026,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2822,6 +3075,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2856,6 +3113,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2913,6 +3176,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -2958,6 +3226,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -3022,6 +3296,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -3096,6 +3377,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -3170,6 +3458,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -3234,6 +3528,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -3281,6 +3580,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
+			stack[4] = uint64(uint32(stack[4]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero
@@ -3368,6 +3675,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -3402,6 +3713,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
 			arg0, err := func() (*Graph, error) {
 				var zero *Graph
 				_ = zero
@@ -3436,6 +3751,11 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
 			arg0, err := func() (*Textspan, error) {
 				var zero *Textspan
 				_ = zero
@@ -3488,6 +3808,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			stack[0] = uint64(uint32(stack[0]))
+			stack[1] = uint64(uint32(stack[1]))
+			stack[2] = uint64(uint32(stack[2]))
+			stack[3] = uint64(uint32(stack[3]))
 			arg0, err := func() (*Job, error) {
 				var zero *Job
 				_ = zero

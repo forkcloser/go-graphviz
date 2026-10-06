@@ -156,6 +156,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
 			}
+			// An i32 argument is only the low half of its stack word: wazero
+			// does not clear the high half (the amd64 compiler leaves bits
+			// there), so it is cleared before any conversion reads the word.
+			{{- range .Args }}
+			{{- if not .Value.Is64Bit }}
+			stack[{{ .Index }}] = uint64(uint32(stack[{{ .Index }}]))
+			{{- end }}
+			{{- end }}
 			{{- range .Args }}
 			arg{{ .Index }}, err := func() ({{ .Value.GoType }}, error) {
 				var zero {{ .Value.GoType }}
