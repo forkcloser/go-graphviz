@@ -11,6 +11,71 @@ Graphviz 16 below.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-06
+
+### Changed
+
+- Text is measured for the layout with the fonts it is drawn in, as
+  Graphviz's own Pango-based tools measure it, instead of Graphviz's
+  built-in width estimates for Times, Courier and Arial. Labels fit their
+  nodes in every output. The layout now follows the fonts installed on the
+  machine: the same graph can come out with slightly different
+  coordinates, in SVG, DOT and every other format, on two machines with
+  different fonts, as it does with `dot`. Text whose font a `FontLoader`
+  supplies is still estimated, since a loader answers for a render job and
+  layout has none.
+- Font names resolve the way Graphviz's text layout resolves them. A
+  PostScript name such as `Times-Roman` or `Helvetica-Narrow-BoldOblique`
+  uses Graphviz's family, weight, width and slant for it. Any other name
+  is read as a family with style words (`DejaVu Sans Bold`,
+  `Arial:italic`), or a list of them ending, optionally, in a generic
+  family. The family and its metric-compatible substitutes (Arial for
+  Helvetica, Liberation and TeX Gyre faces, and others) are looked up
+  among the installed fonts by their names, not their file names, and the
+  closest face is taken. Where nothing installed answers, the embedded Go
+  fonts stand in, now in bold, italic and monospace cuts, which adds about
+  1.2 MB to binaries.
+- Pen widths and dashes scale with the page, as they do in Graphviz's own
+  renderers: lines are thinner on a graph reduced by `size` and wider at a
+  higher `dpi`. At the default 96 dpi a line of pen width 1 is 1.33 pixels
+  wide, a third wider than before.
+- A node image is stretched to the box Graphviz computes from
+  `imagescale` and `imagepos`, at the page's scale. It used to be drawn
+  at its own pixel size, or, scaled, at its size in points and offset by
+  a padding of the renderer's own.
+
+### Added
+
+- `Job.Rotation`, for render engines that transform coordinates
+  themselves, and `ErrRotation` for a page turned by another angle than 0
+  or 90 degrees.
+- `TextLayoutPlugin` and `NewTextLayoutPlugin`, which `DefaultPlugins`
+  installs; a context built with `NewWithPlugins` measures text only when
+  it is among the plugins.
+- Node images in JPEG, GIF, BMP and WebP, and node images in JPEG output.
+- `ErrImageTooLarge` and `MaxImagePixels`: a node image whose header
+  declares, or whose drawn size reaches, more than 64 megapixels fails the
+  render before it is decoded, and an image file is read no further than
+  such an image can take.
+- `MaxPagePixels`: a PNG or JPEG page over 256 megapixels, 16384 by 16384,
+  fails with `ErrPageTooLarge` before its canvas is allocated; a page's
+  size and resolution come from the graph.
+
+### Fixed
+
+- A graph laid out with `rotate=90` or `landscape=true` renders in PNG and
+  JPEG. The page's rotation was ignored and the page came out blank.
+- A character the label's font has no glyph for is drawn from an installed
+  font that has one: Japanese, Chinese and Korean in a Latin font, for
+  one, where a box was drawn.
+- Text in a symbol-encoded font, which keeps its glyphs in the private
+  use area as Symbol and Zapf Dingbats do on Windows, is drawn from there
+  instead of as boxes. This is untested on a real symbol-encoded font.
+- Labels no longer overflow their nodes in PNG and JPEG output: bold and
+  wide faces were drawn wider than the box Graphviz had estimated for them.
+- A node image shown by many nodes is read and decoded once per page, not
+  once per node.
+
 ## [0.3.1] - 2026-10-05
 
 ### Fixed
