@@ -54,9 +54,16 @@ const MaxImagePixels = 1 << 26
 // angle other than the two Graphviz uses, 0 and 90 degrees.
 var ErrRotation = errors.New("page rotation not supported by the raster renderer")
 
-// ErrPageTooLarge is returned by the raster renderer for a page whose width
-// or height does not fit the drawing context's int coordinates.
+// ErrPageTooLarge is returned by the raster renderer for a page over
+// MaxPagePixels, or whose width or height does not fit the drawing
+// context's int coordinates.
 var ErrPageTooLarge = errors.New("page too large for the raster renderer")
+
+// MaxPagePixels is how many pixels the raster renderer draws a page with:
+// 256 megapixels, 16384 by 16384, 1 GiB as RGBA. A page's size comes from
+// the graph, its size and dpi attributes included. A landscape page is
+// drawn upright and copied turned, so it holds twice that at its end.
+const MaxPagePixels = 1 << 28
 
 type ImageRenderer struct {
 	*DefaultRenderEngine
@@ -90,8 +97,8 @@ type ImageRenderer struct {
 // finished page's pixel (X, Y) is the canvas's (height-1-Y, X).
 func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	width, height := job.Width(), job.Height()
-	if width > math.MaxInt32 || height > math.MaxInt32 {
-		return fmt.Errorf("%w: %d by %d points", ErrPageTooLarge, width, height)
+	if width > math.MaxInt32 || height > math.MaxInt32 || (width > 0 && height > MaxPagePixels/width) {
+		return fmt.Errorf("%w: %d by %d pixels", ErrPageTooLarge, width, height)
 	}
 
 	r.images = map[string]image.Image{}
