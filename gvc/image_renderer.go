@@ -117,7 +117,12 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 	}
 
 	r.ctx.SetFontFace(face)
-	y := r.toY(job, pos.Y()+span.YOffsetCenterLine()+span.YOffsetLayout())
+	// The baseline goes where Graphviz's own renderers put it: the span's
+	// position raised by its centreline offset. yoffset_layout is the
+	// ascent of a text-layout plugin's logical rectangle; Graphviz 16's
+	// size estimate sets it to the font size (12 left it 0), and adding it
+	// lifted every line by one font size, the first out of its box.
+	y := r.toY(job, pos.Y()+span.YOffsetCenterLine())
 	r.ctx.DrawStringAnchored(span.Text(), pos.X(), -y, 0, 0)
 
 	return nil
@@ -317,7 +322,7 @@ func (r *ImageRenderer) getFontFace(ctx context.Context, job *Job, textFont *Tex
 func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error) {
 	fontSize := textFont.Size() * job.Zoom()
 	fontName := textFont.Name()
-	cacheKey := fmt.Sprintf("%s:%f", fontName, fontSize)
+	cacheKey := fmt.Sprintf("%s:%f:%f", fontName, fontSize, job.DPI().X())
 
 	fontMu.RLock()
 
@@ -357,7 +362,7 @@ func (r *ImageRenderer) lookupFontWithCache(ctx context.Context, job *Job, textF
 func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *PointFloat) (font.Face, error) {
 	fontPath, err := findFont(fontName)
 	if err == nil {
-		return r.lookupFontFromTTFFile(fontSize, fontPath)
+		return r.lookupFontFromTTFFile(fontSize, dpi, fontPath)
 	}
 
 	// "Helvetica-Bold-Oblique" is tried as Helvetica-Bold, then Helvetica.
@@ -365,7 +370,7 @@ func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *Point
 	for i := len(parts) - 1; i > 0; i-- {
 		baseName := strings.Join(parts[:i], "-")
 
-		ttfFace, err := r.lookupFontFromTTFFile(fontSize, baseName+".ttf")
+		ttfFace, err := r.lookupFontFromTTFFile(fontSize, dpi, baseName+".ttf")
 		if err == nil {
 			return ttfFace, nil
 		}
@@ -387,7 +392,20 @@ func (r *ImageRenderer) lookupFont(fontName string, fontSize float64, dpi *Point
 	return nil, fmt.Errorf("%w: %s", ErrFontNotFound, fontName)
 }
 
-func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (font.Face, error) {
+// faceOptions sizes a face for a job: the font size in points at the job's
+// resolution, the scale Graphviz lays the page out at. A face built
+// without a DPI has x/image's scale size × DPI ÷ 72 of zero, and draws
+// nothing; freetype, which the renderer used before, defaulted to 72.
+func faceOptions(size float64, dpi *PointFloat) *opentype.FaceOptions {
+	resolution := dpi.X()
+	if resolution <= 0 {
+		resolution = defaultDeviceDPI
+	}
+
+	return &opentype.FaceOptions{Size: size, DPI: resolution}
+}
+
+func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, dpi *PointFloat, fontPath string) (font.Face, error) {
 	// #nosec G304 -- a font file found in the platform font directories or named by the font loader
 	fontData, err := os.ReadFile(fontPath)
 	if err != nil {
@@ -399,7 +417,7 @@ func (*ImageRenderer) lookupFontFromTTFFile(fontSize float64, fontPath string) (
 		return nil, fmt.Errorf("parsing font %s: %w", fontPath, err)
 	}
 
-	face, err := opentype.NewFace(ft, &opentype.FaceOptions{Size: fontSize})
+	face, err := opentype.NewFace(ft, faceOptions(fontSize, dpi))
 	if err != nil {
 		return nil, fmt.Errorf("face for %s: %w", fontPath, err)
 	}
@@ -445,10 +463,7 @@ func (*ImageRenderer) lookupFontFromTTCFile(
 		}
 
 		if strings.Join(parts, " ") == name {
-			face, err := opentype.NewFace(member, &opentype.FaceOptions{
-				Size: fontSize,
-				DPI:  dpi.X(),
-			})
+			face, err := opentype.NewFace(member, faceOptions(fontSize, dpi))
 			if err != nil {
 				return nil, fmt.Errorf("face for %s from collection %s: %w", fontName, fontPath, err)
 			}
@@ -478,7 +493,7 @@ func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, 
 	}
 
 	fontSize := textFont.Size() * job.Zoom()
-	cacheKey := fmt.Sprintf("goregular:%f", fontSize)
+	cacheKey := fmt.Sprintf("goregular:%f:%f", fontSize, job.DPI().X())
 
 	fontMu.RLock()
 
@@ -490,7 +505,7 @@ func (*ImageRenderer) defaultFontFace(job *Job, textFont *TextFont) (font.Face, 
 
 	fontMu.RUnlock()
 
-	face, err := opentype.NewFace(goRegular, &opentype.FaceOptions{Size: fontSize})
+	face, err := opentype.NewFace(goRegular, faceOptions(fontSize, job.DPI()))
 	if err != nil {
 		return nil, fmt.Errorf("face for the embedded Go Regular font: %w", err)
 	}
