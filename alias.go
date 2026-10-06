@@ -69,6 +69,7 @@ type (
 	DefaultRenderEngine = gvc.DefaultRenderEngine
 	RenderFeature       = gvc.RenderFeature
 	RenderPluginOption  = gvc.RenderPluginOption
+	TextLayoutPlugin    = gvc.TextLayoutPlugin
 	ColorType           = gvc.ColorType
 	LabelType           = gvc.LabelType
 	Job                 = gvc.Job
@@ -330,19 +331,20 @@ var (
 
 // functions from gvc package.
 var (
-	SetFontLoader   = gvc.SetFontLoader
-	DefaultPlugins  = gvc.DefaultPlugins
-	DeviceQuality   = gvc.WithDeviceQuality
-	DeviceFeatures  = gvc.WithDeviceFeatures
-	DeviceDPI       = gvc.WithDeviceDPI
-	NewDevicePlugin = gvc.NewDevicePlugin
-	PNGDevicePlugin = gvc.PNGDevicePlugin
-	JPGDevicePlugin = gvc.JPGDevicePlugin
-	RenderQuality   = gvc.WithRenderQuality
-	RenderFeatures  = gvc.WithRenderFeatures
-	RenderColorType = gvc.WithRenderColorType
-	RenderPAD       = gvc.WithRenderPAD
-	NewRenderPlugin = gvc.NewRenderPlugin
-	PNGRenderPlugin = gvc.PNGRenderPlugin
-	JPGRenderPlugin = gvc.JPGRenderPlugin
+	SetFontLoader       = gvc.SetFontLoader
+	DefaultPlugins      = gvc.DefaultPlugins
+	DeviceQuality       = gvc.WithDeviceQuality
+	DeviceFeatures      = gvc.WithDeviceFeatures
+	DeviceDPI           = gvc.WithDeviceDPI
+	NewDevicePlugin     = gvc.NewDevicePlugin
+	PNGDevicePlugin     = gvc.PNGDevicePlugin
+	JPGDevicePlugin     = gvc.JPGDevicePlugin
+	RenderQuality       = gvc.WithRenderQuality
+	RenderFeatures      = gvc.WithRenderFeatures
+	RenderColorType     = gvc.WithRenderColorType
+	RenderPAD           = gvc.WithRenderPAD
+	NewRenderPlugin     = gvc.NewRenderPlugin
+	PNGRenderPlugin     = gvc.PNGRenderPlugin
+	JPGRenderPlugin     = gvc.JPGRenderPlugin
+	NewTextLayoutPlugin = gvc.NewTextLayoutPlugin
 )

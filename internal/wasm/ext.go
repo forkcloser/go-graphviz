@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"runtime"
 	"strings"
 	"sync"
@@ -342,4 +343,72 @@ func FileSystem() fs.FS {
 	defer fsMu.Unlock()
 
 	return mod.fs
+}
+
+// SetTextspanSize sets a text span's size, which Graphviz copies in from a
+// point. It runs inside the text-layout callback that measures the span, so
+// the point is made, filled and freed with that call's context.
+func SetTextspanSize(ctx context.Context, span *Textspan, width, height float64) (err error) {
+	point, err := mod.newObject(ctx, "PointFloat")
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if freeErr := mod.free(ctx, point); freeErr != nil && err == nil {
+			err = freeErr
+		}
+	}()
+
+	for field, value := range map[string]float64{"PointFloat_x": width, "PointFloat_y": height} {
+		encoded, err := mod.toDoubleWasmValue(ctx, value)
+		if err != nil {
+			return err
+		}
+
+		if err := mod.setField(ctx, field, point, encoded); err != nil {
+			return err
+		}
+	}
+
+	return mod.setField(ctx, "Textspan_size", span.getPtr(), point)
+}
+
+// Where textspan_t (Graphviz's lib/common/textspan.h) keeps the two words a
+// text-layout plugin owns, in wasm32: after the str and font pointers, the
+// layout pointer and the function that frees it.
+const (
+	textspanLayout     = 8
+	textspanFreeLayout = 12
+)
+
+// errMemoryWrite is a write outside the module's memory.
+var errMemoryWrite = errors.New("failed to write wasm memory")
+
+// ClearTextspanLayout nulls a span's layout and free_layout, as every
+// text-layout plugin must: Graphviz frees a span's layout with its
+// free_layout when both are set, and measures the text of an HTML label in
+// a span it leaves uninitialized. The bridge has no accessor for either
+// field, so the words are written in the module's memory.
+func ClearTextspanLayout(ctx context.Context, span *Textspan) error {
+	if mod.mod == nil {
+		return mod.unavailable()
+	}
+
+	_, leave, _ := mod.lock.enter(ctx)
+	defer leave()
+
+	memory := mod.mod.Memory()
+
+	ptr := span.getPtr()
+	if ptr > math.MaxUint32-textspanFreeLayout {
+		return fmt.Errorf("%w: text span at %d", errMemoryWrite, ptr)
+	}
+
+	base := uint32(ptr)
+	if !memory.WriteUint32Le(base+textspanLayout, 0) || !memory.WriteUint32Le(base+textspanFreeLayout, 0) {
+		return fmt.Errorf("%w: text span at %d and memory size is %d", errMemoryWrite, base, memory.Size())
+	}
+
+	return nil
 }

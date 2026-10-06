@@ -152,6 +152,12 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	{{- range .ExportCallbackFunctions }}
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			{{- if .Return }}
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
+			{{- end }}
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -192,9 +198,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			}
 			if fn, exists := mod.callbackFuncMap.{{ .Name }}[funcID]; exists {
 				{{- if .Return }}
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {
+				ret, err := fn(ctx, {{- range .Args}}arg{{ .Index }},{{- end }})
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := {{ .Return.Value.WasmTypeConverter }}(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 				{{- else }}
 				if err := fn(ctx, {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {

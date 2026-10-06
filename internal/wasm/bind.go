@@ -519,6 +519,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	env := r.NewHostModuleBuilder("env")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -557,9 +561,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Open[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
+				ret, err := fn(ctx, arg0, arg1)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toAnyWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -570,6 +578,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IDAllocator_Open")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -644,9 +656,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Map[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
+				ret, err := fn(ctx, arg0, arg1, arg2, arg3, arg4)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toInt32WasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -715,6 +731,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IDAllocator_Free")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -761,9 +781,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.IDAllocator_Print[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
+				ret, err := fn(ctx, arg0, arg1, arg2)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toStringWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -870,6 +894,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IDAllocator_IdRegister")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -920,9 +948,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.IOService_Afread[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
+				ret, err := fn(ctx, arg0, arg1, arg2)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toIntWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -933,6 +965,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IOService_Afread")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -972,9 +1008,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.IOService_Putstr[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
+				ret, err := fn(ctx, arg0, arg1)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toIntWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -985,6 +1025,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IOService_Putstr")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1010,9 +1054,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.IOService_Flush[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0); err != nil {
+				ret, err := fn(ctx, arg0)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toIntWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -1157,6 +1205,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_ClientEventCallback_ObjectUpdateFunc")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1185,9 +1237,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.UserRef[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0); err != nil {
+				ret, err := fn(ctx, arg0)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toIntWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -1198,6 +1254,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_UserRef")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1258,9 +1318,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictMemory[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
+				ret, err := fn(ctx, arg0, arg1, arg2, arg3)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toAnyWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -1271,6 +1335,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DictMemory")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1319,9 +1387,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictSearch[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
+				ret, err := fn(ctx, arg0, arg1, arg2)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toAnyWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -1332,6 +1404,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DictSearch")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1369,9 +1445,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictMake[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
+				ret, err := fn(ctx, arg0, arg1)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toAnyWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -1419,6 +1499,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DictFree")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1455,9 +1539,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictCompare[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
+				ret, err := fn(ctx, arg0, arg1)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toIntWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -1468,6 +1556,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DictCompare")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1504,9 +1596,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.DictWalk[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
+				ret, err := fn(ctx, arg0, arg1)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toIntWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
@@ -3747,6 +3843,10 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_LayoutEngine_Cleanup")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// The result goes back in the first slot once the arguments are
+			// read; a skipped or failed callback returns zero.
+			var result uint64
+			defer func() { stack[0] = result }()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3791,9 +3891,13 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 				return
 			}
 			if fn, exists := mod.callbackFuncMap.TextLayoutEngine_TextLayout[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
+				ret, err := fn(ctx, arg0, arg1)
+				if err != nil {
 					mod.failCallback(err)
+				} else if value, err := mod.toBoolWasmValue(ctx, ret); err != nil {
+					mod.failCallback(err)
+				} else {
+					result = value
 				}
 			}
 			// The bridge allocated a copy for every argument passed by value;
