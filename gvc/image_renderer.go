@@ -6,17 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	_ "image/gif" // node images: Graphviz recognizes GIF
 	"image/jpeg"
 	"image/png"
-	"io"
 	"math"
 	"sync"
 
 	"github.com/fogleman/gg"
+	_ "golang.org/x/image/bmp" // node images: Graphviz recognizes BMP
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
+	_ "golang.org/x/image/webp" // node images: Graphviz recognizes WebP
 
-	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
@@ -56,6 +57,9 @@ type ImageRenderer struct {
 	scaleX, scaleY float64
 	lineScale      float64
 	rotated        bool
+	// images holds the node images of the page being drawn, decoded and
+	// at each size drawn, by file name and by name and size.
+	images map[string]image.Image
 	// imageOnly skips encoding a page that only its image is wanted for,
 	// and last keeps that image; Context.RenderImage sets the first and
 	// reads the second while it holds the module, so no other render runs
@@ -78,6 +82,8 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	if width > math.MaxInt32 || height > math.MaxInt32 {
 		return fmt.Errorf("%w: %d by %d points", ErrPageTooLarge, width, height)
 	}
+
+	r.images = map[string]image.Image{}
 
 	scale, translation := job.Scale(), job.Translation()
 	r.lineScale = math.Sqrt(math.Abs(scale.X() * scale.Y()))
@@ -102,6 +108,7 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 
 func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 	page := r.page()
+	r.images = nil
 
 	if r.imageOnly {
 		r.last = page
@@ -239,54 +246,77 @@ func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, points []*Point
 	return nil
 }
 
+// LoadImage draws a node's image into the box Graphviz computed for it,
+// which already applies imagescale and imagepos: stretched to the box under
+// the page's transform, as Graphviz's Cairo image loader draws it.
 func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, box *BoxFloat, _ bool) error {
 	r.ctx.Push()
 	defer r.ctx.Pop()
 
-	fs := wasm.FileSystem()
+	left, top := r.toX(job, box.LL().X()), r.toY(job, -box.UR().Y())
+	width := int(math.Round(r.toX(job, box.UR().X()-box.LL().X())))
+	height := int(math.Round(r.toY(job, box.UR().Y()-box.LL().Y())))
 
-	file, err := fs.Open(shape.Name())
+	if width <= 0 || height <= 0 {
+		return nil
+	}
+
+	img, err := r.nodeImage(shape.Name(), width, height)
 	if err != nil {
-		return fmt.Errorf("opening image %s: %w", shape.Name(), err)
-	}
-	defer file.Close()
-
-	var buf bytes.Buffer
-	if _, copyErr := io.Copy(&buf, file); copyErr != nil {
-		return fmt.Errorf("reading image %s: %w", shape.Name(), copyErr)
+		return err
 	}
 
-	img, _, err := image.Decode(&buf)
-	if err != nil {
-		return fmt.Errorf("decoding image %s: %w", shape.Name(), err)
-	}
-
-	topLeftX := box.LL().X()
-	topLeftY := box.LL().Y()
-
-	node := job.Object().Node()
-	if node != nil {
-		if node.FixedSize() || node.ImageScale() != cgraph.ImageScaleDefault {
-			bottomRightX := box.UR().X()
-			bottomRightY := box.UR().Y()
-			width := bottomRightX - topLeftX
-			height := bottomRightY - topLeftY
-			img = resizeLanczos(img, int(width), int(height))
-			xPAD := defaultXPAD / half
-			yPAD := defaultYPAD / half
-			posX := r.toX(job, topLeftX+xPAD)
-			posY := r.toY(job, topLeftY+yPAD)
-			r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
-
-			return nil
-		}
-	}
-
-	posX := r.toX(job, topLeftX)
-	posY := r.toY(job, topLeftY)
-	r.ctx.DrawImageAnchored(img, int(posX), -int(posY), 0, 1)
+	r.ctx.DrawImage(img, int(math.Round(left)), int(math.Round(top)))
 
 	return nil
+}
+
+// nodeImage is the image file name at width by height pixels, decoded and
+// scaled once per page however many nodes show it.
+func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, error) {
+	key := fmt.Sprintf("%s|%dx%d", name, width, height)
+	if scaled, ok := r.images[key]; ok {
+		return scaled, nil
+	}
+
+	decoded, ok := r.images[name]
+	if !ok {
+		var err error
+
+		decoded, err = decodeImage(name)
+		if err != nil {
+			return nil, err
+		}
+
+		r.images[name] = decoded
+	}
+
+	scaled := decoded
+	if bounds := decoded.Bounds(); bounds.Dx() != width || bounds.Dy() != height {
+		scaled = resizeLanczos(decoded, width, height)
+	}
+
+	r.images[key] = scaled
+
+	return scaled, nil
+}
+
+// decodeImage reads and decodes an image file through the file system
+// Graphviz sees.
+func decodeImage(name string) (image.Image, error) {
+	file, err := wasm.FileSystem().Open(name)
+	if err != nil {
+		return nil, fmt.Errorf("opening image %s: %w", name, err)
+	}
+
+	defer func() { _ = file.Close() }()
+
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return nil, fmt.Errorf("decoding image %s: %w", name, err)
+	}
+
+	return img, nil
 }
 
 // spanFace is the face a span is drawn with: the font loader's, when one
@@ -414,7 +444,7 @@ func (r *ImageRenderer) setColor(color *Color) {
 }
 
 func (*ImageRenderer) isPNG(job *Job) bool {
-	return job.OutputLangName() == "png"
+	return job.OutputLangName() == pngFormat
 }
 
 func (*ImageRenderer) isJPG(job *Job) bool {
@@ -433,12 +463,6 @@ func (r *ImageRenderer) setPenStyle(job *Job) {
 
 	r.ctx.SetLineWidth(object.PenWidth() * r.lineScale)
 }
-
-const (
-	defaultGAP  = 4
-	defaultXPAD = 4 * defaultGAP
-	defaultYPAD = 2 * defaultGAP
-)
 
 type FontLoader func(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error)
 
