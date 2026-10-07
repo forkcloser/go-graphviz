@@ -226,3 +226,49 @@ func TestGlyphFallbackRuns(t *testing.T) {
 		t.Error("the missing glyph's answer not remembered")
 	}
 }
+
+// symbolEncodedFace finds an installed font that keeps its glyphs in the
+// private use area, as Symbol and Wingdings do on Windows: no glyph for 'A',
+// one at U+F041.
+func symbolEncodedFace(t *testing.T) font.Face {
+	t.Helper()
+
+	for _, installed := range fonts.installed().faces {
+		loaded, err := installed.load()
+		if err != nil {
+			continue
+		}
+
+		face, err := loaded.face(12, 72)
+		if err != nil {
+			continue
+		}
+
+		_, latin := face.GlyphAdvance('A')
+		_, private := face.GlyphAdvance(symbolBase + 'A')
+
+		if !latin && private {
+			t.Logf("symbol-encoded font: %s", loaded.key)
+
+			return face
+		}
+	}
+
+	return nil
+}
+
+// Text in a symbol-encoded font is drawn from its private use area, with
+// that font, not handed to a fallback or drawn as boxes.
+func TestSymbolEncodedFont(t *testing.T) {
+	face := symbolEncodedFace(t)
+	if face == nil {
+		t.Skip("no symbol-encoded font installed (Windows has Symbol and Wingdings)")
+	}
+
+	runs := newGlyphFallback(&fontIndex{byFamily: map[string][]installedFace{}}).runs("ABC", face, 12, 72)
+
+	want := string([]rune{symbolBase + 'A', symbolBase + 'B', symbolBase + 'C'})
+	if len(runs) != 1 || runs[0].face != face || runs[0].text != want {
+		t.Errorf("runs %+v, want one run of %q in the symbol font", runs, want)
+	}
+}

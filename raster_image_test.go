@@ -12,6 +12,7 @@ import (
 	"image/png"
 	"io/fs"
 	"math"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -135,8 +136,8 @@ func TestRasterNodeImageFillsItsBox(t *testing.T) {
 	}
 }
 
-// Every image type Graphviz recognizes and Go decodes is drawn, into PNG
-// and JPEG output alike: there was a loader for a PNG image into a PNG
+// Every image type Graphviz recognizes and Go decodes, WebP included, is
+// drawn, into PNG and JPEG output alike: there was a loader for a PNG image into a PNG
 // page only, and the others drew nothing.
 func TestRasterNodeImageFormats(t *testing.T) {
 	red := solidImage(40, 40, color.RGBA{R: 255, A: 255})
@@ -165,6 +166,17 @@ func TestRasterNodeImageFormats(t *testing.T) {
 	}
 
 	encoded["bmp"] = bytes.Clone(buf.Bytes())
+
+	// x/image decodes WebP but cannot write it: testdata/red.webp is the
+	// same 40 by 40 red square, written by libwebp's cwebp 1.6 at quality
+	// 100. It is lossy (VP8): Graphviz 16 sizes a lossless (VP8L) WebP
+	// from the wrong bytes, tens of thousands of points a side, as dot does.
+	webp, err := os.ReadFile("testdata/red.webp")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	encoded["webp"] = webp
 
 	for extension, data := range encoded {
 		for _, format := range []graphviz.Format{graphviz.PNG, graphviz.JPG} {
