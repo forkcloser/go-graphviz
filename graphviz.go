@@ -17,6 +17,12 @@
 // so a callback must not hand them to another goroutine while it runs; the
 // points, spans, boxes and colours are copies that are freed when the
 // callback returns, so they are not to be kept past it either.
+//
+// Getters that return a value and no error (Job.Width, Symbol.Name,
+// ObjectState.PenColor, …) read the WebAssembly module's memory and panic if
+// that read fails. A handle this API gives out always points into that
+// memory, so the panic marks a bug in this library, not a misuse; inside a
+// render's callback it comes back from the render as gvc.ErrCallbackPanic.
 package graphviz
 
 import (

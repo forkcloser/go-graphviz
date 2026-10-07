@@ -11,24 +11,12 @@ message Record {
   option (nori.message).alias = "Agrec_t";
 
   string name = 1 [(nori.field).type.kind = CHARPTR];
-  Record next = 2 [(nori.field).type.pointer = 1];
 }
 
 message Tag {
   option (nori.message).alias = "Agtag_t";
 
-  uint32 object_type = 1 [(nori.field).alias = "objtype"];
-  uint32 mtflock = 2;
-  uint32 attrwf = 3;
-  uint32 seq = 4;
   uint64 id = 5;
-}
-
-message Object {
-  option (nori.message).alias = "Agobj_t";
-
-  Tag tag = 1;
-  Record data = 2 [(nori.field).type.pointer = 1];
 }
 
 enum ObjectTag {
@@ -42,37 +30,17 @@ enum ObjectTag {
 message SubNode {
   option (nori.message).alias = "Agsubnode_t";
 
-  DictLink seq_link = 1;
-  DictLink id_link = 2;
-  Node node = 3 [(nori.field).type.pointer = 1];
-  DictLink in_id = 4 [(nori.field).type.pointer = 1];
-  DictLink out_id = 5 [(nori.field).type.pointer = 1];
-  DictLink in_seq = 6 [(nori.field).type.pointer = 1];
-  DictLink out_seq = 7 [(nori.field).type.pointer = 1];
 }
 
 message Node {
   option (nori.message).alias = "Agnode_t";
 
-  Object base = 1;
   Graph root = 2 [(nori.field).type.pointer = 1];
-  SubNode mainsub = 3;
 }
 
 message Edge {
   option (nori.message).alias = "Agedge_t";
 
-  Object base = 1;
-  DictLink id_link = 2;
-  DictLink seq_link = 3;
-  Node node = 4 [(nori.field).type.pointer = 1];
-}
-
-message EdgePair {
-  option (nori.message).alias = "Agedgepair_t";
-
-  Edge out = 1;
-  Edge in = 2;
 }
 
 message GraphDescriptor {
@@ -80,11 +48,7 @@ message GraphDescriptor {
 
   uint32 directed = 1;
   uint32 strict = 2;
-  uint32 no_loop = 3;
   uint32 maingraph = 4;
-  uint32 no_write = 5;
-  uint32 has_attrs = 6;
-  uint32 has_cmpnd = 7;
 }
 
 message IDAllocator {
@@ -92,77 +56,23 @@ message IDAllocator {
 
 }
 
-message IOService {
-  option (nori.message).alias = "Agiodisc_t";
-
-}
-
 message ClientDiscipline {
   option (nori.message).alias = "Agdisc_t";
 
   IDAllocator id = 1 [(nori.field).type.pointer = 1];
-  IOService io = 2 [(nori.field).type.pointer = 1];
-}
-
-message State {
-  option (nori.message).alias = "Agdstate_t";
-
-  nori.Any id = 1 [(nori.field).type.kind = VOIDPTR];
-}
-
-message ClientEventCallback {
-  option (nori.message).alias = "Agcbdisc_t";
-
-};
-
-message CallbackStack {
-  option (nori.message).alias = "Agcbstack_t";
-
-  ClientEventCallback f = 1 [(nori.field).type.pointer = 1];
-  nori.Any state = 2 [(nori.field).type.kind = VOIDPTR];
-  CallbackStack prev = 3 [(nori.field).type.pointer = 1];
-};
-
-message CommonFields {
-  option (nori.message).alias = "Agclos_t";
-
-  ClientDiscipline disc = 1;
-  State state = 2;
-  Dict strdict = 3 [(nori.field).type.pointer = 1];
-  repeated uint64 seq = 4 [(nori.field).type.array_num = 3];
-  CallbackStack cb = 5 [(nori.field).type.pointer = 1];
-  repeated Dict lookup_by_name = 6 [(nori.field).type = {
-    pointer: 1
-    array_num: 3
-  }];
-  repeated Dict lookup_by_id = 7 [(nori.field).type = {
-    pointer: 1
-    array_num: 3
-  }];
 }
 
 message Graph {
   option (nori.message).alias = "Agraph_t";
 
-  Object base = 1;
-  GraphDescriptor desc = 2;
-  DictLink seq_link = 3;
-  DictLink id_link = 4;
-  Dict n_seq = 5 [(nori.field).type.pointer = 1];
-  Dict e_seq = 6 [(nori.field).type.pointer = 1];
-  Dict e_id = 7 [(nori.field).type.pointer = 1];
-  Dict g_seq = 8 [(nori.field).type.pointer = 1];
-  Dict g_id = 9 [(nori.field).type.pointer = 1];
   Graph parent = 10 [(nori.field).type.pointer = 1];
   Graph root = 11 [(nori.field).type.pointer = 1];
-  CommonFields clos = 12 [(nori.field).type.pointer = 1];
 }
 
 message Attr {
   option (nori.message).alias = "Agattr_t";
 
   Record h = 1;
-  Dict dict = 2 [(nori.field).type.pointer = 1];
   repeated string str = 3 [(nori.field).type = {
     kind: CHARPTR
     array: true
@@ -172,20 +82,10 @@ message Attr {
 message Sym {
   option (nori.message).alias = "Agsym_t";
 
-  DictLink link = 1;
   string name = 2 [(nori.field).type.kind = CHARPTR];
   string defval = 3 [(nori.field).type.kind = CHARPTR];
   int32 id = 4;
   uint32 kind = 5;
-  uint32 fixed = 6;
-  uint32 print = 7;
-  Graph owner = 8 [(nori.field).type.pointer = 1];
-}
-
-message DataDict {
-  option (nori.message).alias = "Agdatadict_t";
-
-  Record h = 1;
 }
 
 enum ErrorLevel {
@@ -219,36 +119,6 @@ option (nori.file).export = {
     "gvplugin_loadimage.h",
     "gvplugin_textlayout.h"
   ]
-  func {
-    name: "pushDisc"
-    alias: "agpushdisc"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    args {
-      kind: STRUCT
-      ref: "ClientEventCallback"
-      pointer: 1
-    }
-    args { kind: VOIDPTR }
-  }
-  func {
-    name: "popDisc"
-    alias: "agpopdisc"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    args {
-      kind: STRUCT
-      ref: "ClientEventCallback"
-      pointer: 1
-    }
-    return { kind: INT }
-  }
   func {
     name: "open"
     alias: "agopen"
@@ -303,27 +173,6 @@ option (nori.file).export = {
     }
   }
   func {
-    name: "concat"
-    alias: "agconcat"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    args { kind: CHARPTR }
-    args { kind: VOIDPTR }
-    args {
-      kind: STRUCT
-      ref: "ClientDiscipline"
-      pointer: 1
-    }
-    return {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-  }
-  func {
     name: "write"
     alias: "agwrite"
     args {
@@ -332,36 +181,6 @@ option (nori.file).export = {
       pointer: 1
     }
     args { kind: VOIDPTR }
-    return { kind: INT }
-  }
-  func {
-    name: "isDirected"
-    alias: "agisdirected"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    return { kind: INT }
-  }
-  func {
-    name: "isUndirected"
-    alias: "agisundirected"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    return { kind: INT }
-  }
-  func {
-    name: "isStrict"
-    alias: "agisstrict"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
     return { kind: INT }
   }
   method {
@@ -459,21 +278,6 @@ option (nori.file).export = {
     return {
       kind: STRUCT
       ref: "Node"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Graph"
-    name: "subRep"
-    alias: "agsubrep"
-    args {
-      kind: STRUCT
-      ref: "Node"
-      pointer: 1
-    }
-    return {
-      kind: STRUCT
-      ref: "SubNode"
       pointer: 1
     }
   }
@@ -663,26 +467,6 @@ option (nori.file).export = {
       pointer: 1
     }
   }
-  func {
-    name: "graphOf"
-    alias: "agraphof"
-    args { kind: VOIDPTR }
-    return {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-  }
-  func {
-    name: "graphRoot"
-    alias: "agroot"
-    args { kind: VOIDPTR }
-    return {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-  }
   method {
     recv: "Graph"
     name: "contains"
@@ -744,68 +528,6 @@ option (nori.file).export = {
     return { kind: INT }
   }
   func {
-    name: "objectKind"
-    alias: "agobjkind"
-    args { kind: VOIDPTR }
-    return { kind: INT }
-  }
-  method {
-    recv: "Graph"
-    name: "strdup"
-    alias: "agstrdup"
-    args { kind: CHARPTR }
-    return { kind: CHARPTR }
-  }
-  method {
-    recv: "Graph"
-    name: "strdupHTML"
-    alias: "agstrdup_html"
-    args { kind: CHARPTR }
-    return { kind: CHARPTR }
-  }
-  method {
-    recv: "Graph"
-    name: "strdupText"
-    alias: "agstrdup_text"
-    args { kind: CHARPTR }
-    return { kind: CHARPTR }
-  }
-  func {
-    name: "htmlStr"
-    alias: "aghtmlstr"
-    args { kind: CHARPTR }
-    return { kind: BOOL }
-  }
-  method {
-    recv: "Graph"
-    name: "strBind"
-    alias: "agstrbind"
-    args { kind: CHARPTR }
-    return { kind: CHARPTR }
-  }
-  method {
-    recv: "Graph"
-    name: "strBindText"
-    alias: "agstrbind_text"
-    args { kind: CHARPTR }
-    return { kind: CHARPTR }
-  }
-  method {
-    recv: "Graph"
-    name: "strBindHTML"
-    alias: "agstrbind_html"
-    args { kind: CHARPTR }
-    return { kind: CHARPTR }
-  }
-  method {
-    recv: "Graph"
-    name: "strFree"
-    alias: "agstrfree"
-    args { kind: CHARPTR }
-    args { kind: BOOL }
-    return { kind: INT }
-  }
-  func {
     name: "strCanon"
     alias: "agstrcanon"
     args { kind: CHARPTR }
@@ -818,47 +540,6 @@ option (nori.file).export = {
     alias: "agattr"
     args { kind: INT }
     args { kind: CHARPTR }
-    args { kind: CHARPTR }
-    return {
-      kind: STRUCT
-      ref: "Sym"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Graph"
-    name: "attrText"
-    alias: "agattr_text"
-    args { kind: INT }
-    args { kind: CHARPTR }
-    args { kind: CHARPTR }
-    return {
-      kind: STRUCT
-      ref: "Sym"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Graph"
-    name: "attrHTML"
-    alias: "agattr_html"
-    args { kind: INT }
-    args { kind: CHARPTR }
-    args { kind: CHARPTR }
-    return {
-      kind: STRUCT
-      ref: "Sym"
-      pointer: 1
-    }
-  }
-  func {
-    name: "attrSym"
-    alias: "agattrsym"
-    args {
-      kind: STRUCT
-      ref: "Object"
-      pointer: 1
-    }
     args { kind: CHARPTR }
     return {
       kind: STRUCT
@@ -890,50 +571,6 @@ option (nori.file).export = {
     return { kind: INT }
   }
   func {
-    name: "bindRecord"
-    alias: "agbindrec"
-    args { kind: VOIDPTR }
-    args { kind: CHARPTR }
-    args { kind: UINT }
-    args { kind: INT }
-    return { kind: VOIDPTR }
-  }
-  func {
-    name: "getRecord"
-    alias: "aggetrec"
-    args { kind: VOIDPTR }
-    args { kind: CHARPTR }
-    args { kind: INT }
-    return {
-      kind: STRUCT
-      ref: "Record"
-      pointer: 1
-    }
-  }
-  func {
-    name: "deleteRecord"
-    alias: "agdelrec"
-    args { kind: VOIDPTR }
-    args { kind: CHARPTR }
-    return { kind: INT }
-  }
-  method {
-    recv: "Graph"
-    name: "init"
-    alias: "aginit"
-    args { kind: INT }
-    args { kind: CHARPTR }
-    args { kind: INT }
-    args { kind: INT }
-  }
-  method {
-    recv: "Graph"
-    name: "clean"
-    alias: "agclean"
-    args { kind: INT }
-    args { kind: CHARPTR }
-  }
-  func {
     name: "getStr"
     alias: "agget"
     args { kind: VOIDPTR }
@@ -960,22 +597,6 @@ option (nori.file).export = {
     return { kind: INT }
   }
   func {
-    name: "setStrText"
-    alias: "agset_text"
-    args { kind: VOIDPTR }
-    args { kind: CHARPTR }
-    args { kind: CHARPTR }
-    return { kind: INT }
-  }
-  func {
-    name: "setStrHTML"
-    alias: "agset_html"
-    args { kind: VOIDPTR }
-    args { kind: CHARPTR }
-    args { kind: CHARPTR }
-    return { kind: INT }
-  }
-  func {
     name: "setSymName"
     alias: "agxset"
     args { kind: VOIDPTR }
@@ -988,41 +609,8 @@ option (nori.file).export = {
     return { kind: INT }
   }
   func {
-    name: "setSymNameText"
-    alias: "agxset_text"
-    args { kind: VOIDPTR }
-    args {
-      kind: STRUCT
-      ref: "Sym"
-      pointer: 1
-    }
-    args { kind: CHARPTR }
-    return { kind: INT }
-  }
-  func {
-    name: "setSymNameHTML"
-    alias: "agxset_html"
-    args { kind: VOIDPTR }
-    args {
-      kind: STRUCT
-      ref: "Sym"
-      pointer: 1
-    }
-    args { kind: CHARPTR }
-    return { kind: INT }
-  }
-  func {
     name: "safeSetStr"
     alias: "agsafeset"
-    args { kind: VOIDPTR }
-    args { kind: CHARPTR }
-    args { kind: CHARPTR }
-    args { kind: CHARPTR }
-    return { kind: INT }
-  }
-  func {
-    name: "safeSetStrText"
-    alias: "agsafeset_text"
     args { kind: VOIDPTR }
     args { kind: CHARPTR }
     args { kind: CHARPTR }
@@ -1136,23 +724,6 @@ option (nori.file).export = {
     return { kind: INT }
   }
   func {
-    name: "setError"
-    alias: "agseterr"
-    args {
-      kind: ENUM
-      ref: "ErrorLevel"
-    }
-    return {
-      kind: ENUM
-      ref: "ErrorLevel"
-    }
-  }
-  func {
-    name: "lastError"
-    alias: "aglasterr"
-    return { kind: CHARPTR }
-  }
-  func {
     name: "error"
     alias: "agerr"
     args {
@@ -1174,24 +745,6 @@ option (nori.file).export = {
     }
   }
   func {
-    name: "warningf"
-    alias: "agwarningf"
-    args {
-      kind: CHARPTR
-      const: true
-    }
-  }
-  func {
-    name: "errorNum"
-    alias: "agerrors"
-    return { kind: INT }
-  }
-  func {
-    name: "resetErrors"
-    alias: "agreseterrors"
-    return { kind: INT }
-  }
-  func {
     name: "setErrorf"
     alias: "agseterrf"
     args {
@@ -1203,26 +756,6 @@ option (nori.file).export = {
 
 // cdt.h
 
-message DictLink {
-  option (nori.message).alias = "Dtlink_t";
-
-  DictLink right = 1 [(nori.field).type.pointer = 1];
-  oneof hl {
-    uint32 hash = 2 [(nori.field).alias = "_hash"];
-    DictLink left = 3 [(nori.field) = {
-      alias: "_left"
-      type { pointer: 1 }
-    }];
-  };
-}
-
-message DictHold {
-  option (nori.message).alias = "Dthold_t";
-
-  DictLink hdr = 1;
-  nori.Any obj = 2 [(nori.field).type.kind = VOIDPTR];
-}
-
 message DictMethod {
   option (nori.message).alias = "Dtmethod_t";
 
@@ -1233,56 +766,18 @@ message DictData {
   option (nori.message).alias = "Dtdata_t";
 
   int64 type = 1;
-  DictLink here = 2 [(nori.field).type.pointer = 1];
-  oneof hh {
-    DictLink htab = 3 [(nori.field) = {
-      alias: "_htab"
-      type {
-        array: true
-        pointer: 1
-      }
-    }];
-    DictLink head = 4 [(nori.field) = {
-      alias: "_head"
-      type { pointer: 1 }
-    }];
-  };
-  int64 ntab = 5;
   int64 size = 6;
-  int64 loop = 7;
-}
-
-message DictDisc {
-  option (nori.message).alias = "Dtdisc_t";
-
-  int64 key = 1;
-  int64 size = 2;
-  int64 link = 3;
 }
 
 message Dict {
   option (nori.message).alias = "Dict_t";
 
-  DictDisc disc = 2 [(nori.field).type.pointer = 1];
   DictData data = 3;
-  DictMethod meth = 4 [(nori.field).type.pointer = 1];
-  int64 nview = 5;
-  Dict view = 6 [(nori.field).type.pointer = 1];
-  Dict walk = 7 [(nori.field).type.pointer = 1];
-  nori.Any user = 8 [(nori.field).type.kind = VOIDPTR];
 }
 
 message DictStat {
   option (nori.message).alias = "Dtstat_t";
 
-  int64 dt_meth = 1;
-  int64 dt_size = 2;
-  uint64 dt_n = 3;
-  uint64 dt_max = 4;
-  repeated uint64 dt_count = 5 [(nori.field).type = {
-    kind: UINT32
-    array: true
-  }];
 }
 
 message DictWalk {
@@ -1308,60 +803,11 @@ option (nori.file).export = {
     "gvplugin_loadimage.h",
     "gvplugin_textlayout.h"
   ]
-  func {
-    name: "newDictWithDisc"
-    alias: "dtopen"
-    args {
-      kind: STRUCT
-      ref: "DictDisc"
-      pointer: 1
-    }
-    args {
-      kind: STRUCT
-      ref: "DictMethod"
-      pointer: 1
-    }
-    return {
-      kind: STRUCT
-      ref: "Dict"
-      pointer: 1
-    }
-  }
   method {
     recv: "Dict"
     name: "close"
     alias: "dtclose"
     return { kind: INT }
-  }
-  method {
-    recv: "Dict"
-    name: "view"
-    alias: "dtview"
-    args {
-      kind: STRUCT
-      ref: "Dict"
-      pointer: 1
-    }
-    return {
-      kind: STRUCT
-      ref: "Dict"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Dict"
-    name: "disc"
-    alias: "dtdisc"
-    args {
-      kind: STRUCT
-      ref: "DictDisc"
-      pointer: 1
-    }
-    return {
-      kind: STRUCT
-      ref: "DictDisc"
-      pointer: 1
-    }
   }
   method {
     recv: "Dict"
@@ -1380,37 +826,6 @@ option (nori.file).export = {
   }
   method {
     recv: "Dict"
-    name: "flatten"
-    alias: "dtflatten"
-    return {
-      kind: STRUCT
-      ref: "DictLink"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Dict"
-    name: "extract"
-    alias: "dtextract"
-    return {
-      kind: STRUCT
-      ref: "DictLink"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Dict"
-    name: "restore"
-    alias: "dtrestore"
-    args {
-      kind: STRUCT
-      ref: "DictLink"
-      pointer: 1
-    }
-    return { kind: INT }
-  }
-  method {
-    recv: "Dict"
     name: "walk"
     alias: "dtwalk"
     args {
@@ -1419,13 +834,6 @@ option (nori.file).export = {
     }
     args { kind: VOIDPTR }
     return { kind: INT }
-  }
-  method {
-    recv: "Dict"
-    name: "renew"
-    alias: "dtrenew"
-    args { kind: VOIDPTR }
-    return { kind: VOIDPTR }
   }
   method {
     recv: "Dict"
@@ -1445,13 +853,6 @@ option (nori.file).export = {
     args { kind: INT }
     return { kind: INT }
   }
-  func {
-    name: "strHash"
-    alias: "dtstrhash"
-    args { kind: VOIDPTR }
-    args { kind: INT }
-    return { kind: UINT }
-  }
 };
 
 // gvc.h
@@ -1466,13 +867,6 @@ message File {
 message Context {
   option (nori.message).alias = "GVC_t";
 
-  Common common = 1;
-  string config_path = 2;
-  bool config_found = 3;
-  repeated string input_filenames = 4 [(nori.field).type = {
-    kind: CHARPTR
-    array: true
-  }];
   repeated PluginAvailable apis = 5 [(nori.field).type = {
     pointer: 1
     array: true
@@ -1488,8 +882,6 @@ message Context {
 message PluginAvailable {
   option (nori.message).alias = "gvplugin_available_t";
 
-  PluginAvailable next = 1 [(nori.field).type.pointer = 1];
-  string typestr = 2 [(nori.field).type.kind = CHARPTR];
   int64 quality = 3;
   PluginPackage package = 4 [(nori.field).type.pointer = 1];
   PluginInstalled typeptr = 5 [(nori.field).type.pointer = 1];
@@ -1498,8 +890,6 @@ message PluginAvailable {
 message PluginPackage {
   option (nori.message).alias = "gvplugin_package_t";
 
-  PluginPackage next = 1 [(nori.field).type.pointer = 1];
-  string path = 2 [(nori.field).type.kind = CHARPTR];
   string name = 3 [(nori.field).type.kind = CHARPTR];
 }
 
@@ -1532,7 +922,6 @@ enum ImageType {
 message UserShape {
   option (nori.message).alias = "usershape_t";
 
-  DictLink link = 1;
   string name = 2 [(nori.field).type = {
     kind: CHARPTR
     const: true
@@ -1540,7 +929,6 @@ message UserShape {
   int64 macro_id = 3;
   bool must_inline = 4;
   bool nocache = 5;
-  File f = 6 [(nori.field).type.pointer = 1];
   ImageType type = 7;
   string stringtype = 8 [(nori.field).type.kind = CHARPTR];
   int64 x = 9;
@@ -1550,43 +938,6 @@ message UserShape {
   int64 dpi = 13;
   nori.Any data = 14 [(nori.field).type.kind = VOIDPTR];
   uint64 datasize = 15;
-}
-
-message PluginActiveLoadImage {
-  option (nori.message).alias = "gvplugin_active_loadimage_t";
-
-  LoadImageEngine engine = 1 [(nori.field).type.pointer = 1];
-  int64 id = 2;
-  string type = 3 [(nori.field).type = {
-    kind: CHARPTR
-    const: true
-  }];
-}
-
-message Common {
-  option (nori.message).alias = "GVCOMMON_t";
-
-  repeated string info = 1 [(nori.field).type = {
-    kind: CHARPTR
-    array: true
-  }];
-  string cmdname = 2 [(nori.field).type.kind = CHARPTR];
-  int64 verbose = 3;
-  bool config = 4;
-  bool auto_outfile_names = 5;
-  repeated string show_boxes = 6 [(nori.field).type = {
-    kind: CHARPTR
-    const: true
-    array: true
-  }];
-  repeated string lib = 7 [(nori.field).type = {
-    kind: CHARPTR
-    const: true
-    array: true
-  }];
-  int64 view_num = 8 [(nori.field).alias = "viewNum"];
-  SymList builtins = 9 [(nori.field).type.pointer = 1];
-  int64 demand_loading = 10;
 }
 
 enum ObjectType {
@@ -1630,16 +981,12 @@ message ObjectState {
   ObjectType type = 2;
   oneof u {
     Graph g = 3 [(nori.field).type.pointer = 1];
-    Graph sg = 4 [(nori.field).type.pointer = 1];
     Node n = 5 [(nori.field).type.pointer = 1];
     Edge e = 6 [(nori.field).type.pointer = 1];
   }
-  EmitState emit_state = 7;
   Color pencolor = 8;
   Color fillcolor = 9;
   Color stopcolor = 10;
-  int64 gradient_angle = 11;
-  float gradient_frac = 12;
   PenType pen = 13;
   FillType fill = 14;
   double penwidth = 15;
@@ -1647,54 +994,8 @@ message ObjectState {
     kind: CHARPTR
     array: true
   }];
-  double z = 17;
-  double tail_z = 18;
-  double head_z = 19;
   string label = 20;
-  string xlabel = 21;
-  string taillabel = 22;
-  string headlabel = 23;
-  string url = 24;
   string id = 25;
-  string labelurl = 26;
-  string tailurl = 27;
-  string headurl = 28;
-  string tooltip = 29;
-  string labeltooltip = 30;
-  string tailtooltip = 31;
-  string headtooltip = 32;
-  string target = 33;
-  string labeltarget = 34;
-  string tailtarget = 35;
-  string headtarget = 36;
-  uint64 explicit_tooltip = 37;
-  uint64 explicit_tailtooltip = 38;
-  uint64 explicit_headtooltip = 39;
-  uint64 explicit_labeltooltip = 40;
-  uint64 explicit_tailtarget = 41;
-  uint64 explicit_headtarget = 42;
-  uint64 explicit_edgetarget = 43;
-  uint64 explicit_tailurl = 44;
-  uint64 explicit_headurl = 45;
-  uint64 labeledgealigned = 46;
-  MapShapeType url_map_shape = 47;
-  uint64 url_map_n = 48;
-  PointFloat url_map_p = 49 [(nori.field).type.pointer = 1];
-  int64 url_bsplinemap_poly_n = 50;
-  int64 url_bsplinemap_n = 51 [(nori.field).type = {
-    kind: INT
-    array: true
-  }];
-  PointFloat url_bsplinemap_p = 52 [(nori.field).type.pointer = 1];
-  int64 tailendurl_map_n = 53;
-  PointFloat tailendurl_map_p = 54 [(nori.field).type.pointer = 1];
-  int64 headendurl_map_n = 55;
-  PointFloat headendurl_map_p = 56 [(nori.field).type.pointer = 1];
-}
-
-message DeviceCallbacks {
-  option (nori.message).alias = "gvdevice_callbacks_t";
-
 }
 
 enum EmitType {
@@ -1740,80 +1041,27 @@ message Job {
   option (nori.message).alias = "GVJ_t";
 
   Context gvc = 1 [(nori.field).type.pointer = 1];
-  Job next = 2 [(nori.field).type.pointer = 1];
-  Job next_active = 3 [(nori.field).type.pointer = 1];
-  Common common = 4 [(nori.field).type.pointer = 1];
   ObjectState obj = 5 [(nori.field).type.pointer = 1];
-  string input_filename = 6 [(nori.field).type.kind = CHARPTR];
-  int64 graph_index = 7;
-  string layout_type = 8 [(nori.field).type = {
-    kind: CHARPTR
-    const: true
-  }];
   string output_filename = 9 [(nori.field).type = {
     kind: CHARPTR
     const: true
   }];
-  File output_file = 10 [(nori.field).type.pointer = 1];
   string output_data = 11 [(nori.field).type.kind = CHARPTR];
-  uint64 output_data_allocated = 12 [(nori.field).type.kind = UINT];
   uint64 output_data_position = 13 [(nori.field).type.kind = UINT];
   string output_langname = 14 [(nori.field).type = {
     kind: CHARPTR
     const: true
   }];
-  int64 output_lang = 15;
-  PluginActiveRender render = 16;
-  PluginActiveDevice device = 17;
-  PluginActiveLoadImage loadimage = 18;
-  DeviceCallbacks callbacks = 19 [(nori.field).type.pointer = 1];
-  PointFloat device_dpi = 20;
-  bool device_sets_dpi = 21;
-  nori.Any display = 22 [(nori.field).type.kind = VOIDPTR];
-  int64 screen = 23;
-  nori.Any context = 24 [(nori.field).type.kind = VOIDPTR];
   bool external_context = 25;
-  string imagedata = 26 [(nori.field).type.kind = CHARPTR];
   int64 flags = 27;
-  int64 num_layers = 28 [(nori.field).alias = "numLayers"];
-  int64 layer_num = 29 [(nori.field).alias = "layerNum"];
-  Point pages_array_size = 30 [(nori.field).alias = "pagesArraySize"];
-  Point pages_array_first = 31 [(nori.field).alias = "pagesArrayFirst"];
-  Point pages_array_major = 32 [(nori.field).alias = "pagesArrayMajor"];
-  Point pages_array_minor = 33 [(nori.field).alias = "pagesArrayMinor"];
-  Point pages_array_elem = 34 [(nori.field).alias = "pagesArrayElem"];
-  int64 num_pages = 35 [(nori.field).alias = "numPages"];
-  BoxFloat bb = 36;
-  PointFloat pad = 37;
-  BoxFloat clip = 38;
-  BoxFloat page_box = 39 [(nori.field).alias = "pageBox"];
-  PointFloat page_size = 40 [(nori.field).alias = "pageSize"];
-  PointFloat focus = 41;
   double zoom = 42;
   int64 rotation = 43;
-  PointFloat view = 44;
-  BoxFloat canvas_box = 45 [(nori.field).alias = "canvasBox"];
-  PointFloat margin = 46;
   PointFloat dpi = 47;
   uint64 width = 48;
   uint64 height = 49;
-  Box page_bounding_box = 50 [(nori.field).alias = "pageBoundingBox"];
-  Box bounding_box = 51 [(nori.field).alias = "boundingBox"];
   PointFloat scale = 52;
   PointFloat translation = 53;
-  PointFloat devscale = 54;
-  bool fit_mode = 55;
-  bool needs_refresh = 56;
-  bool click = 57;
-  bool has_grown = 58;
-  bool has_been_rendered = 59;
-  uint64 button = 60;
   PointFloat pointer = 61;
-  PointFloat oldpointer = 62;
-  nori.Any current_obj = 63 [(nori.field).type.kind = VOIDPTR];
-  nori.Any selected_obj = 64 [(nori.field).type.kind = VOIDPTR];
-  string active_tooltip = 65 [(nori.field).type.kind = CHARPTR];
-  string selected_href = 66 [(nori.field).type.kind = CHARPTR];
 }
 
 message Point {
@@ -1929,38 +1177,6 @@ message PointFloat {
 
   double x = 1;
   double y = 2;
-}
-
-message PluginActiveDevice {
-  option (nori.message).alias = "gvplugin_active_device_t";
-
-  DeviceEngine engine = 1 [(nori.field).type.pointer = 1];
-  int64 id = 2;
-  DeviceFeatures features = 3 [(nori.field).type.pointer = 1];
-  string type = 4 [(nori.field).type = {
-    kind: CHARPTR
-    const: true
-  }];
-}
-
-message PluginActiveRender {
-  option (nori.message).alias = "gvplugin_active_render_t";
-
-  RenderEngine engine = 1 [(nori.field).type.pointer = 1];
-  int64 id = 2;
-  RenderFeatures features = 3 [(nori.field).type.pointer = 1];
-  string type = 4 [(nori.field).type = {
-    kind: CHARPTR
-    const: true
-  }];
-}
-
-message DeviceEngine {
-  option (nori.message) = {
-    parent: "Engine"
-    alias: "gvdevice_engine_t"
-  };
-
 }
 
 message PostscriptAlias {
@@ -2434,22 +1650,6 @@ message RenderEngine {
   LibraryShape library_shape = 30;
 }
 
-message FormatterEngine {
-  option (nori.message) = {
-    parent: "Engine"
-    alias: "gvformatter_engine_t"
-    constructor: false
-  };
-}
-
-message LayoutEngine {
-  option (nori.message) = {
-    parent: "Engine"
-    alias: "gvlayout_engine_t"
-  };
-
-}
-
 message TextLayoutEngine {
   option (nori.message) = {
     parent: "Engine"
@@ -2510,21 +1710,10 @@ message LoadImageEngine {
 message Engine {
 }
 
-message LayoutFeatures {
-  option (nori.message) = {
-    parent: "Layout"
-    alias: "gvlayout_features_t"
-  };
-
-  int64 flags = 1;
-}
-
 message DeviceFeatures {
   option (nori.message).alias = "gvdevice_features_t";
 
   int64 flags = 1;
-  PointFloat default_margin = 2;
-  PointFloat default_pagesize = 3;
   PointFloat default_dpi = 4;
 }
 
@@ -2533,14 +1722,6 @@ message RenderFeatures {
 
   int64 flags = 1;
   double default_pad = 2;
-  repeated string known_colors = 3 [(nori.field) = {
-    alias: "knowncolors"
-    type {
-      kind: CHARPTR
-      array: true
-    }
-  }];
-  int64 size_known_colors = 4 [(nori.field).alias = "sz_knowncolors"];
   ColorType color_type = 5;
 }
 
@@ -2596,36 +1777,6 @@ option (nori.file).export = {
     "gvplugin_textlayout.h"
   ]
   func {
-    name: "toggle"
-    alias: "gvToggle"
-    args { kind: INT }
-  }
-  func {
-    name: "newContextWithSymList"
-    alias: "gvNEWcontext"
-    args {
-      kind: STRUCT
-      ref: "SymList"
-      array: true
-      const: true
-    }
-    args { kind: INT }
-    return {
-      kind: STRUCT
-      ref: "Context"
-      pointer: 1
-    }
-  }
-  func {
-    name: "getContext"
-    alias: "gvContext"
-    return {
-      kind: STRUCT
-      ref: "Context"
-      pointer: 1
-    }
-  }
-  func {
     name: "getContextWithPlugins"
     alias: "gvContextPlugins"
     args {
@@ -2643,58 +1794,6 @@ option (nori.file).export = {
   }
   method {
     recv: "Context"
-    name: "info"
-    alias: "gvcInfo"
-    return {
-      kind: CHARPTR
-      array: true
-    }
-  }
-  method {
-    recv: "Context"
-    name: "version"
-    alias: "gvcVersion"
-    return { kind: CHARPTR }
-  }
-  method {
-    recv: "Context"
-    name: "buildDate"
-    alias: "gvcBuildDate"
-    return { kind: CHARPTR }
-  }
-  method {
-    recv: "Context"
-    name: "parseArgs"
-    alias: "gvParseArgs"
-    args { kind: INT }
-    args {
-      kind: CHARPTR
-      array: true
-    }
-    return { kind: INT }
-  }
-  method {
-    recv: "Context"
-    name: "nextInputGraph"
-    alias: "gvNextInputGraph"
-    return {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Context"
-    name: "pluginsGraph"
-    alias: "gvPluginsGraph"
-    return {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Context"
     name: "layout"
     alias: "gvLayout"
     args {
@@ -2707,22 +1806,6 @@ option (nori.file).export = {
       const: true
     }
     return { kind: INT }
-  }
-  method {
-    recv: "Context"
-    name: "layoutJobs"
-    alias: "gvLayoutJobs"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    return { kind: INT }
-  }
-  method {
-    recv: "Graph"
-    name: "attachAttrs"
-    alias: "attach_attrs"
   }
   method {
     recv: "Context"
@@ -2765,22 +1848,6 @@ option (nori.file).export = {
   }
   method {
     recv: "Context"
-    name: "renderContext"
-    alias: "gvRenderContext"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    args {
-      kind: CHARPTR
-      const: true
-    }
-    args { kind: VOIDPTR }
-    return { kind: INT }
-  }
-  method {
-    recv: "Context"
     name: "renderData"
     alias: "gvRenderData"
     args {
@@ -2803,27 +1870,6 @@ option (nori.file).export = {
     }
     return { kind: INT }
   }
-  func {
-    name: "freeRenderData"
-    alias: "gvFreeRenderData"
-    args { kind: CHARPTR }
-  }
-  method {
-    recv: "Context"
-    name: "renderJobs"
-    alias: "gvRenderJobs"
-    args {
-      kind: STRUCT
-      ref: "Graph"
-      pointer: 1
-    }
-    return { kind: INT }
-  }
-  method {
-    recv: "Context"
-    name: "finalize"
-    alias: "gvFinalize"
-  }
   method {
     recv: "Context"
     name: "freeContext"
@@ -2839,39 +1885,6 @@ option (nori.file).export = {
       ref: "Graph"
       pointer: 1
     }
-    return { kind: INT }
-  }
-  method {
-    recv: "Context"
-    name: "pluginList"
-    alias: "gvPluginList"
-    args {
-      kind: CHARPTR
-      const: true
-    }
-    args {
-      kind: INT
-      pointer: 1
-    }
-    return {
-      kind: CHARPTR
-      array: true
-    }
-  }
-  method {
-    recv: "Context"
-    name: "addLibrary"
-    alias: "gvAddLibrary"
-    args {
-      kind: STRUCT
-      ref: "PluginLibrary"
-      pointer: 1
-    }
-  }
-  method {
-    recv: "Graph"
-    name: "toolTred"
-    alias: "gvToolTred"
     return { kind: INT }
   }
   method {

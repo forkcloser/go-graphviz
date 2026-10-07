@@ -985,66 +985,11 @@ void wasm_bridge_set_Record_name(Agrec_t *recv, void * v) {
   recv->name = (char *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Record_next)
-void wasm_bridge_get_Record_next(Agrec_t *recv, Agrec_t ** ret) {
-  Agrec_t * v = (Agrec_t *)recv->next;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Record_next)
-void wasm_bridge_set_Record_next(Agrec_t *recv, void * v) {
-  recv->next = (Agrec_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_Tag)
 void *wasm_bridge_new_Tag() {
   void *ret = malloc(sizeof(Agtag_t));
   memset(ret, 0, sizeof(Agtag_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Tag_object_type)
-void wasm_bridge_get_Tag_object_type(Agtag_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->objtype;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Tag_object_type)
-void wasm_bridge_set_Tag_object_type(Agtag_t *recv, unsigned long int v) {
-  recv->objtype = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Tag_mtflock)
-void wasm_bridge_get_Tag_mtflock(Agtag_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->mtflock;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Tag_mtflock)
-void wasm_bridge_set_Tag_mtflock(Agtag_t *recv, unsigned long int v) {
-  recv->mtflock = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Tag_attrwf)
-void wasm_bridge_get_Tag_attrwf(Agtag_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->attrwf;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Tag_attrwf)
-void wasm_bridge_set_Tag_attrwf(Agtag_t *recv, unsigned long int v) {
-  recv->attrwf = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Tag_seq)
-void wasm_bridge_get_Tag_seq(Agtag_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->seq;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Tag_seq)
-void wasm_bridge_set_Tag_seq(Agtag_t *recv, unsigned long int v) {
-  recv->seq = (unsigned long int)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Tag_id)
@@ -1058,36 +1003,6 @@ void wasm_bridge_set_Tag_id(Agtag_t *recv, unsigned long long int v) {
   recv->id = (unsigned long long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_new_Object)
-void *wasm_bridge_new_Object() {
-  void *ret = malloc(sizeof(Agobj_t));
-  memset(ret, 0, sizeof(Agobj_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Object_tag)
-void wasm_bridge_get_Object_tag(Agobj_t *recv, Agtag_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->tag;
-}
-
-WASM_EXPORT(wasm_bridge_set_Object_tag)
-void wasm_bridge_set_Object_tag(Agobj_t *recv, void * v) {
-  recv->tag = *(Agtag_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Object_data)
-void wasm_bridge_get_Object_data(Agobj_t *recv, Agrec_t ** ret) {
-  Agrec_t * v = (Agrec_t *)recv->data;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Object_data)
-void wasm_bridge_set_Object_data(Agobj_t *recv, void * v) {
-  recv->data = (Agrec_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_SubNode)
 void *wasm_bridge_new_SubNode() {
   void *ret = malloc(sizeof(Agsubnode_t));
@@ -1095,102 +1010,11 @@ void *wasm_bridge_new_SubNode() {
   return ret;
 }
 
-WASM_EXPORT(wasm_bridge_get_SubNode_seq_link)
-void wasm_bridge_get_SubNode_seq_link(Agsubnode_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->seq_link;
-}
-
-WASM_EXPORT(wasm_bridge_set_SubNode_seq_link)
-void wasm_bridge_set_SubNode_seq_link(Agsubnode_t *recv, void * v) {
-  recv->seq_link = *(Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_SubNode_id_link)
-void wasm_bridge_get_SubNode_id_link(Agsubnode_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->id_link;
-}
-
-WASM_EXPORT(wasm_bridge_set_SubNode_id_link)
-void wasm_bridge_set_SubNode_id_link(Agsubnode_t *recv, void * v) {
-  recv->id_link = *(Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_SubNode_node)
-void wasm_bridge_get_SubNode_node(Agsubnode_t *recv, Agnode_t ** ret) {
-  Agnode_t * v = (Agnode_t *)recv->node;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_SubNode_node)
-void wasm_bridge_set_SubNode_node(Agsubnode_t *recv, void * v) {
-  recv->node = (Agnode_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_SubNode_in_id)
-void wasm_bridge_get_SubNode_in_id(Agsubnode_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->in_id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_SubNode_in_id)
-void wasm_bridge_set_SubNode_in_id(Agsubnode_t *recv, void * v) {
-  recv->in_id = (Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_SubNode_out_id)
-void wasm_bridge_get_SubNode_out_id(Agsubnode_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->out_id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_SubNode_out_id)
-void wasm_bridge_set_SubNode_out_id(Agsubnode_t *recv, void * v) {
-  recv->out_id = (Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_SubNode_in_seq)
-void wasm_bridge_get_SubNode_in_seq(Agsubnode_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->in_seq;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_SubNode_in_seq)
-void wasm_bridge_set_SubNode_in_seq(Agsubnode_t *recv, void * v) {
-  recv->in_seq = (Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_SubNode_out_seq)
-void wasm_bridge_get_SubNode_out_seq(Agsubnode_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->out_seq;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_SubNode_out_seq)
-void wasm_bridge_set_SubNode_out_seq(Agsubnode_t *recv, void * v) {
-  recv->out_seq = (Dtlink_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_Node)
 void *wasm_bridge_new_Node() {
   void *ret = malloc(sizeof(Agnode_t));
   memset(ret, 0, sizeof(Agnode_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Node_base)
-void wasm_bridge_get_Node_base(Agnode_t *recv, Agobj_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->base;
-}
-
-WASM_EXPORT(wasm_bridge_set_Node_base)
-void wasm_bridge_set_Node_base(Agnode_t *recv, void * v) {
-  recv->base = *(Agobj_t *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Node_root)
@@ -1204,101 +1028,11 @@ void wasm_bridge_set_Node_root(Agnode_t *recv, void * v) {
   recv->root = (Agraph_t *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Node_mainsub)
-void wasm_bridge_get_Node_mainsub(Agnode_t *recv, Agsubnode_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->mainsub;
-}
-
-WASM_EXPORT(wasm_bridge_set_Node_mainsub)
-void wasm_bridge_set_Node_mainsub(Agnode_t *recv, void * v) {
-  recv->mainsub = *(Agsubnode_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_Edge)
 void *wasm_bridge_new_Edge() {
   void *ret = malloc(sizeof(Agedge_t));
   memset(ret, 0, sizeof(Agedge_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Edge_base)
-void wasm_bridge_get_Edge_base(Agedge_t *recv, Agobj_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->base;
-}
-
-WASM_EXPORT(wasm_bridge_set_Edge_base)
-void wasm_bridge_set_Edge_base(Agedge_t *recv, void * v) {
-  recv->base = *(Agobj_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Edge_id_link)
-void wasm_bridge_get_Edge_id_link(Agedge_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->id_link;
-}
-
-WASM_EXPORT(wasm_bridge_set_Edge_id_link)
-void wasm_bridge_set_Edge_id_link(Agedge_t *recv, void * v) {
-  recv->id_link = *(Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Edge_seq_link)
-void wasm_bridge_get_Edge_seq_link(Agedge_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->seq_link;
-}
-
-WASM_EXPORT(wasm_bridge_set_Edge_seq_link)
-void wasm_bridge_set_Edge_seq_link(Agedge_t *recv, void * v) {
-  recv->seq_link = *(Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Edge_node)
-void wasm_bridge_get_Edge_node(Agedge_t *recv, Agnode_t ** ret) {
-  Agnode_t * v = (Agnode_t *)recv->node;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Edge_node)
-void wasm_bridge_set_Edge_node(Agedge_t *recv, void * v) {
-  recv->node = (Agnode_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_EdgePair)
-void *wasm_bridge_new_EdgePair() {
-  void *ret = malloc(sizeof(Agedgepair_t));
-  memset(ret, 0, sizeof(Agedgepair_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_EdgePair_out)
-void wasm_bridge_get_EdgePair_out(Agedgepair_t *recv, Agedge_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->out;
-}
-
-WASM_EXPORT(wasm_bridge_set_EdgePair_out)
-void wasm_bridge_set_EdgePair_out(Agedgepair_t *recv, void * v) {
-  recv->out = *(Agedge_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_EdgePair_in)
-void wasm_bridge_get_EdgePair_in(Agedgepair_t *recv, Agedge_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->in;
-}
-
-WASM_EXPORT(wasm_bridge_set_EdgePair_in)
-void wasm_bridge_set_EdgePair_in(Agedgepair_t *recv, void * v) {
-  recv->in = *(Agedge_t *)v;
 }
 
 WASM_EXPORT(wasm_bridge_new_GraphDescriptor)
@@ -1330,17 +1064,6 @@ void wasm_bridge_set_GraphDescriptor_strict(Agdesc_t *recv, unsigned long int v)
   recv->strict = (unsigned long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_GraphDescriptor_no_loop)
-void wasm_bridge_get_GraphDescriptor_no_loop(Agdesc_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->no_loop;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_GraphDescriptor_no_loop)
-void wasm_bridge_set_GraphDescriptor_no_loop(Agdesc_t *recv, unsigned long int v) {
-  recv->no_loop = (unsigned long int)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_GraphDescriptor_maingraph)
 void wasm_bridge_get_GraphDescriptor_maingraph(Agdesc_t *recv, unsigned long int* ret) {
   unsigned long int v = (unsigned long int)recv->maingraph;
@@ -1352,50 +1075,10 @@ void wasm_bridge_set_GraphDescriptor_maingraph(Agdesc_t *recv, unsigned long int
   recv->maingraph = (unsigned long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_GraphDescriptor_no_write)
-void wasm_bridge_get_GraphDescriptor_no_write(Agdesc_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->no_write;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_GraphDescriptor_no_write)
-void wasm_bridge_set_GraphDescriptor_no_write(Agdesc_t *recv, unsigned long int v) {
-  recv->no_write = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_GraphDescriptor_has_attrs)
-void wasm_bridge_get_GraphDescriptor_has_attrs(Agdesc_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->has_attrs;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_GraphDescriptor_has_attrs)
-void wasm_bridge_set_GraphDescriptor_has_attrs(Agdesc_t *recv, unsigned long int v) {
-  recv->has_attrs = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_GraphDescriptor_has_cmpnd)
-void wasm_bridge_get_GraphDescriptor_has_cmpnd(Agdesc_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->has_cmpnd;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_GraphDescriptor_has_cmpnd)
-void wasm_bridge_set_GraphDescriptor_has_cmpnd(Agdesc_t *recv, unsigned long int v) {
-  recv->has_cmpnd = (unsigned long int)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_IDAllocator)
 void *wasm_bridge_new_IDAllocator() {
   void *ret = malloc(sizeof(Agiddisc_t));
   memset(ret, 0, sizeof(Agiddisc_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_new_IOService)
-void *wasm_bridge_new_IOService() {
-  void *ret = malloc(sizeof(Agiodisc_t));
-  memset(ret, 0, sizeof(Agiodisc_t));
   return ret;
 }
 
@@ -1417,309 +1100,11 @@ void wasm_bridge_set_ClientDiscipline_id(Agdisc_t *recv, void * v) {
   recv->id = (Agiddisc_t *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_ClientDiscipline_io)
-void wasm_bridge_get_ClientDiscipline_io(Agdisc_t *recv, Agiodisc_t ** ret) {
-  Agiodisc_t * v = (Agiodisc_t *)recv->io;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ClientDiscipline_io)
-void wasm_bridge_set_ClientDiscipline_io(Agdisc_t *recv, void * v) {
-  recv->io = (Agiodisc_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_State)
-void *wasm_bridge_new_State() {
-  void *ret = malloc(sizeof(Agdstate_t));
-  memset(ret, 0, sizeof(Agdstate_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_State_id)
-void wasm_bridge_get_State_id(Agdstate_t *recv, void ** ret) {
-  void * v = (void *)recv->id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_State_id)
-void wasm_bridge_set_State_id(Agdstate_t *recv, void * v) {
-  recv->id = (void *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_ClientEventCallback)
-void *wasm_bridge_new_ClientEventCallback() {
-  void *ret = malloc(sizeof(Agcbdisc_t));
-  memset(ret, 0, sizeof(Agcbdisc_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_new_CallbackStack)
-void *wasm_bridge_new_CallbackStack() {
-  void *ret = malloc(sizeof(Agcbstack_t));
-  memset(ret, 0, sizeof(Agcbstack_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_CallbackStack_f)
-void wasm_bridge_get_CallbackStack_f(Agcbstack_t *recv, Agcbdisc_t ** ret) {
-  Agcbdisc_t * v = (Agcbdisc_t *)recv->f;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CallbackStack_f)
-void wasm_bridge_set_CallbackStack_f(Agcbstack_t *recv, void * v) {
-  recv->f = (Agcbdisc_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_CallbackStack_state)
-void wasm_bridge_get_CallbackStack_state(Agcbstack_t *recv, void ** ret) {
-  void * v = (void *)recv->state;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CallbackStack_state)
-void wasm_bridge_set_CallbackStack_state(Agcbstack_t *recv, void * v) {
-  recv->state = (void *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_CallbackStack_prev)
-void wasm_bridge_get_CallbackStack_prev(Agcbstack_t *recv, Agcbstack_t ** ret) {
-  Agcbstack_t * v = (Agcbstack_t *)recv->prev;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CallbackStack_prev)
-void wasm_bridge_set_CallbackStack_prev(Agcbstack_t *recv, void * v) {
-  recv->prev = (Agcbstack_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_CommonFields)
-void *wasm_bridge_new_CommonFields() {
-  void *ret = malloc(sizeof(Agclos_t));
-  memset(ret, 0, sizeof(Agclos_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_CommonFields_disc)
-void wasm_bridge_get_CommonFields_disc(Agclos_t *recv, Agdisc_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->disc;
-}
-
-WASM_EXPORT(wasm_bridge_set_CommonFields_disc)
-void wasm_bridge_set_CommonFields_disc(Agclos_t *recv, void * v) {
-  recv->disc = *(Agdisc_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_CommonFields_state)
-void wasm_bridge_get_CommonFields_state(Agclos_t *recv, Agdstate_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->state;
-}
-
-WASM_EXPORT(wasm_bridge_set_CommonFields_state)
-void wasm_bridge_set_CommonFields_state(Agclos_t *recv, void * v) {
-  recv->state = *(Agdstate_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_CommonFields_strdict)
-void wasm_bridge_get_CommonFields_strdict(Agclos_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->strdict;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CommonFields_strdict)
-void wasm_bridge_set_CommonFields_strdict(Agclos_t *recv, void * v) {
-  recv->strdict = (Dict_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_CommonFields_seq)
-void wasm_bridge_get_CommonFields_seq(Agclos_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 3;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  unsigned long long int v = (unsigned long long int)recv->seq[i];
-    *v_data = (void *)(intptr_t)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CommonFields_seq)
-void wasm_bridge_set_CommonFields_seq(Agclos_t *recv, GoSlice * v) {
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->seq[i], elem, sizeof(unsigned long long int));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_CommonFields_cb)
-void wasm_bridge_get_CommonFields_cb(Agclos_t *recv, Agcbstack_t ** ret) {
-  Agcbstack_t * v = (Agcbstack_t *)recv->cb;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CommonFields_cb)
-void wasm_bridge_set_CommonFields_cb(Agclos_t *recv, void * v) {
-  recv->cb = (Agcbstack_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_CommonFields_lookup_by_name)
-void wasm_bridge_get_CommonFields_lookup_by_name(Agclos_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 3;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  Dict_t * v = (Dict_t *)recv->lookup_by_name[i];
-    *v_data = (void *)(intptr_t)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CommonFields_lookup_by_name)
-void wasm_bridge_set_CommonFields_lookup_by_name(Agclos_t *recv, GoSlice * v) {
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->lookup_by_name[i], elem, sizeof(Dict_t *));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_CommonFields_lookup_by_id)
-void wasm_bridge_get_CommonFields_lookup_by_id(Agclos_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 3;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  Dict_t * v = (Dict_t *)recv->lookup_by_id[i];
-    *v_data = (void *)(intptr_t)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_CommonFields_lookup_by_id)
-void wasm_bridge_set_CommonFields_lookup_by_id(Agclos_t *recv, GoSlice * v) {
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->lookup_by_id[i], elem, sizeof(Dict_t *));
-  }
-}
-
 WASM_EXPORT(wasm_bridge_new_Graph)
 void *wasm_bridge_new_Graph() {
   void *ret = malloc(sizeof(Agraph_t));
   memset(ret, 0, sizeof(Agraph_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_base)
-void wasm_bridge_get_Graph_base(Agraph_t *recv, Agobj_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->base;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_base)
-void wasm_bridge_set_Graph_base(Agraph_t *recv, void * v) {
-  recv->base = *(Agobj_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_desc)
-void wasm_bridge_get_Graph_desc(Agraph_t *recv, Agdesc_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->desc;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_desc)
-void wasm_bridge_set_Graph_desc(Agraph_t *recv, void * v) {
-  recv->desc = *(Agdesc_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_seq_link)
-void wasm_bridge_get_Graph_seq_link(Agraph_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->seq_link;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_seq_link)
-void wasm_bridge_set_Graph_seq_link(Agraph_t *recv, void * v) {
-  recv->seq_link = *(Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_id_link)
-void wasm_bridge_get_Graph_id_link(Agraph_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->id_link;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_id_link)
-void wasm_bridge_set_Graph_id_link(Agraph_t *recv, void * v) {
-  recv->id_link = *(Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_n_seq)
-void wasm_bridge_get_Graph_n_seq(Agraph_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->n_seq;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_n_seq)
-void wasm_bridge_set_Graph_n_seq(Agraph_t *recv, void * v) {
-  recv->n_seq = (Dict_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_e_seq)
-void wasm_bridge_get_Graph_e_seq(Agraph_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->e_seq;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_e_seq)
-void wasm_bridge_set_Graph_e_seq(Agraph_t *recv, void * v) {
-  recv->e_seq = (Dict_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_e_id)
-void wasm_bridge_get_Graph_e_id(Agraph_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->e_id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_e_id)
-void wasm_bridge_set_Graph_e_id(Agraph_t *recv, void * v) {
-  recv->e_id = (Dict_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_g_seq)
-void wasm_bridge_get_Graph_g_seq(Agraph_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->g_seq;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_g_seq)
-void wasm_bridge_set_Graph_g_seq(Agraph_t *recv, void * v) {
-  recv->g_seq = (Dict_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Graph_g_id)
-void wasm_bridge_get_Graph_g_id(Agraph_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->g_id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_g_id)
-void wasm_bridge_set_Graph_g_id(Agraph_t *recv, void * v) {
-  recv->g_id = (Dict_t *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Graph_parent)
@@ -1744,17 +1129,6 @@ void wasm_bridge_set_Graph_root(Agraph_t *recv, void * v) {
   recv->root = (Agraph_t *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Graph_clos)
-void wasm_bridge_get_Graph_clos(Agraph_t *recv, Agclos_t ** ret) {
-  Agclos_t * v = (Agclos_t *)recv->clos;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Graph_clos)
-void wasm_bridge_set_Graph_clos(Agraph_t *recv, void * v) {
-  recv->clos = (Agclos_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_Attr)
 void *wasm_bridge_new_Attr() {
   void *ret = malloc(sizeof(Agattr_t));
@@ -1772,17 +1146,6 @@ void wasm_bridge_get_Attr_h(Agattr_t *recv, Agrec_t ** ret) {
 WASM_EXPORT(wasm_bridge_set_Attr_h)
 void wasm_bridge_set_Attr_h(Agattr_t *recv, void * v) {
   recv->h = *(Agrec_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Attr_dict)
-void wasm_bridge_get_Attr_dict(Agattr_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->dict;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Attr_dict)
-void wasm_bridge_set_Attr_dict(Agattr_t *recv, void * v) {
-  recv->dict = (Dict_t *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Attr_str)
@@ -1818,18 +1181,6 @@ void *wasm_bridge_new_Sym() {
   void *ret = malloc(sizeof(Agsym_t));
   memset(ret, 0, sizeof(Agsym_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Sym_link)
-void wasm_bridge_get_Sym_link(Agsym_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->link;
-}
-
-WASM_EXPORT(wasm_bridge_set_Sym_link)
-void wasm_bridge_set_Sym_link(Agsym_t *recv, void * v) {
-  recv->link = *(Dtlink_t *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Sym_name)
@@ -1876,128 +1227,6 @@ void wasm_bridge_set_Sym_kind(Agsym_t *recv, unsigned long int v) {
   recv->kind = (unsigned long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Sym_fixed)
-void wasm_bridge_get_Sym_fixed(Agsym_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->fixed;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Sym_fixed)
-void wasm_bridge_set_Sym_fixed(Agsym_t *recv, unsigned long int v) {
-  recv->fixed = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Sym_print)
-void wasm_bridge_get_Sym_print(Agsym_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->print;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Sym_print)
-void wasm_bridge_set_Sym_print(Agsym_t *recv, unsigned long int v) {
-  recv->print = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Sym_owner)
-void wasm_bridge_get_Sym_owner(Agsym_t *recv, Agraph_t ** ret) {
-  Agraph_t * v = (Agraph_t *)recv->owner;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Sym_owner)
-void wasm_bridge_set_Sym_owner(Agsym_t *recv, void * v) {
-  recv->owner = (Agraph_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_DataDict)
-void *wasm_bridge_new_DataDict() {
-  void *ret = malloc(sizeof(Agdatadict_t));
-  memset(ret, 0, sizeof(Agdatadict_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_DataDict_h)
-void wasm_bridge_get_DataDict_h(Agdatadict_t *recv, Agrec_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->h;
-}
-
-WASM_EXPORT(wasm_bridge_set_DataDict_h)
-void wasm_bridge_set_DataDict_h(Agdatadict_t *recv, void * v) {
-  recv->h = *(Agrec_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_DictLink)
-void *wasm_bridge_new_DictLink() {
-  void *ret = malloc(sizeof(Dtlink_t));
-  memset(ret, 0, sizeof(Dtlink_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictLink_right)
-void wasm_bridge_get_DictLink_right(Dtlink_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->right;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictLink_right)
-void wasm_bridge_set_DictLink_right(Dtlink_t *recv, void * v) {
-  recv->right = (Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictLink_hash)
-void wasm_bridge_get_DictLink_hash(Dtlink_t *recv, unsigned long int* ret) {
-  unsigned long int v = (unsigned long int)recv->hl._hash;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictLink_hash)
-void wasm_bridge_set_DictLink_hash(Dtlink_t *recv, unsigned long int v) {
-  recv->hl._hash = (unsigned long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictLink_left)
-void wasm_bridge_get_DictLink_left(Dtlink_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->hl._left;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictLink_left)
-void wasm_bridge_set_DictLink_left(Dtlink_t *recv, void * v) {
-  recv->hl._left = (Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_DictHold)
-void *wasm_bridge_new_DictHold() {
-  void *ret = malloc(sizeof(Dthold_t));
-  memset(ret, 0, sizeof(Dthold_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictHold_hdr)
-void wasm_bridge_get_DictHold_hdr(Dthold_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->hdr;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictHold_hdr)
-void wasm_bridge_set_DictHold_hdr(Dthold_t *recv, void * v) {
-  recv->hdr = *(Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictHold_obj)
-void wasm_bridge_get_DictHold_obj(Dthold_t *recv, void ** ret) {
-  void * v = (void *)recv->obj;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictHold_obj)
-void wasm_bridge_set_DictHold_obj(Dthold_t *recv, void * v) {
-  recv->obj = (void *)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_DictMethod)
 void *wasm_bridge_new_DictMethod() {
   void *ret = malloc(sizeof(Dtmethod_t));
@@ -2034,67 +1263,6 @@ void wasm_bridge_set_DictData_type(Dtdata_t *recv, long long int v) {
   recv->type = (long long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_DictData_here)
-void wasm_bridge_get_DictData_here(Dtdata_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->here;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictData_here)
-void wasm_bridge_set_DictData_here(Dtdata_t *recv, void * v) {
-  recv->here = (Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictData_htab)
-void wasm_bridge_get_DictData_htab(Dtdata_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; recv->hh._htab != NULL && recv->hh._htab[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  Dtlink_t * v = (Dtlink_t *)recv->hh._htab[i];
-    *v_data = (void *)(intptr_t)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictData_htab)
-void wasm_bridge_set_DictData_htab(Dtdata_t *recv, GoSlice * v) {
-  recv->hh._htab = (Dtlink_t **)malloc(sizeof(Dtlink_t *) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->hh._htab[i], elem, sizeof(Dtlink_t *));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_DictData_head)
-void wasm_bridge_get_DictData_head(Dtdata_t *recv, Dtlink_t ** ret) {
-  Dtlink_t * v = (Dtlink_t *)recv->hh._head;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictData_head)
-void wasm_bridge_set_DictData_head(Dtdata_t *recv, void * v) {
-  recv->hh._head = (Dtlink_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictData_ntab)
-void wasm_bridge_get_DictData_ntab(Dtdata_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->ntab;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictData_ntab)
-void wasm_bridge_set_DictData_ntab(Dtdata_t *recv, long long int v) {
-  recv->ntab = (long long int)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_DictData_size)
 void wasm_bridge_get_DictData_size(Dtdata_t *recv, long long int* ret) {
   long long int v = (long long int)recv->size;
@@ -2106,73 +1274,11 @@ void wasm_bridge_set_DictData_size(Dtdata_t *recv, long long int v) {
   recv->size = (long long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_DictData_loop)
-void wasm_bridge_get_DictData_loop(Dtdata_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->loop;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictData_loop)
-void wasm_bridge_set_DictData_loop(Dtdata_t *recv, long long int v) {
-  recv->loop = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_DictDisc)
-void *wasm_bridge_new_DictDisc() {
-  void *ret = malloc(sizeof(Dtdisc_t));
-  memset(ret, 0, sizeof(Dtdisc_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictDisc_key)
-void wasm_bridge_get_DictDisc_key(Dtdisc_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->key;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictDisc_key)
-void wasm_bridge_set_DictDisc_key(Dtdisc_t *recv, long long int v) {
-  recv->key = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictDisc_size)
-void wasm_bridge_get_DictDisc_size(Dtdisc_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->size;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictDisc_size)
-void wasm_bridge_set_DictDisc_size(Dtdisc_t *recv, long long int v) {
-  recv->size = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictDisc_link)
-void wasm_bridge_get_DictDisc_link(Dtdisc_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->link;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictDisc_link)
-void wasm_bridge_set_DictDisc_link(Dtdisc_t *recv, long long int v) {
-  recv->link = (long long int)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_Dict)
 void *wasm_bridge_new_Dict() {
   void *ret = malloc(sizeof(Dict_t));
   memset(ret, 0, sizeof(Dict_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Dict_disc)
-void wasm_bridge_get_Dict_disc(Dict_t *recv, Dtdisc_t ** ret) {
-  Dtdisc_t * v = (Dtdisc_t *)recv->disc;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Dict_disc)
-void wasm_bridge_set_Dict_disc(Dict_t *recv, void * v) {
-  recv->disc = (Dtdisc_t *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Dict_data)
@@ -2187,61 +1293,6 @@ void wasm_bridge_set_Dict_data(Dict_t *recv, void * v) {
   recv->data = *(Dtdata_t *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Dict_meth)
-void wasm_bridge_get_Dict_meth(Dict_t *recv, Dtmethod_t ** ret) {
-  Dtmethod_t * v = (Dtmethod_t *)recv->meth;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Dict_meth)
-void wasm_bridge_set_Dict_meth(Dict_t *recv, void * v) {
-  recv->meth = (Dtmethod_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Dict_nview)
-void wasm_bridge_get_Dict_nview(Dict_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->nview;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Dict_nview)
-void wasm_bridge_set_Dict_nview(Dict_t *recv, long long int v) {
-  recv->nview = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Dict_view)
-void wasm_bridge_get_Dict_view(Dict_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->view;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Dict_view)
-void wasm_bridge_set_Dict_view(Dict_t *recv, void * v) {
-  recv->view = (Dict_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Dict_walk)
-void wasm_bridge_get_Dict_walk(Dict_t *recv, Dict_t ** ret) {
-  Dict_t * v = (Dict_t *)recv->walk;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Dict_walk)
-void wasm_bridge_set_Dict_walk(Dict_t *recv, void * v) {
-  recv->walk = (Dict_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Dict_user)
-void wasm_bridge_get_Dict_user(Dict_t *recv, void ** ret) {
-  void * v = (void *)recv->user;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Dict_user)
-void wasm_bridge_set_Dict_user(Dict_t *recv, void * v) {
-  recv->user = (void *)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_DictStat)
 void *wasm_bridge_new_DictStat() {
   void *ret = malloc(sizeof(Dtstat_t));
@@ -2249,140 +1300,11 @@ void *wasm_bridge_new_DictStat() {
   return ret;
 }
 
-WASM_EXPORT(wasm_bridge_get_DictStat_dt_meth)
-void wasm_bridge_get_DictStat_dt_meth(Dtstat_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->dt_meth;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictStat_dt_meth)
-void wasm_bridge_set_DictStat_dt_meth(Dtstat_t *recv, long long int v) {
-  recv->dt_meth = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictStat_dt_size)
-void wasm_bridge_get_DictStat_dt_size(Dtstat_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->dt_size;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictStat_dt_size)
-void wasm_bridge_set_DictStat_dt_size(Dtstat_t *recv, long long int v) {
-  recv->dt_size = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictStat_dt_n)
-void wasm_bridge_get_DictStat_dt_n(Dtstat_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->dt_n;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictStat_dt_n)
-void wasm_bridge_set_DictStat_dt_n(Dtstat_t *recv, unsigned long long int v) {
-  recv->dt_n = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictStat_dt_max)
-void wasm_bridge_get_DictStat_dt_max(Dtstat_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->dt_max;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictStat_dt_max)
-void wasm_bridge_set_DictStat_dt_max(Dtstat_t *recv, unsigned long long int v) {
-  recv->dt_max = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DictStat_dt_count)
-void wasm_bridge_get_DictStat_dt_count(Dtstat_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  unsigned long int v = (unsigned long int)recv->dt_count[i];
-    *v_data = (void *)(intptr_t)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_DictStat_dt_count)
-void wasm_bridge_set_DictStat_dt_count(Dtstat_t *recv, GoSlice * v) {
-  recv->dt_count = (unsigned long int *)malloc(sizeof(unsigned long int) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->dt_count[i], elem, sizeof(unsigned long int));
-  }
-}
-
 WASM_EXPORT(wasm_bridge_new_Context)
 void *wasm_bridge_new_Context() {
   void *ret = malloc(sizeof(GVC_t));
   memset(ret, 0, sizeof(GVC_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Context_common)
-void wasm_bridge_get_Context_common(GVC_t *recv, GVCOMMON_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->common;
-}
-
-WASM_EXPORT(wasm_bridge_set_Context_common)
-void wasm_bridge_set_Context_common(GVC_t *recv, void * v) {
-  recv->common = *(GVCOMMON_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Context_config_path)
-void wasm_bridge_get_Context_config_path(GVC_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->config_path);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Context_config_path)
-void wasm_bridge_set_Context_config_path(GVC_t *recv, void * v) {
-  recv->config_path = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Context_config_found)
-void wasm_bridge_get_Context_config_found(GVC_t *recv, bool* ret) {
-  bool v = (bool)recv->config_found;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Context_config_found)
-void wasm_bridge_set_Context_config_found(GVC_t *recv, bool v) {
-  recv->config_found = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Context_input_filenames)
-void wasm_bridge_get_Context_input_filenames(GVC_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; recv->input_filenames != NULL && recv->input_filenames[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  GoString *v = newString(recv->input_filenames[i]);
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Context_input_filenames)
-void wasm_bridge_set_Context_input_filenames(GVC_t *recv, GoSlice * v) {
-  recv->input_filenames = (char **)malloc(sizeof(char *) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->input_filenames[i], elem, sizeof(char *));
-  }
 }
 
 WASM_EXPORT(wasm_bridge_get_Context_apis)
@@ -2436,28 +1358,6 @@ void *wasm_bridge_new_PluginAvailable() {
   return ret;
 }
 
-WASM_EXPORT(wasm_bridge_get_PluginAvailable_next)
-void wasm_bridge_get_PluginAvailable_next(gvplugin_available_t *recv, gvplugin_available_t ** ret) {
-  gvplugin_available_t * v = (gvplugin_available_t *)recv->next;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginAvailable_next)
-void wasm_bridge_set_PluginAvailable_next(gvplugin_available_t *recv, void * v) {
-  recv->next = (gvplugin_available_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginAvailable_typestr)
-void wasm_bridge_get_PluginAvailable_typestr(gvplugin_available_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->typestr);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginAvailable_typestr)
-void wasm_bridge_set_PluginAvailable_typestr(gvplugin_available_t *recv, void * v) {
-  recv->typestr = (char *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_PluginAvailable_quality)
 void wasm_bridge_get_PluginAvailable_quality(gvplugin_available_t *recv, long long int* ret) {
   long long int v = (long long int)recv->quality;
@@ -2496,28 +1396,6 @@ void *wasm_bridge_new_PluginPackage() {
   void *ret = malloc(sizeof(gvplugin_package_t));
   memset(ret, 0, sizeof(gvplugin_package_t));
   return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginPackage_next)
-void wasm_bridge_get_PluginPackage_next(gvplugin_package_t *recv, gvplugin_package_t ** ret) {
-  gvplugin_package_t * v = (gvplugin_package_t *)recv->next;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginPackage_next)
-void wasm_bridge_set_PluginPackage_next(gvplugin_package_t *recv, void * v) {
-  recv->next = (gvplugin_package_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginPackage_path)
-void wasm_bridge_get_PluginPackage_path(gvplugin_package_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->path);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginPackage_path)
-void wasm_bridge_set_PluginPackage_path(gvplugin_package_t *recv, void * v) {
-  recv->path = (char *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_PluginPackage_name)
@@ -2567,18 +1445,6 @@ void *wasm_bridge_new_UserShape() {
   return ret;
 }
 
-WASM_EXPORT(wasm_bridge_get_UserShape_link)
-void wasm_bridge_get_UserShape_link(usershape_t *recv, Dtlink_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->link;
-}
-
-WASM_EXPORT(wasm_bridge_set_UserShape_link)
-void wasm_bridge_set_UserShape_link(usershape_t *recv, void * v) {
-  recv->link = *(Dtlink_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_UserShape_name)
 void wasm_bridge_get_UserShape_name(usershape_t *recv, GoString ** ret) {
   GoString *v = newString(recv->name);
@@ -2621,17 +1487,6 @@ void wasm_bridge_get_UserShape_nocache(usershape_t *recv, bool* ret) {
 WASM_EXPORT(wasm_bridge_set_UserShape_nocache)
 void wasm_bridge_set_UserShape_nocache(usershape_t *recv, bool v) {
   recv->nocache = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_UserShape_f)
-void wasm_bridge_get_UserShape_f(usershape_t *recv, FILE ** ret) {
-  FILE * v = (FILE *)recv->f;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_UserShape_f)
-void wasm_bridge_set_UserShape_f(usershape_t *recv, void * v) {
-  recv->f = (FILE *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_UserShape_type)
@@ -2733,214 +1588,6 @@ void wasm_bridge_set_UserShape_datasize(usershape_t *recv, unsigned long long in
   recv->datasize = (unsigned long long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_new_PluginActiveLoadImage)
-void *wasm_bridge_new_PluginActiveLoadImage() {
-  void *ret = malloc(sizeof(gvplugin_active_loadimage_t));
-  memset(ret, 0, sizeof(gvplugin_active_loadimage_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveLoadImage_engine)
-void wasm_bridge_get_PluginActiveLoadImage_engine(gvplugin_active_loadimage_t *recv, gvloadimage_engine_t ** ret) {
-  gvloadimage_engine_t * v = (gvloadimage_engine_t *)recv->engine;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveLoadImage_engine)
-void wasm_bridge_set_PluginActiveLoadImage_engine(gvplugin_active_loadimage_t *recv, void * v) {
-  recv->engine = (gvloadimage_engine_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveLoadImage_id)
-void wasm_bridge_get_PluginActiveLoadImage_id(gvplugin_active_loadimage_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveLoadImage_id)
-void wasm_bridge_set_PluginActiveLoadImage_id(gvplugin_active_loadimage_t *recv, long long int v) {
-  recv->id = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveLoadImage_type)
-void wasm_bridge_get_PluginActiveLoadImage_type(gvplugin_active_loadimage_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->type);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveLoadImage_type)
-void wasm_bridge_set_PluginActiveLoadImage_type(gvplugin_active_loadimage_t *recv, void * v) {
-  recv->type = (const char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_Common)
-void *wasm_bridge_new_Common() {
-  void *ret = malloc(sizeof(GVCOMMON_t));
-  memset(ret, 0, sizeof(GVCOMMON_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_info)
-void wasm_bridge_get_Common_info(GVCOMMON_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; recv->info != NULL && recv->info[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  GoString *v = newString(recv->info[i]);
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_info)
-void wasm_bridge_set_Common_info(GVCOMMON_t *recv, GoSlice * v) {
-  recv->info = (char **)malloc(sizeof(char *) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->info[i], elem, sizeof(char *));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_cmdname)
-void wasm_bridge_get_Common_cmdname(GVCOMMON_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->cmdname);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_cmdname)
-void wasm_bridge_set_Common_cmdname(GVCOMMON_t *recv, void * v) {
-  recv->cmdname = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_verbose)
-void wasm_bridge_get_Common_verbose(GVCOMMON_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->verbose;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_verbose)
-void wasm_bridge_set_Common_verbose(GVCOMMON_t *recv, long long int v) {
-  recv->verbose = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_config)
-void wasm_bridge_get_Common_config(GVCOMMON_t *recv, bool* ret) {
-  bool v = (bool)recv->config;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_config)
-void wasm_bridge_set_Common_config(GVCOMMON_t *recv, bool v) {
-  recv->config = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_auto_outfile_names)
-void wasm_bridge_get_Common_auto_outfile_names(GVCOMMON_t *recv, bool* ret) {
-  bool v = (bool)recv->auto_outfile_names;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_auto_outfile_names)
-void wasm_bridge_set_Common_auto_outfile_names(GVCOMMON_t *recv, bool v) {
-  recv->auto_outfile_names = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_show_boxes)
-void wasm_bridge_get_Common_show_boxes(GVCOMMON_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; recv->show_boxes != NULL && recv->show_boxes[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  GoString *v = newString(recv->show_boxes[i]);
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_show_boxes)
-void wasm_bridge_set_Common_show_boxes(GVCOMMON_t *recv, GoSlice * v) {
-  recv->show_boxes = (const char **)malloc(sizeof(const char *) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->show_boxes[i], elem, sizeof(const char *));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_lib)
-void wasm_bridge_get_Common_lib(GVCOMMON_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; recv->lib != NULL && recv->lib[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  GoString *v = newString(recv->lib[i]);
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_lib)
-void wasm_bridge_set_Common_lib(GVCOMMON_t *recv, GoSlice * v) {
-  recv->lib = (const char **)malloc(sizeof(const char *) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->lib[i], elem, sizeof(const char *));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_view_num)
-void wasm_bridge_get_Common_view_num(GVCOMMON_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->viewNum;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_view_num)
-void wasm_bridge_set_Common_view_num(GVCOMMON_t *recv, long long int v) {
-  recv->viewNum = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_builtins)
-void wasm_bridge_get_Common_builtins(GVCOMMON_t *recv, lt_symlist_t ** ret) {
-  lt_symlist_t * v = (lt_symlist_t *)recv->builtins;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_builtins)
-void wasm_bridge_set_Common_builtins(GVCOMMON_t *recv, void * v) {
-  recv->builtins = (lt_symlist_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Common_demand_loading)
-void wasm_bridge_get_Common_demand_loading(GVCOMMON_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->demand_loading;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Common_demand_loading)
-void wasm_bridge_set_Common_demand_loading(GVCOMMON_t *recv, long long int v) {
-  recv->demand_loading = (long long int)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_ObjectState)
 void *wasm_bridge_new_ObjectState() {
   void *ret = malloc(sizeof(obj_state_t));
@@ -2981,17 +1628,6 @@ void wasm_bridge_set_ObjectState_g(obj_state_t *recv, void * v) {
   recv->u.g = (Agraph_t *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_ObjectState_sg)
-void wasm_bridge_get_ObjectState_sg(obj_state_t *recv, Agraph_t ** ret) {
-  Agraph_t * v = (Agraph_t *)recv->u.sg;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_sg)
-void wasm_bridge_set_ObjectState_sg(obj_state_t *recv, void * v) {
-  recv->u.sg = (Agraph_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_ObjectState_n)
 void wasm_bridge_get_ObjectState_n(obj_state_t *recv, Agnode_t ** ret) {
   Agnode_t * v = (Agnode_t *)recv->u.n;
@@ -3012,17 +1648,6 @@ void wasm_bridge_get_ObjectState_e(obj_state_t *recv, Agedge_t ** ret) {
 WASM_EXPORT(wasm_bridge_set_ObjectState_e)
 void wasm_bridge_set_ObjectState_e(obj_state_t *recv, void * v) {
   recv->u.e = (Agedge_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_emit_state)
-void wasm_bridge_get_ObjectState_emit_state(obj_state_t *recv, int* ret) {
-  emit_state_t v = (emit_state_t)recv->emit_state;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_emit_state)
-void wasm_bridge_set_ObjectState_emit_state(obj_state_t *recv, int v) {
-  recv->emit_state = (emit_state_t)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_ObjectState_pencolor)
@@ -3059,28 +1684,6 @@ void wasm_bridge_get_ObjectState_stopcolor(obj_state_t *recv, gvcolor_t ** ret) 
 WASM_EXPORT(wasm_bridge_set_ObjectState_stopcolor)
 void wasm_bridge_set_ObjectState_stopcolor(obj_state_t *recv, void * v) {
   recv->stopcolor = *(gvcolor_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_gradient_angle)
-void wasm_bridge_get_ObjectState_gradient_angle(obj_state_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->gradient_angle;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_gradient_angle)
-void wasm_bridge_set_ObjectState_gradient_angle(obj_state_t *recv, long long int v) {
-  recv->gradient_angle = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_gradient_frac)
-void wasm_bridge_get_ObjectState_gradient_frac(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newFloatString(recv->gradient_frac);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_gradient_frac)
-void wasm_bridge_set_ObjectState_gradient_frac(obj_state_t *recv, float v) {
-  recv->gradient_frac = (float)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_ObjectState_pen)
@@ -3144,39 +1747,6 @@ void wasm_bridge_set_ObjectState_rawstyle(obj_state_t *recv, GoSlice * v) {
   }
 }
 
-WASM_EXPORT(wasm_bridge_get_ObjectState_z)
-void wasm_bridge_get_ObjectState_z(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newFloatString(recv->z);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_z)
-void wasm_bridge_set_ObjectState_z(obj_state_t *recv, double v) {
-  recv->z = (double)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_tail_z)
-void wasm_bridge_get_ObjectState_tail_z(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newFloatString(recv->tail_z);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_tail_z)
-void wasm_bridge_set_ObjectState_tail_z(obj_state_t *recv, double v) {
-  recv->tail_z = (double)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_head_z)
-void wasm_bridge_get_ObjectState_head_z(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newFloatString(recv->head_z);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_head_z)
-void wasm_bridge_set_ObjectState_head_z(obj_state_t *recv, double v) {
-  recv->head_z = (double)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_ObjectState_label)
 void wasm_bridge_get_ObjectState_label(obj_state_t *recv, GoString ** ret) {
   GoString *v = newString(recv->label);
@@ -3188,50 +1758,6 @@ void wasm_bridge_set_ObjectState_label(obj_state_t *recv, void * v) {
   recv->label = (char *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_ObjectState_xlabel)
-void wasm_bridge_get_ObjectState_xlabel(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->xlabel);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_xlabel)
-void wasm_bridge_set_ObjectState_xlabel(obj_state_t *recv, void * v) {
-  recv->xlabel = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_taillabel)
-void wasm_bridge_get_ObjectState_taillabel(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->taillabel);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_taillabel)
-void wasm_bridge_set_ObjectState_taillabel(obj_state_t *recv, void * v) {
-  recv->taillabel = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_headlabel)
-void wasm_bridge_get_ObjectState_headlabel(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->headlabel);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_headlabel)
-void wasm_bridge_set_ObjectState_headlabel(obj_state_t *recv, void * v) {
-  recv->headlabel = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_url)
-void wasm_bridge_get_ObjectState_url(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->url);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_url)
-void wasm_bridge_set_ObjectState_url(obj_state_t *recv, void * v) {
-  recv->url = (char *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_ObjectState_id)
 void wasm_bridge_get_ObjectState_id(obj_state_t *recv, GoString ** ret) {
   GoString *v = newString(recv->id);
@@ -3241,366 +1767,6 @@ void wasm_bridge_get_ObjectState_id(obj_state_t *recv, GoString ** ret) {
 WASM_EXPORT(wasm_bridge_set_ObjectState_id)
 void wasm_bridge_set_ObjectState_id(obj_state_t *recv, void * v) {
   recv->id = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_labelurl)
-void wasm_bridge_get_ObjectState_labelurl(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->labelurl);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_labelurl)
-void wasm_bridge_set_ObjectState_labelurl(obj_state_t *recv, void * v) {
-  recv->labelurl = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_tailurl)
-void wasm_bridge_get_ObjectState_tailurl(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->tailurl);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_tailurl)
-void wasm_bridge_set_ObjectState_tailurl(obj_state_t *recv, void * v) {
-  recv->tailurl = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_headurl)
-void wasm_bridge_get_ObjectState_headurl(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->headurl);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_headurl)
-void wasm_bridge_set_ObjectState_headurl(obj_state_t *recv, void * v) {
-  recv->headurl = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_tooltip)
-void wasm_bridge_get_ObjectState_tooltip(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->tooltip);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_tooltip)
-void wasm_bridge_set_ObjectState_tooltip(obj_state_t *recv, void * v) {
-  recv->tooltip = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_labeltooltip)
-void wasm_bridge_get_ObjectState_labeltooltip(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->labeltooltip);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_labeltooltip)
-void wasm_bridge_set_ObjectState_labeltooltip(obj_state_t *recv, void * v) {
-  recv->labeltooltip = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_tailtooltip)
-void wasm_bridge_get_ObjectState_tailtooltip(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->tailtooltip);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_tailtooltip)
-void wasm_bridge_set_ObjectState_tailtooltip(obj_state_t *recv, void * v) {
-  recv->tailtooltip = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_headtooltip)
-void wasm_bridge_get_ObjectState_headtooltip(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->headtooltip);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_headtooltip)
-void wasm_bridge_set_ObjectState_headtooltip(obj_state_t *recv, void * v) {
-  recv->headtooltip = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_target)
-void wasm_bridge_get_ObjectState_target(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->target);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_target)
-void wasm_bridge_set_ObjectState_target(obj_state_t *recv, void * v) {
-  recv->target = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_labeltarget)
-void wasm_bridge_get_ObjectState_labeltarget(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->labeltarget);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_labeltarget)
-void wasm_bridge_set_ObjectState_labeltarget(obj_state_t *recv, void * v) {
-  recv->labeltarget = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_tailtarget)
-void wasm_bridge_get_ObjectState_tailtarget(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->tailtarget);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_tailtarget)
-void wasm_bridge_set_ObjectState_tailtarget(obj_state_t *recv, void * v) {
-  recv->tailtarget = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_headtarget)
-void wasm_bridge_get_ObjectState_headtarget(obj_state_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->headtarget);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_headtarget)
-void wasm_bridge_set_ObjectState_headtarget(obj_state_t *recv, void * v) {
-  recv->headtarget = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_tooltip)
-void wasm_bridge_get_ObjectState_explicit_tooltip(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_tooltip;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_tooltip)
-void wasm_bridge_set_ObjectState_explicit_tooltip(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_tooltip = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_tailtooltip)
-void wasm_bridge_get_ObjectState_explicit_tailtooltip(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_tailtooltip;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_tailtooltip)
-void wasm_bridge_set_ObjectState_explicit_tailtooltip(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_tailtooltip = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_headtooltip)
-void wasm_bridge_get_ObjectState_explicit_headtooltip(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_headtooltip;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_headtooltip)
-void wasm_bridge_set_ObjectState_explicit_headtooltip(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_headtooltip = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_labeltooltip)
-void wasm_bridge_get_ObjectState_explicit_labeltooltip(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_labeltooltip;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_labeltooltip)
-void wasm_bridge_set_ObjectState_explicit_labeltooltip(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_labeltooltip = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_tailtarget)
-void wasm_bridge_get_ObjectState_explicit_tailtarget(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_tailtarget;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_tailtarget)
-void wasm_bridge_set_ObjectState_explicit_tailtarget(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_tailtarget = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_headtarget)
-void wasm_bridge_get_ObjectState_explicit_headtarget(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_headtarget;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_headtarget)
-void wasm_bridge_set_ObjectState_explicit_headtarget(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_headtarget = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_edgetarget)
-void wasm_bridge_get_ObjectState_explicit_edgetarget(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_edgetarget;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_edgetarget)
-void wasm_bridge_set_ObjectState_explicit_edgetarget(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_edgetarget = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_tailurl)
-void wasm_bridge_get_ObjectState_explicit_tailurl(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_tailurl;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_tailurl)
-void wasm_bridge_set_ObjectState_explicit_tailurl(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_tailurl = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_explicit_headurl)
-void wasm_bridge_get_ObjectState_explicit_headurl(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->explicit_headurl;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_explicit_headurl)
-void wasm_bridge_set_ObjectState_explicit_headurl(obj_state_t *recv, unsigned long long int v) {
-  recv->explicit_headurl = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_labeledgealigned)
-void wasm_bridge_get_ObjectState_labeledgealigned(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->labeledgealigned;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_labeledgealigned)
-void wasm_bridge_set_ObjectState_labeledgealigned(obj_state_t *recv, unsigned long long int v) {
-  recv->labeledgealigned = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_url_map_shape)
-void wasm_bridge_get_ObjectState_url_map_shape(obj_state_t *recv, int* ret) {
-  map_shape_t v = (map_shape_t)recv->url_map_shape;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_url_map_shape)
-void wasm_bridge_set_ObjectState_url_map_shape(obj_state_t *recv, int v) {
-  recv->url_map_shape = (map_shape_t)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_url_map_n)
-void wasm_bridge_get_ObjectState_url_map_n(obj_state_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->url_map_n;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_url_map_n)
-void wasm_bridge_set_ObjectState_url_map_n(obj_state_t *recv, unsigned long long int v) {
-  recv->url_map_n = (unsigned long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_url_map_p)
-void wasm_bridge_get_ObjectState_url_map_p(obj_state_t *recv, pointf ** ret) {
-  pointf * v = (pointf *)recv->url_map_p;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_url_map_p)
-void wasm_bridge_set_ObjectState_url_map_p(obj_state_t *recv, void * v) {
-  recv->url_map_p = (pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_url_bsplinemap_poly_n)
-void wasm_bridge_get_ObjectState_url_bsplinemap_poly_n(obj_state_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->url_bsplinemap_poly_n;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_url_bsplinemap_poly_n)
-void wasm_bridge_set_ObjectState_url_bsplinemap_poly_n(obj_state_t *recv, long long int v) {
-  recv->url_bsplinemap_poly_n = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_url_bsplinemap_n)
-void wasm_bridge_get_ObjectState_url_bsplinemap_n(obj_state_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  int v = (int)recv->url_bsplinemap_n[i];
-    *v_data = (void *)(intptr_t)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_url_bsplinemap_n)
-void wasm_bridge_set_ObjectState_url_bsplinemap_n(obj_state_t *recv, GoSlice * v) {
-  recv->url_bsplinemap_n = (int *)malloc(sizeof(int) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->url_bsplinemap_n[i], elem, sizeof(int));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_url_bsplinemap_p)
-void wasm_bridge_get_ObjectState_url_bsplinemap_p(obj_state_t *recv, pointf ** ret) {
-  pointf * v = (pointf *)recv->url_bsplinemap_p;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_url_bsplinemap_p)
-void wasm_bridge_set_ObjectState_url_bsplinemap_p(obj_state_t *recv, void * v) {
-  recv->url_bsplinemap_p = (pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_tailendurl_map_n)
-void wasm_bridge_get_ObjectState_tailendurl_map_n(obj_state_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->tailendurl_map_n;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_tailendurl_map_n)
-void wasm_bridge_set_ObjectState_tailendurl_map_n(obj_state_t *recv, long long int v) {
-  recv->tailendurl_map_n = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_tailendurl_map_p)
-void wasm_bridge_get_ObjectState_tailendurl_map_p(obj_state_t *recv, pointf ** ret) {
-  pointf * v = (pointf *)recv->tailendurl_map_p;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_tailendurl_map_p)
-void wasm_bridge_set_ObjectState_tailendurl_map_p(obj_state_t *recv, void * v) {
-  recv->tailendurl_map_p = (pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_headendurl_map_n)
-void wasm_bridge_get_ObjectState_headendurl_map_n(obj_state_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->headendurl_map_n;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_headendurl_map_n)
-void wasm_bridge_set_ObjectState_headendurl_map_n(obj_state_t *recv, long long int v) {
-  recv->headendurl_map_n = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_ObjectState_headendurl_map_p)
-void wasm_bridge_get_ObjectState_headendurl_map_p(obj_state_t *recv, pointf ** ret) {
-  pointf * v = (pointf *)recv->headendurl_map_p;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_ObjectState_headendurl_map_p)
-void wasm_bridge_set_ObjectState_headendurl_map_p(obj_state_t *recv, void * v) {
-  recv->headendurl_map_p = (pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_DeviceCallbacks)
-void *wasm_bridge_new_DeviceCallbacks() {
-  void *ret = malloc(sizeof(gvdevice_callbacks_t));
-  memset(ret, 0, sizeof(gvdevice_callbacks_t));
-  return ret;
 }
 
 WASM_EXPORT(wasm_bridge_new_Job)
@@ -3621,39 +1787,6 @@ void wasm_bridge_set_Job_gvc(GVJ_t *recv, void * v) {
   recv->gvc = (GVC_t *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Job_next)
-void wasm_bridge_get_Job_next(GVJ_t *recv, GVJ_t ** ret) {
-  GVJ_t * v = (GVJ_t *)recv->next;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_next)
-void wasm_bridge_set_Job_next(GVJ_t *recv, void * v) {
-  recv->next = (GVJ_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_next_active)
-void wasm_bridge_get_Job_next_active(GVJ_t *recv, GVJ_t ** ret) {
-  GVJ_t * v = (GVJ_t *)recv->next_active;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_next_active)
-void wasm_bridge_set_Job_next_active(GVJ_t *recv, void * v) {
-  recv->next_active = (GVJ_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_common)
-void wasm_bridge_get_Job_common(GVJ_t *recv, GVCOMMON_t ** ret) {
-  GVCOMMON_t * v = (GVCOMMON_t *)recv->common;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_common)
-void wasm_bridge_set_Job_common(GVJ_t *recv, void * v) {
-  recv->common = (GVCOMMON_t *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_Job_obj)
 void wasm_bridge_get_Job_obj(GVJ_t *recv, obj_state_t ** ret) {
   obj_state_t * v = (obj_state_t *)recv->obj;
@@ -3663,39 +1796,6 @@ void wasm_bridge_get_Job_obj(GVJ_t *recv, obj_state_t ** ret) {
 WASM_EXPORT(wasm_bridge_set_Job_obj)
 void wasm_bridge_set_Job_obj(GVJ_t *recv, void * v) {
   recv->obj = (obj_state_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_input_filename)
-void wasm_bridge_get_Job_input_filename(GVJ_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->input_filename);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_input_filename)
-void wasm_bridge_set_Job_input_filename(GVJ_t *recv, void * v) {
-  recv->input_filename = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_graph_index)
-void wasm_bridge_get_Job_graph_index(GVJ_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->graph_index;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_graph_index)
-void wasm_bridge_set_Job_graph_index(GVJ_t *recv, long long int v) {
-  recv->graph_index = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_layout_type)
-void wasm_bridge_get_Job_layout_type(GVJ_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->layout_type);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_layout_type)
-void wasm_bridge_set_Job_layout_type(GVJ_t *recv, void * v) {
-  recv->layout_type = (const char *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Job_output_filename)
@@ -3709,17 +1809,6 @@ void wasm_bridge_set_Job_output_filename(GVJ_t *recv, void * v) {
   recv->output_filename = (const char *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Job_output_file)
-void wasm_bridge_get_Job_output_file(GVJ_t *recv, FILE ** ret) {
-  FILE * v = (FILE *)recv->output_file;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_output_file)
-void wasm_bridge_set_Job_output_file(GVJ_t *recv, void * v) {
-  recv->output_file = (FILE *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_Job_output_data)
 void wasm_bridge_get_Job_output_data(GVJ_t *recv, GoString ** ret) {
   GoString *v = newString(recv->output_data);
@@ -3729,17 +1818,6 @@ void wasm_bridge_get_Job_output_data(GVJ_t *recv, GoString ** ret) {
 WASM_EXPORT(wasm_bridge_set_Job_output_data)
 void wasm_bridge_set_Job_output_data(GVJ_t *recv, void * v) {
   recv->output_data = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_output_data_allocated)
-void wasm_bridge_get_Job_output_data_allocated(GVJ_t *recv, unsigned int* ret) {
-  unsigned int v = (unsigned int)recv->output_data_allocated;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_output_data_allocated)
-void wasm_bridge_set_Job_output_data_allocated(GVJ_t *recv, unsigned int v) {
-  recv->output_data_allocated = (unsigned int)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Job_output_data_position)
@@ -3764,120 +1842,6 @@ void wasm_bridge_set_Job_output_langname(GVJ_t *recv, void * v) {
   recv->output_langname = (const char *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Job_output_lang)
-void wasm_bridge_get_Job_output_lang(GVJ_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->output_lang;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_output_lang)
-void wasm_bridge_set_Job_output_lang(GVJ_t *recv, long long int v) {
-  recv->output_lang = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_render)
-void wasm_bridge_get_Job_render(GVJ_t *recv, gvplugin_active_render_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->render;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_render)
-void wasm_bridge_set_Job_render(GVJ_t *recv, void * v) {
-  recv->render = *(gvplugin_active_render_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_device)
-void wasm_bridge_get_Job_device(GVJ_t *recv, gvplugin_active_device_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->device;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_device)
-void wasm_bridge_set_Job_device(GVJ_t *recv, void * v) {
-  recv->device = *(gvplugin_active_device_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_loadimage)
-void wasm_bridge_get_Job_loadimage(GVJ_t *recv, gvplugin_active_loadimage_t ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->loadimage;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_loadimage)
-void wasm_bridge_set_Job_loadimage(GVJ_t *recv, void * v) {
-  recv->loadimage = *(gvplugin_active_loadimage_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_callbacks)
-void wasm_bridge_get_Job_callbacks(GVJ_t *recv, gvdevice_callbacks_t ** ret) {
-  gvdevice_callbacks_t * v = (gvdevice_callbacks_t *)recv->callbacks;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_callbacks)
-void wasm_bridge_set_Job_callbacks(GVJ_t *recv, void * v) {
-  recv->callbacks = (gvdevice_callbacks_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_device_dpi)
-void wasm_bridge_get_Job_device_dpi(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->device_dpi;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_device_dpi)
-void wasm_bridge_set_Job_device_dpi(GVJ_t *recv, void * v) {
-  recv->device_dpi = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_device_sets_dpi)
-void wasm_bridge_get_Job_device_sets_dpi(GVJ_t *recv, bool* ret) {
-  bool v = (bool)recv->device_sets_dpi;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_device_sets_dpi)
-void wasm_bridge_set_Job_device_sets_dpi(GVJ_t *recv, bool v) {
-  recv->device_sets_dpi = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_display)
-void wasm_bridge_get_Job_display(GVJ_t *recv, void ** ret) {
-  void * v = (void *)recv->display;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_display)
-void wasm_bridge_set_Job_display(GVJ_t *recv, void * v) {
-  recv->display = (void *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_screen)
-void wasm_bridge_get_Job_screen(GVJ_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->screen;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_screen)
-void wasm_bridge_set_Job_screen(GVJ_t *recv, long long int v) {
-  recv->screen = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_context)
-void wasm_bridge_get_Job_context(GVJ_t *recv, void ** ret) {
-  void * v = (void *)recv->context;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_context)
-void wasm_bridge_set_Job_context(GVJ_t *recv, void * v) {
-  recv->context = (void *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_Job_external_context)
 void wasm_bridge_get_Job_external_context(GVJ_t *recv, bool* ret) {
   bool v = (bool)recv->external_context;
@@ -3889,17 +1853,6 @@ void wasm_bridge_set_Job_external_context(GVJ_t *recv, bool v) {
   recv->external_context = (bool)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Job_imagedata)
-void wasm_bridge_get_Job_imagedata(GVJ_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->imagedata);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_imagedata)
-void wasm_bridge_set_Job_imagedata(GVJ_t *recv, void * v) {
-  recv->imagedata = (char *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_Job_flags)
 void wasm_bridge_get_Job_flags(GVJ_t *recv, long long int* ret) {
   long long int v = (long long int)recv->flags;
@@ -3909,171 +1862,6 @@ void wasm_bridge_get_Job_flags(GVJ_t *recv, long long int* ret) {
 WASM_EXPORT(wasm_bridge_set_Job_flags)
 void wasm_bridge_set_Job_flags(GVJ_t *recv, long long int v) {
   recv->flags = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_num_layers)
-void wasm_bridge_get_Job_num_layers(GVJ_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->numLayers;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_num_layers)
-void wasm_bridge_set_Job_num_layers(GVJ_t *recv, long long int v) {
-  recv->numLayers = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_layer_num)
-void wasm_bridge_get_Job_layer_num(GVJ_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->layerNum;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_layer_num)
-void wasm_bridge_set_Job_layer_num(GVJ_t *recv, long long int v) {
-  recv->layerNum = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_pages_array_size)
-void wasm_bridge_get_Job_pages_array_size(GVJ_t *recv, point ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pagesArraySize;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_pages_array_size)
-void wasm_bridge_set_Job_pages_array_size(GVJ_t *recv, void * v) {
-  recv->pagesArraySize = *(point *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_pages_array_first)
-void wasm_bridge_get_Job_pages_array_first(GVJ_t *recv, point ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pagesArrayFirst;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_pages_array_first)
-void wasm_bridge_set_Job_pages_array_first(GVJ_t *recv, void * v) {
-  recv->pagesArrayFirst = *(point *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_pages_array_major)
-void wasm_bridge_get_Job_pages_array_major(GVJ_t *recv, point ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pagesArrayMajor;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_pages_array_major)
-void wasm_bridge_set_Job_pages_array_major(GVJ_t *recv, void * v) {
-  recv->pagesArrayMajor = *(point *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_pages_array_minor)
-void wasm_bridge_get_Job_pages_array_minor(GVJ_t *recv, point ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pagesArrayMinor;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_pages_array_minor)
-void wasm_bridge_set_Job_pages_array_minor(GVJ_t *recv, void * v) {
-  recv->pagesArrayMinor = *(point *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_pages_array_elem)
-void wasm_bridge_get_Job_pages_array_elem(GVJ_t *recv, point ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pagesArrayElem;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_pages_array_elem)
-void wasm_bridge_set_Job_pages_array_elem(GVJ_t *recv, void * v) {
-  recv->pagesArrayElem = *(point *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_num_pages)
-void wasm_bridge_get_Job_num_pages(GVJ_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->numPages;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_num_pages)
-void wasm_bridge_set_Job_num_pages(GVJ_t *recv, long long int v) {
-  recv->numPages = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_bb)
-void wasm_bridge_get_Job_bb(GVJ_t *recv, boxf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->bb;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_bb)
-void wasm_bridge_set_Job_bb(GVJ_t *recv, void * v) {
-  recv->bb = *(boxf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_pad)
-void wasm_bridge_get_Job_pad(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pad;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_pad)
-void wasm_bridge_set_Job_pad(GVJ_t *recv, void * v) {
-  recv->pad = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_clip)
-void wasm_bridge_get_Job_clip(GVJ_t *recv, boxf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->clip;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_clip)
-void wasm_bridge_set_Job_clip(GVJ_t *recv, void * v) {
-  recv->clip = *(boxf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_page_box)
-void wasm_bridge_get_Job_page_box(GVJ_t *recv, boxf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pageBox;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_page_box)
-void wasm_bridge_set_Job_page_box(GVJ_t *recv, void * v) {
-  recv->pageBox = *(boxf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_page_size)
-void wasm_bridge_get_Job_page_size(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pageSize;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_page_size)
-void wasm_bridge_set_Job_page_size(GVJ_t *recv, void * v) {
-  recv->pageSize = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_focus)
-void wasm_bridge_get_Job_focus(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->focus;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_focus)
-void wasm_bridge_set_Job_focus(GVJ_t *recv, void * v) {
-  recv->focus = *(pointf *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Job_zoom)
@@ -4096,42 +1884,6 @@ void wasm_bridge_get_Job_rotation(GVJ_t *recv, long long int* ret) {
 WASM_EXPORT(wasm_bridge_set_Job_rotation)
 void wasm_bridge_set_Job_rotation(GVJ_t *recv, long long int v) {
   recv->rotation = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_view)
-void wasm_bridge_get_Job_view(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->view;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_view)
-void wasm_bridge_set_Job_view(GVJ_t *recv, void * v) {
-  recv->view = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_canvas_box)
-void wasm_bridge_get_Job_canvas_box(GVJ_t *recv, boxf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->canvasBox;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_canvas_box)
-void wasm_bridge_set_Job_canvas_box(GVJ_t *recv, void * v) {
-  recv->canvasBox = *(boxf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_margin)
-void wasm_bridge_get_Job_margin(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->margin;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_margin)
-void wasm_bridge_set_Job_margin(GVJ_t *recv, void * v) {
-  recv->margin = *(pointf *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_Job_dpi)
@@ -4168,30 +1920,6 @@ void wasm_bridge_set_Job_height(GVJ_t *recv, unsigned long long int v) {
   recv->height = (unsigned long long int)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Job_page_bounding_box)
-void wasm_bridge_get_Job_page_bounding_box(GVJ_t *recv, box ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->pageBoundingBox;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_page_bounding_box)
-void wasm_bridge_set_Job_page_bounding_box(GVJ_t *recv, void * v) {
-  recv->pageBoundingBox = *(box *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_bounding_box)
-void wasm_bridge_get_Job_bounding_box(GVJ_t *recv, box ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->boundingBox;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_bounding_box)
-void wasm_bridge_set_Job_bounding_box(GVJ_t *recv, void * v) {
-  recv->boundingBox = *(box *)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_Job_scale)
 void wasm_bridge_get_Job_scale(GVJ_t *recv, pointf ** ret) {
   // The field itself, not a copy: a copy was allocated on every read and
@@ -4216,84 +1944,6 @@ void wasm_bridge_set_Job_translation(GVJ_t *recv, void * v) {
   recv->translation = *(pointf *)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_Job_devscale)
-void wasm_bridge_get_Job_devscale(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->devscale;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_devscale)
-void wasm_bridge_set_Job_devscale(GVJ_t *recv, void * v) {
-  recv->devscale = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_fit_mode)
-void wasm_bridge_get_Job_fit_mode(GVJ_t *recv, bool* ret) {
-  bool v = (bool)recv->fit_mode;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_fit_mode)
-void wasm_bridge_set_Job_fit_mode(GVJ_t *recv, bool v) {
-  recv->fit_mode = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_needs_refresh)
-void wasm_bridge_get_Job_needs_refresh(GVJ_t *recv, bool* ret) {
-  bool v = (bool)recv->needs_refresh;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_needs_refresh)
-void wasm_bridge_set_Job_needs_refresh(GVJ_t *recv, bool v) {
-  recv->needs_refresh = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_click)
-void wasm_bridge_get_Job_click(GVJ_t *recv, bool* ret) {
-  bool v = (bool)recv->click;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_click)
-void wasm_bridge_set_Job_click(GVJ_t *recv, bool v) {
-  recv->click = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_has_grown)
-void wasm_bridge_get_Job_has_grown(GVJ_t *recv, bool* ret) {
-  bool v = (bool)recv->has_grown;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_has_grown)
-void wasm_bridge_set_Job_has_grown(GVJ_t *recv, bool v) {
-  recv->has_grown = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_has_been_rendered)
-void wasm_bridge_get_Job_has_been_rendered(GVJ_t *recv, bool* ret) {
-  bool v = (bool)recv->has_been_rendered;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_has_been_rendered)
-void wasm_bridge_set_Job_has_been_rendered(GVJ_t *recv, bool v) {
-  recv->has_been_rendered = (bool)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_button)
-void wasm_bridge_get_Job_button(GVJ_t *recv, unsigned long long int* ret) {
-  unsigned long long int v = (unsigned long long int)recv->button;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_button)
-void wasm_bridge_set_Job_button(GVJ_t *recv, unsigned long long int v) {
-  recv->button = (unsigned long long int)v;
-}
-
 WASM_EXPORT(wasm_bridge_get_Job_pointer)
 void wasm_bridge_get_Job_pointer(GVJ_t *recv, pointf ** ret) {
   // The field itself, not a copy: a copy was allocated on every read and
@@ -4304,62 +1954,6 @@ void wasm_bridge_get_Job_pointer(GVJ_t *recv, pointf ** ret) {
 WASM_EXPORT(wasm_bridge_set_Job_pointer)
 void wasm_bridge_set_Job_pointer(GVJ_t *recv, void * v) {
   recv->pointer = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_oldpointer)
-void wasm_bridge_get_Job_oldpointer(GVJ_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->oldpointer;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_oldpointer)
-void wasm_bridge_set_Job_oldpointer(GVJ_t *recv, void * v) {
-  recv->oldpointer = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_current_obj)
-void wasm_bridge_get_Job_current_obj(GVJ_t *recv, void ** ret) {
-  void * v = (void *)recv->current_obj;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_current_obj)
-void wasm_bridge_set_Job_current_obj(GVJ_t *recv, void * v) {
-  recv->current_obj = (void *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_selected_obj)
-void wasm_bridge_get_Job_selected_obj(GVJ_t *recv, void ** ret) {
-  void * v = (void *)recv->selected_obj;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_selected_obj)
-void wasm_bridge_set_Job_selected_obj(GVJ_t *recv, void * v) {
-  recv->selected_obj = (void *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_active_tooltip)
-void wasm_bridge_get_Job_active_tooltip(GVJ_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->active_tooltip);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_active_tooltip)
-void wasm_bridge_set_Job_active_tooltip(GVJ_t *recv, void * v) {
-  recv->active_tooltip = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_Job_selected_href)
-void wasm_bridge_get_Job_selected_href(GVJ_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->selected_href);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_Job_selected_href)
-void wasm_bridge_set_Job_selected_href(GVJ_t *recv, void * v) {
-  recv->selected_href = (char *)v;
 }
 
 WASM_EXPORT(wasm_bridge_new_Point)
@@ -4608,115 +2202,6 @@ void wasm_bridge_get_PointFloat_y(pointf *recv, GoString ** ret) {
 WASM_EXPORT(wasm_bridge_set_PointFloat_y)
 void wasm_bridge_set_PointFloat_y(pointf *recv, double v) {
   recv->y = (double)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_PluginActiveDevice)
-void *wasm_bridge_new_PluginActiveDevice() {
-  void *ret = malloc(sizeof(gvplugin_active_device_t));
-  memset(ret, 0, sizeof(gvplugin_active_device_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveDevice_engine)
-void wasm_bridge_get_PluginActiveDevice_engine(gvplugin_active_device_t *recv, gvdevice_engine_t ** ret) {
-  gvdevice_engine_t * v = (gvdevice_engine_t *)recv->engine;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveDevice_engine)
-void wasm_bridge_set_PluginActiveDevice_engine(gvplugin_active_device_t *recv, void * v) {
-  recv->engine = (gvdevice_engine_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveDevice_id)
-void wasm_bridge_get_PluginActiveDevice_id(gvplugin_active_device_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveDevice_id)
-void wasm_bridge_set_PluginActiveDevice_id(gvplugin_active_device_t *recv, long long int v) {
-  recv->id = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveDevice_features)
-void wasm_bridge_get_PluginActiveDevice_features(gvplugin_active_device_t *recv, gvdevice_features_t ** ret) {
-  gvdevice_features_t * v = (gvdevice_features_t *)recv->features;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveDevice_features)
-void wasm_bridge_set_PluginActiveDevice_features(gvplugin_active_device_t *recv, void * v) {
-  recv->features = (gvdevice_features_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveDevice_type)
-void wasm_bridge_get_PluginActiveDevice_type(gvplugin_active_device_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->type);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveDevice_type)
-void wasm_bridge_set_PluginActiveDevice_type(gvplugin_active_device_t *recv, void * v) {
-  recv->type = (const char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_PluginActiveRender)
-void *wasm_bridge_new_PluginActiveRender() {
-  void *ret = malloc(sizeof(gvplugin_active_render_t));
-  memset(ret, 0, sizeof(gvplugin_active_render_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveRender_engine)
-void wasm_bridge_get_PluginActiveRender_engine(gvplugin_active_render_t *recv, gvrender_engine_t ** ret) {
-  gvrender_engine_t * v = (gvrender_engine_t *)recv->engine;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveRender_engine)
-void wasm_bridge_set_PluginActiveRender_engine(gvplugin_active_render_t *recv, void * v) {
-  recv->engine = (gvrender_engine_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveRender_id)
-void wasm_bridge_get_PluginActiveRender_id(gvplugin_active_render_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->id;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveRender_id)
-void wasm_bridge_set_PluginActiveRender_id(gvplugin_active_render_t *recv, long long int v) {
-  recv->id = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveRender_features)
-void wasm_bridge_get_PluginActiveRender_features(gvplugin_active_render_t *recv, gvrender_features_t ** ret) {
-  gvrender_features_t * v = (gvrender_features_t *)recv->features;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveRender_features)
-void wasm_bridge_set_PluginActiveRender_features(gvplugin_active_render_t *recv, void * v) {
-  recv->features = (gvrender_features_t *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginActiveRender_type)
-void wasm_bridge_get_PluginActiveRender_type(gvplugin_active_render_t *recv, GoString ** ret) {
-  GoString *v = newString(recv->type);
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_PluginActiveRender_type)
-void wasm_bridge_set_PluginActiveRender_type(gvplugin_active_render_t *recv, void * v) {
-  recv->type = (const char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_new_DeviceEngine)
-void *wasm_bridge_new_DeviceEngine() {
-  void *ret = malloc(sizeof(gvdevice_engine_t));
-  memset(ret, 0, sizeof(gvdevice_engine_t));
-  return ret;
 }
 
 WASM_EXPORT(wasm_bridge_new_PostscriptAlias)
@@ -5129,13 +2614,6 @@ void wasm_bridge_set_RenderEngine_library_shape(gvrender_engine_t *recv) {
   recv->library_shape = RenderEngine_LibraryShape;
 }
 
-WASM_EXPORT(wasm_bridge_new_LayoutEngine)
-void *wasm_bridge_new_LayoutEngine() {
-  void *ret = malloc(sizeof(gvlayout_engine_t));
-  memset(ret, 0, sizeof(gvlayout_engine_t));
-  return ret;
-}
-
 WASM_EXPORT(wasm_bridge_new_TextLayoutEngine)
 void *wasm_bridge_new_TextLayoutEngine() {
   void *ret = malloc(sizeof(gvtextlayout_engine_t));
@@ -5160,24 +2638,6 @@ void wasm_bridge_set_LoadImageEngine_load_image(gvloadimage_engine_t *recv) {
   recv->loadimage = LoadImageEngine_LoadImage;
 }
 
-WASM_EXPORT(wasm_bridge_new_LayoutFeatures)
-void *wasm_bridge_new_LayoutFeatures() {
-  void *ret = malloc(sizeof(gvlayout_features_t));
-  memset(ret, 0, sizeof(gvlayout_features_t));
-  return ret;
-}
-
-WASM_EXPORT(wasm_bridge_get_LayoutFeatures_flags)
-void wasm_bridge_get_LayoutFeatures_flags(gvlayout_features_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->flags;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_LayoutFeatures_flags)
-void wasm_bridge_set_LayoutFeatures_flags(gvlayout_features_t *recv, long long int v) {
-  recv->flags = (long long int)v;
-}
-
 WASM_EXPORT(wasm_bridge_new_DeviceFeatures)
 void *wasm_bridge_new_DeviceFeatures() {
   void *ret = malloc(sizeof(gvdevice_features_t));
@@ -5194,30 +2654,6 @@ void wasm_bridge_get_DeviceFeatures_flags(gvdevice_features_t *recv, long long i
 WASM_EXPORT(wasm_bridge_set_DeviceFeatures_flags)
 void wasm_bridge_set_DeviceFeatures_flags(gvdevice_features_t *recv, long long int v) {
   recv->flags = (long long int)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DeviceFeatures_default_margin)
-void wasm_bridge_get_DeviceFeatures_default_margin(gvdevice_features_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->default_margin;
-}
-
-WASM_EXPORT(wasm_bridge_set_DeviceFeatures_default_margin)
-void wasm_bridge_set_DeviceFeatures_default_margin(gvdevice_features_t *recv, void * v) {
-  recv->default_margin = *(pointf *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_DeviceFeatures_default_pagesize)
-void wasm_bridge_get_DeviceFeatures_default_pagesize(gvdevice_features_t *recv, pointf ** ret) {
-  // The field itself, not a copy: a copy was allocated on every read and
-  // never freed. The handle lives as long as the struct holding it.
-  *ret = (void *)&recv->default_pagesize;
-}
-
-WASM_EXPORT(wasm_bridge_set_DeviceFeatures_default_pagesize)
-void wasm_bridge_set_DeviceFeatures_default_pagesize(gvdevice_features_t *recv, void * v) {
-  recv->default_pagesize = *(pointf *)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_DeviceFeatures_default_dpi)
@@ -5259,45 +2695,6 @@ void wasm_bridge_get_RenderFeatures_default_pad(gvrender_features_t *recv, GoStr
 WASM_EXPORT(wasm_bridge_set_RenderFeatures_default_pad)
 void wasm_bridge_set_RenderFeatures_default_pad(gvrender_features_t *recv, double v) {
   recv->default_pad = (double)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_RenderFeatures_known_colors)
-void wasm_bridge_get_RenderFeatures_known_colors(gvrender_features_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; recv->knowncolors != NULL && recv->knowncolors[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  GoString *v = newString(recv->knowncolors[i]);
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_RenderFeatures_known_colors)
-void wasm_bridge_set_RenderFeatures_known_colors(gvrender_features_t *recv, GoSlice * v) {
-  recv->knowncolors = (char **)malloc(sizeof(char *) * v->len);
-  for (int i = 0; i < v->len; i++) {
-    void *elem = ((void **)v->data)[i * 2];
-    memcpy(&recv->knowncolors[i], elem, sizeof(char *));
-  }
-}
-
-WASM_EXPORT(wasm_bridge_get_RenderFeatures_size_known_colors)
-void wasm_bridge_get_RenderFeatures_size_known_colors(gvrender_features_t *recv, long long int* ret) {
-  long long int v = (long long int)recv->sz_knowncolors;
-  *ret = v;
-}
-
-WASM_EXPORT(wasm_bridge_set_RenderFeatures_size_known_colors)
-void wasm_bridge_set_RenderFeatures_size_known_colors(gvrender_features_t *recv, long long int v) {
-  recv->sz_knowncolors = (long long int)v;
 }
 
 WASM_EXPORT(wasm_bridge_get_RenderFeatures_color_type)
@@ -5459,35 +2856,6 @@ void wasm_bridge_set_PluginLibrary_apis(gvplugin_library_t *recv, GoSlice * v) {
 
 
 
-WASM_EXPORT(wasm_bridge_pushDisc)
-void wasm_bridge_pushDisc(void * _arg0, void * _arg1, void * _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  Agcbdisc_t * arg1;
-  arg1 = (Agcbdisc_t *)_arg1;
-  void * arg2;
-  arg2 = (void *)_arg2;
-  agpushdisc(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-WASM_EXPORT(wasm_bridge_popDisc)
-void wasm_bridge_popDisc(void * _arg0, void * _arg1, int* _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  Agcbdisc_t * arg1;
-  arg1 = (Agcbdisc_t *)_arg1;
-  int ret = agpopdisc(
-    arg0,
-    arg1
-  );
-  int v = (int)ret;
-  *_arg2 = v;
-}
-
 WASM_EXPORT(wasm_bridge_open)
 void wasm_bridge_open(void * _arg0, void * _arg1, void * _arg2, void ** _arg3) {
   char * arg0;
@@ -5530,26 +2898,6 @@ void wasm_bridge_memRead(void * _arg0, void ** _arg1) {
   *_arg1 = v;
 }
 
-WASM_EXPORT(wasm_bridge_concat)
-void wasm_bridge_concat(void * _arg0, void * _arg1, void * _arg2, void * _arg3, void ** _arg4) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  void * arg2;
-  arg2 = (void *)_arg2;
-  Agdisc_t * arg3;
-  arg3 = (Agdisc_t *)_arg3;
-  Agraph_t * ret = agconcat(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-  Agraph_t * v = (Agraph_t *)ret;
-  *_arg4 = v;
-}
-
 WASM_EXPORT(wasm_bridge_write)
 void wasm_bridge_write(void * _arg0, void * _arg1, int* _arg2) {
   Agraph_t * arg0;
@@ -5564,61 +2912,6 @@ void wasm_bridge_write(void * _arg0, void * _arg1, int* _arg2) {
   *_arg2 = v;
 }
 
-WASM_EXPORT(wasm_bridge_isDirected)
-void wasm_bridge_isDirected(void * _arg0, int* _arg1) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int ret = agisdirected(
-    arg0
-  );
-  int v = (int)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_isUndirected)
-void wasm_bridge_isUndirected(void * _arg0, int* _arg1) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int ret = agisundirected(
-    arg0
-  );
-  int v = (int)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_isStrict)
-void wasm_bridge_isStrict(void * _arg0, int* _arg1) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int ret = agisstrict(
-    arg0
-  );
-  int v = (int)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_graphOf)
-void wasm_bridge_graphOf(void * _arg0, void ** _arg1) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  Agraph_t * ret = agraphof(
-    arg0
-  );
-  Agraph_t * v = (Agraph_t *)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_graphRoot)
-void wasm_bridge_graphRoot(void * _arg0, void ** _arg1) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  Agraph_t * ret = agroot(
-    arg0
-  );
-  Agraph_t * v = (Agraph_t *)ret;
-  *_arg1 = v;
-}
-
 WASM_EXPORT(wasm_bridge_graphNameOf)
 void wasm_bridge_graphNameOf(void * _arg0, void ** _arg1) {
   void * arg0;
@@ -5627,28 +2920,6 @@ void wasm_bridge_graphNameOf(void * _arg0, void ** _arg1) {
     arg0
   );
   GoString *v = newString(ret);
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_objectKind)
-void wasm_bridge_objectKind(void * _arg0, int* _arg1) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  int ret = agobjkind(
-    arg0
-  );
-  int v = (int)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_htmlStr)
-void wasm_bridge_htmlStr(void * _arg0, bool* _arg1) {
-  char * arg0;
-  arg0 = (char *)_arg0;
-  bool ret = aghtmlstr(
-    arg0
-  );
-  bool v = (bool)ret;
   *_arg1 = v;
 }
 
@@ -5666,20 +2937,6 @@ void wasm_bridge_strCanon(void * _arg0, void * _arg1, void ** _arg2) {
   *_arg2 = v;
 }
 
-WASM_EXPORT(wasm_bridge_attrSym)
-void wasm_bridge_attrSym(void * _arg0, void * _arg1, void ** _arg2) {
-  Agobj_t * arg0;
-  arg0 = (Agobj_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  Agsym_t * ret = agattrsym(
-    arg0,
-    arg1
-  );
-  Agsym_t * v = (Agsym_t *)ret;
-  *_arg2 = v;
-}
-
 WASM_EXPORT(wasm_bridge_copyAttr)
 void wasm_bridge_copyAttr(void * _arg0, void * _arg1, int* _arg2) {
   void * arg0;
@@ -5687,57 +2944,6 @@ void wasm_bridge_copyAttr(void * _arg0, void * _arg1, int* _arg2) {
   void * arg1;
   arg1 = (void *)_arg1;
   int ret = agcopyattr(
-    arg0,
-    arg1
-  );
-  int v = (int)ret;
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_bindRecord)
-void wasm_bridge_bindRecord(void * _arg0, void * _arg1, unsigned int _arg2, int _arg3, void ** _arg4) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  unsigned int arg2;
-  arg2 = (unsigned int)_arg2;
-  int arg3;
-  arg3 = (int)_arg3;
-  void * ret = agbindrec(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-  void * v = (void *)ret;
-  *_arg4 = v;
-}
-
-WASM_EXPORT(wasm_bridge_getRecord)
-void wasm_bridge_getRecord(void * _arg0, void * _arg1, int _arg2, void ** _arg3) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  int arg2;
-  arg2 = (int)_arg2;
-  Agrec_t * ret = aggetrec(
-    arg0,
-    arg1,
-    arg2
-  );
-  Agrec_t * v = (Agrec_t *)ret;
-  *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_deleteRecord)
-void wasm_bridge_deleteRecord(void * _arg0, void * _arg1, int* _arg2) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  int ret = agdelrec(
     arg0,
     arg1
   );
@@ -5790,40 +2996,6 @@ void wasm_bridge_setStr(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   *_arg3 = v;
 }
 
-WASM_EXPORT(wasm_bridge_setStrText)
-void wasm_bridge_setStrText(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  int ret = agset_text(
-    arg0,
-    arg1,
-    arg2
-  );
-  int v = (int)ret;
-  *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_setStrHTML)
-void wasm_bridge_setStrHTML(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  int ret = agset_html(
-    arg0,
-    arg1,
-    arg2
-  );
-  int v = (int)ret;
-  *_arg3 = v;
-}
-
 WASM_EXPORT(wasm_bridge_setSymName)
 void wasm_bridge_setSymName(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   void * arg0;
@@ -5833,40 +3005,6 @@ void wasm_bridge_setSymName(void * _arg0, void * _arg1, void * _arg2, int* _arg3
   char * arg2;
   arg2 = (char *)_arg2;
   int ret = agxset(
-    arg0,
-    arg1,
-    arg2
-  );
-  int v = (int)ret;
-  *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_setSymNameText)
-void wasm_bridge_setSymNameText(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  Agsym_t * arg1;
-  arg1 = (Agsym_t *)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  int ret = agxset_text(
-    arg0,
-    arg1,
-    arg2
-  );
-  int v = (int)ret;
-  *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_setSymNameHTML)
-void wasm_bridge_setSymNameHTML(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  Agsym_t * arg1;
-  arg1 = (Agsym_t *)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  int ret = agxset_html(
     arg0,
     arg1,
     arg2
@@ -5886,26 +3024,6 @@ void wasm_bridge_safeSetStr(void * _arg0, void * _arg1, void * _arg2, void * _ar
   char * arg3;
   arg3 = (char *)_arg3;
   int ret = agsafeset(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-  int v = (int)ret;
-  *_arg4 = v;
-}
-
-WASM_EXPORT(wasm_bridge_safeSetStrText)
-void wasm_bridge_safeSetStrText(void * _arg0, void * _arg1, void * _arg2, void * _arg3, int* _arg4) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  char * arg3;
-  arg3 = (char *)_arg3;
-  int ret = agsafeset_text(
     arg0,
     arg1,
     arg2,
@@ -5935,25 +3053,6 @@ void wasm_bridge_safeSetStrHTML(void * _arg0, void * _arg1, void * _arg2, void *
   *_arg4 = v;
 }
 
-WASM_EXPORT(wasm_bridge_setError)
-void wasm_bridge_setError(int _arg0, int* _arg1) {
-  agerrlevel_t arg0;
-  arg0 = (agerrlevel_t)_arg0;
-  agerrlevel_t ret = agseterr(
-    arg0
-  );
-  agerrlevel_t v = (agerrlevel_t)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_lastError)
-void wasm_bridge_lastError(void ** _arg0) {
-  char * ret = aglasterr(
-  );
-  GoString *v = newString(ret);
-  *_arg0 = v;
-}
-
 WASM_EXPORT(wasm_bridge_error)
 void wasm_bridge_error(int _arg0, void * _arg1, int* _arg2) {
   agerrlevel_t arg0;
@@ -5975,31 +3074,6 @@ void wasm_bridge_errorf(void * _arg0) {
   agerrorf(
     arg0
   );
-}
-
-WASM_EXPORT(wasm_bridge_warningf)
-void wasm_bridge_warningf(void * _arg0) {
-  const char * arg0;
-  arg0 = (const char *)_arg0;
-  agwarningf(
-    arg0
-  );
-}
-
-WASM_EXPORT(wasm_bridge_errorNum)
-void wasm_bridge_errorNum(int* _arg0) {
-  int ret = agerrors(
-  );
-  int v = (int)ret;
-  *_arg0 = v;
-}
-
-WASM_EXPORT(wasm_bridge_resetErrors)
-void wasm_bridge_resetErrors(int* _arg0) {
-  int ret = agreseterrors(
-  );
-  int v = (int)ret;
-  *_arg0 = v;
 }
 
 WASM_EXPORT(wasm_bridge_setErrorf)
@@ -6129,20 +3203,6 @@ void wasm_bridge_Graph_prevNode(void * _arg0, void * _arg1, void ** _arg2) {
     arg1
   );
   Agnode_t * v = (Agnode_t *)ret;
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_subRep)
-void wasm_bridge_Graph_subRep(void * _arg0, void * _arg1, void ** _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  Agnode_t * arg1;
-  arg1 = (Agnode_t *)_arg1;
-  Agsubnode_t * ret = agsubrep(
-    arg0,
-    arg1
-  );
-  Agsubnode_t * v = (Agsubnode_t *)ret;
   *_arg2 = v;
 }
 
@@ -6416,107 +3476,6 @@ void wasm_bridge_Graph_deleteEdge(void * _arg0, void * _arg1, int* _arg2) {
   *_arg2 = v;
 }
 
-WASM_EXPORT(wasm_bridge_Graph_strdup)
-void wasm_bridge_Graph_strdup(void * _arg0, void * _arg1, void ** _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * ret = agstrdup(
-    arg0,
-    arg1
-  );
-  GoString *v = newString(ret);
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_strdupHTML)
-void wasm_bridge_Graph_strdupHTML(void * _arg0, void * _arg1, void ** _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * ret = agstrdup_html(
-    arg0,
-    arg1
-  );
-  GoString *v = newString(ret);
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_strdupText)
-void wasm_bridge_Graph_strdupText(void * _arg0, void * _arg1, void ** _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * ret = agstrdup_text(
-    arg0,
-    arg1
-  );
-  GoString *v = newString(ret);
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_strBind)
-void wasm_bridge_Graph_strBind(void * _arg0, void * _arg1, void ** _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * ret = agstrbind(
-    arg0,
-    arg1
-  );
-  GoString *v = newString(ret);
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_strBindText)
-void wasm_bridge_Graph_strBindText(void * _arg0, void * _arg1, void ** _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * ret = agstrbind_text(
-    arg0,
-    arg1
-  );
-  GoString *v = newString(ret);
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_strBindHTML)
-void wasm_bridge_Graph_strBindHTML(void * _arg0, void * _arg1, void ** _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  char * ret = agstrbind_html(
-    arg0,
-    arg1
-  );
-  GoString *v = newString(ret);
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_strFree)
-void wasm_bridge_Graph_strFree(void * _arg0, void * _arg1, bool _arg2, int* _arg3) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  char * arg1;
-  arg1 = (char *)_arg1;
-  bool arg2;
-  arg2 = (bool)_arg2;
-  int ret = agstrfree(
-    arg0,
-    arg1,
-    arg2
-  );
-  int v = (int)ret;
-  *_arg3 = v;
-}
-
 WASM_EXPORT(wasm_bridge_Graph_attr)
 void wasm_bridge_Graph_attr(void * _arg0, int _arg1, void * _arg2, void * _arg3, void ** _arg4) {
   Agraph_t * arg0;
@@ -6528,46 +3487,6 @@ void wasm_bridge_Graph_attr(void * _arg0, int _arg1, void * _arg2, void * _arg3,
   char * arg3;
   arg3 = (char *)_arg3;
   Agsym_t * ret = agattr(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-  Agsym_t * v = (Agsym_t *)ret;
-  *_arg4 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_attrText)
-void wasm_bridge_Graph_attrText(void * _arg0, int _arg1, void * _arg2, void * _arg3, void ** _arg4) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int arg1;
-  arg1 = (int)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  char * arg3;
-  arg3 = (char *)_arg3;
-  Agsym_t * ret = agattr_text(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-  Agsym_t * v = (Agsym_t *)ret;
-  *_arg4 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_attrHTML)
-void wasm_bridge_Graph_attrHTML(void * _arg0, int _arg1, void * _arg2, void * _arg3, void ** _arg4) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int arg1;
-  arg1 = (int)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  char * arg3;
-  arg3 = (char *)_arg3;
-  Agsym_t * ret = agattr_html(
     arg0,
     arg1,
     arg2,
@@ -6592,42 +3511,6 @@ void wasm_bridge_Graph_nextAttr(void * _arg0, int _arg1, void * _arg2, void ** _
   );
   Agsym_t * v = (Agsym_t *)ret;
   *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_init)
-void wasm_bridge_Graph_init(void * _arg0, int _arg1, void * _arg2, int _arg3, int _arg4) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int arg1;
-  arg1 = (int)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  int arg3;
-  arg3 = (int)_arg3;
-  int arg4;
-  arg4 = (int)_arg4;
-  aginit(
-    arg0,
-    arg1,
-    arg2,
-    arg3,
-    arg4
-  );
-}
-
-WASM_EXPORT(wasm_bridge_Graph_clean)
-void wasm_bridge_Graph_clean(void * _arg0, int _arg1, void * _arg2) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int arg1;
-  arg1 = (int)_arg1;
-  char * arg2;
-  arg2 = (char *)_arg2;
-  agclean(
-    arg0,
-    arg1,
-    arg2
-  );
 }
 
 WASM_EXPORT(wasm_bridge_Graph_subGraph)
@@ -6767,34 +3650,6 @@ void wasm_bridge_Graph_countUniqueEdges(void * _arg0, void * _arg1, int _arg2, i
   *_arg4 = v;
 }
 
-WASM_EXPORT(wasm_bridge_newDictWithDisc)
-void wasm_bridge_newDictWithDisc(void * _arg0, void * _arg1, void ** _arg2) {
-  Dtdisc_t * arg0;
-  arg0 = (Dtdisc_t *)_arg0;
-  Dtmethod_t * arg1;
-  arg1 = (Dtmethod_t *)_arg1;
-  Dict_t * ret = dtopen(
-    arg0,
-    arg1
-  );
-  Dict_t * v = (Dict_t *)ret;
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_strHash)
-void wasm_bridge_strHash(void * _arg0, int _arg1, unsigned int* _arg2) {
-  void * arg0;
-  arg0 = (void *)_arg0;
-  int arg1;
-  arg1 = (int)_arg1;
-  unsigned int ret = dtstrhash(
-    arg0,
-    arg1
-  );
-  unsigned int v = (unsigned int)ret;
-  *_arg2 = v;
-}
-
 WASM_EXPORT(wasm_bridge_Dict_close)
 void wasm_bridge_Dict_close(void * _arg0, int* _arg1) {
   Dict_t * arg0;
@@ -6804,34 +3659,6 @@ void wasm_bridge_Dict_close(void * _arg0, int* _arg1) {
   );
   int v = (int)ret;
   *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Dict_view)
-void wasm_bridge_Dict_view(void * _arg0, void * _arg1, void ** _arg2) {
-  Dict_t * arg0;
-  arg0 = (Dict_t *)_arg0;
-  Dict_t * arg1;
-  arg1 = (Dict_t *)_arg1;
-  Dict_t * ret = dtview(
-    arg0,
-    arg1
-  );
-  Dict_t * v = (Dict_t *)ret;
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Dict_disc)
-void wasm_bridge_Dict_disc(void * _arg0, void * _arg1, void ** _arg2) {
-  Dict_t * arg0;
-  arg0 = (Dict_t *)_arg0;
-  Dtdisc_t * arg1;
-  arg1 = (Dtdisc_t *)_arg1;
-  Dtdisc_t * ret = dtdisc(
-    arg0,
-    arg1
-  );
-  Dtdisc_t * v = (Dtdisc_t *)ret;
-  *_arg2 = v;
 }
 
 WASM_EXPORT(wasm_bridge_Dict_method)
@@ -6848,42 +3675,6 @@ void wasm_bridge_Dict_method(void * _arg0, void * _arg1, void ** _arg2) {
   *_arg2 = v;
 }
 
-WASM_EXPORT(wasm_bridge_Dict_flatten)
-void wasm_bridge_Dict_flatten(void * _arg0, void ** _arg1) {
-  Dict_t * arg0;
-  arg0 = (Dict_t *)_arg0;
-  Dtlink_t * ret = dtflatten(
-    arg0
-  );
-  Dtlink_t * v = (Dtlink_t *)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Dict_extract)
-void wasm_bridge_Dict_extract(void * _arg0, void ** _arg1) {
-  Dict_t * arg0;
-  arg0 = (Dict_t *)_arg0;
-  Dtlink_t * ret = dtextract(
-    arg0
-  );
-  Dtlink_t * v = (Dtlink_t *)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Dict_restore)
-void wasm_bridge_Dict_restore(void * _arg0, void * _arg1, int* _arg2) {
-  Dict_t * arg0;
-  arg0 = (Dict_t *)_arg0;
-  Dtlink_t * arg1;
-  arg1 = (Dtlink_t *)_arg1;
-  int ret = dtrestore(
-    arg0,
-    arg1
-  );
-  int v = (int)ret;
-  *_arg2 = v;
-}
-
 WASM_EXPORT(wasm_bridge_Dict_walk)
 void wasm_bridge_Dict_walk(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   Dict_t * arg0;
@@ -6897,20 +3688,6 @@ void wasm_bridge_Dict_walk(void * _arg0, void * _arg1, void * _arg2, int* _arg3)
   );
   int v = (int)ret;
   *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Dict_renew)
-void wasm_bridge_Dict_renew(void * _arg0, void * _arg1, void ** _arg2) {
-  Dict_t * arg0;
-  arg0 = (Dict_t *)_arg0;
-  void * arg1;
-  arg1 = (void *)_arg1;
-  void * ret = dtrenew(
-    arg0,
-    arg1
-  );
-  void * v = (void *)ret;
-  *_arg2 = v;
 }
 
 WASM_EXPORT(wasm_bridge_Dict_size)
@@ -6941,41 +3718,6 @@ void wasm_bridge_Dict_stat(void * _arg0, void * _arg1, int _arg2, int* _arg3) {
   *_arg3 = v;
 }
 
-WASM_EXPORT(wasm_bridge_toggle)
-void wasm_bridge_toggle(int _arg0) {
-  int arg0;
-  arg0 = (int)_arg0;
-  gvToggle(
-    arg0
-  );
-}
-
-WASM_EXPORT(wasm_bridge_newContextWithSymList)
-void wasm_bridge_newContextWithSymList(GoSlice * _arg0, int _arg1, void ** _arg2) {
-  const lt_symlist_t * arg0;
-  arg0 = (const lt_symlist_t *)malloc(sizeof(const lt_symlist_t) * _arg0->len);
-  for (int i = 0; i < _arg0->len; i++) {
-    void *elem = ((void **)_arg0->data)[i * 2];
-    memcpy(&arg0[i], elem, sizeof(const lt_symlist_t));
-  }
-  int arg1;
-  arg1 = (int)_arg1;
-  GVC_t * ret = gvNEWcontext(
-    arg0,
-    arg1
-  );
-  GVC_t * v = (GVC_t *)ret;
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_getContext)
-void wasm_bridge_getContext(void ** _arg0) {
-  GVC_t * ret = gvContext(
-  );
-  GVC_t * v = (GVC_t *)ret;
-  *_arg0 = v;
-}
-
 WASM_EXPORT(wasm_bridge_getContextWithPlugins)
 void wasm_bridge_getContextWithPlugins(GoSlice * _arg0, int _arg1, void ** _arg2) {
   const lt_symlist_t * arg0;
@@ -6994,104 +3736,6 @@ void wasm_bridge_getContextWithPlugins(GoSlice * _arg0, int _arg1, void ** _arg2
   *_arg2 = v;
 }
 
-WASM_EXPORT(wasm_bridge_freeRenderData)
-void wasm_bridge_freeRenderData(void * _arg0) {
-  char * arg0;
-  arg0 = (char *)_arg0;
-  gvFreeRenderData(
-    arg0
-  );
-}
-
-WASM_EXPORT(wasm_bridge_Context_info)
-void wasm_bridge_Context_info(void * _arg0, GoSlice ** _arg1) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  char ** ret = gvcInfo(
-    arg0
-  );GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; ret != NULL && ret[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  GoString *v = newString(ret[i]);
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_version)
-void wasm_bridge_Context_version(void * _arg0, void ** _arg1) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  char * ret = gvcVersion(
-    arg0
-  );
-  GoString *v = newString(ret);
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_buildDate)
-void wasm_bridge_Context_buildDate(void * _arg0, void ** _arg1) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  char * ret = gvcBuildDate(
-    arg0
-  );
-  GoString *v = newString(ret);
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_parseArgs)
-void wasm_bridge_Context_parseArgs(void * _arg0, int _arg1, GoSlice * _arg2, int* _arg3) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  int arg1;
-  arg1 = (int)_arg1;
-  char ** arg2;
-  arg2 = (char **)malloc(sizeof(char *) * _arg2->len);
-  for (int i = 0; i < _arg2->len; i++) {
-    void *elem = ((void **)_arg2->data)[i * 2];
-    memcpy(&arg2[i], elem, sizeof(char *));
-  }
-  int ret = gvParseArgs(
-    arg0,
-    arg1,
-    arg2
-  );
-  int v = (int)ret;
-  *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_nextInputGraph)
-void wasm_bridge_Context_nextInputGraph(void * _arg0, void ** _arg1) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  Agraph_t * ret = gvNextInputGraph(
-    arg0
-  );
-  Agraph_t * v = (Agraph_t *)ret;
-  *_arg1 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_pluginsGraph)
-void wasm_bridge_Context_pluginsGraph(void * _arg0, void ** _arg1) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  Agraph_t * ret = gvPluginsGraph(
-    arg0
-  );
-  Agraph_t * v = (Agraph_t *)ret;
-  *_arg1 = v;
-}
-
 WASM_EXPORT(wasm_bridge_Context_layout)
 void wasm_bridge_Context_layout(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   GVC_t * arg0;
@@ -7107,29 +3751,6 @@ void wasm_bridge_Context_layout(void * _arg0, void * _arg1, void * _arg2, int* _
   );
   int v = (int)ret;
   *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_layoutJobs)
-void wasm_bridge_Context_layoutJobs(void * _arg0, void * _arg1, int* _arg2) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  Agraph_t * arg1;
-  arg1 = (Agraph_t *)_arg1;
-  int ret = gvLayoutJobs(
-    arg0,
-    arg1
-  );
-  int v = (int)ret;
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Graph_attachAttrs)
-void wasm_bridge_Graph_attachAttrs(void * _arg0) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  attach_attrs(
-    arg0
-  );
 }
 
 WASM_EXPORT(wasm_bridge_Context_render)
@@ -7172,26 +3793,6 @@ void wasm_bridge_Context_renderFilename(void * _arg0, void * _arg1, void * _arg2
   *_arg4 = v;
 }
 
-WASM_EXPORT(wasm_bridge_Context_renderContext)
-void wasm_bridge_Context_renderContext(void * _arg0, void * _arg1, void * _arg2, void * _arg3, int* _arg4) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  Agraph_t * arg1;
-  arg1 = (Agraph_t *)_arg1;
-  const char * arg2;
-  arg2 = (const char *)_arg2;
-  void * arg3;
-  arg3 = (void *)_arg3;
-  int ret = gvRenderContext(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-  int v = (int)ret;
-  *_arg4 = v;
-}
-
 WASM_EXPORT(wasm_bridge_Context_renderData)
 void wasm_bridge_Context_renderData(void * _arg0, void * _arg1, void * _arg2, void * _arg3, void * _arg4, int* _arg5) {
   GVC_t * arg0;
@@ -7214,29 +3815,6 @@ void wasm_bridge_Context_renderData(void * _arg0, void * _arg1, void * _arg2, vo
   to_string_ptr_with_length(_arg3, *(int *)_arg4);
   int v = (int)ret;
   *_arg5 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_renderJobs)
-void wasm_bridge_Context_renderJobs(void * _arg0, void * _arg1, int* _arg2) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  Agraph_t * arg1;
-  arg1 = (Agraph_t *)_arg1;
-  int ret = gvRenderJobs(
-    arg0,
-    arg1
-  );
-  int v = (int)ret;
-  *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_finalize)
-void wasm_bridge_Context_finalize(void * _arg0) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  gvFinalize(
-    arg0
-  );
 }
 
 WASM_EXPORT(wasm_bridge_Context_freeContext)
@@ -7262,59 +3840,6 @@ void wasm_bridge_Context_freeLayout(void * _arg0, void * _arg1, int* _arg2) {
   );
   int v = (int)ret;
   *_arg2 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_pluginList)
-void wasm_bridge_Context_pluginList(void * _arg0, void * _arg1, void * _arg2, GoSlice ** _arg3) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  const char * arg1;
-  arg1 = (const char *)_arg1;
-  int * arg2;
-  arg2 = (int *)_arg2;
-  char ** ret = gvPluginList(
-    arg0,
-    arg1,
-    arg2
-  );GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  // A NULL-terminated array may itself be NULL (Graphviz passes a text
-  // layout's fontpath only when verbose); scanning it would read address 0.
-  for (int i = 0; ret != NULL && ret[i] != NULL; i++) {
-    v_length++;
-  }
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  GoString *v = newString(ret[i]);
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *_arg3 = v;
-}
-
-WASM_EXPORT(wasm_bridge_Context_addLibrary)
-void wasm_bridge_Context_addLibrary(void * _arg0, void * _arg1) {
-  GVC_t * arg0;
-  arg0 = (GVC_t *)_arg0;
-  gvplugin_library_t * arg1;
-  arg1 = (gvplugin_library_t *)_arg1;
-  gvAddLibrary(
-    arg0,
-    arg1
-  );
-}
-
-WASM_EXPORT(wasm_bridge_Graph_toolTred)
-void wasm_bridge_Graph_toolTred(void * _arg0, int* _arg1) {
-  Agraph_t * arg0;
-  arg0 = (Agraph_t *)_arg0;
-  int ret = gvToolTred(
-    arg0
-  );
-  int v = (int)ret;
-  *_arg1 = v;
 }
 
 WASM_EXPORT(wasm_bridge_Context_clone)

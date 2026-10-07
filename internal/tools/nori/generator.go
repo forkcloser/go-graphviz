@@ -763,7 +763,10 @@ func (r *Resolver) resolveMessageRule(pkgName string, msg *Message, def *nori.Me
 	if def != nil && def.Constructor != nil {
 		hasConstructor = def.GetConstructor()
 	}
-	if funcptr != nil {
+	// A message with no C type (no alias) is only a name for a void
+	// pointer: the C side emits nothing for it, so Go must not offer a
+	// constructor that calls a bridge function that does not exist.
+	if funcptr != nil || def.GetAlias() == "" {
 		hasConstructor = false
 	}
 	msg.Rule = &MessageRule{
