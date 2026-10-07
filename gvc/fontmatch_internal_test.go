@@ -1,6 +1,7 @@
 package gvc
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -11,6 +12,7 @@ import (
 	"golang.org/x/image/font/gofont/gobolditalic"
 	"golang.org/x/image/font/gofont/goitalic"
 	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -270,5 +272,30 @@ func TestSymbolEncodedFont(t *testing.T) {
 	want := string([]rune{symbolBase + 'A', symbolBase + 'B', symbolBase + 'C'})
 	if len(runs) != 1 || runs[0].face != face || runs[0].text != want {
 		t.Errorf("runs %+v, want one run of %q in the symbol font", runs, want)
+	}
+}
+
+// Faces of fonts a FontLoader supplied are kept a few at a time: a loader
+// that parses its font afresh on every call, a new pointer each time, does
+// not grow the cache with every text drawn.
+func TestLoaderFacesBounded(t *testing.T) {
+	for range 3 * maxLoaderFaces {
+		parsed, err := opentype.Parse(goregular.TTF)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		loaded := &loadedFont{key: fmt.Sprintf("loader|%p", parsed), font: parsed, fromLoader: true}
+		if _, err := loaded.face(12, pointsPerInch); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	fonts.mu.Lock()
+	kept := len(fonts.loaderFaces)
+	fonts.mu.Unlock()
+
+	if kept > maxLoaderFaces {
+		t.Errorf("%d loader faces kept, want at most %d", kept, maxLoaderFaces)
 	}
 }

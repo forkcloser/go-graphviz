@@ -45,6 +45,12 @@ Graphviz's internals listed under Removed.
 
 ### Changed
 
+- Breaking: a `FontLoader` supplies a parsed font (`*opentype.Font`, or nil
+  to resolve the name as usual) for a `TextFont`, no longer a face for a
+  render job; the module sizes it. The same font now measures labels during
+  layout: with a loader set, every label used to be left to Graphviz's
+  estimate, so boxes did not fit text drawn in the loader's font. The root
+  package re-exports `FontLoader`.
 - The embedded WebAssembly module is 30% smaller, 1.12 MB from 1.59 MB: it
   exports only the functions the bindings call, so the Graphviz code none
   of them reaches is no longer built in, and the bridge no longer carries

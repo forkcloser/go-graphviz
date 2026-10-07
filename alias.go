@@ -63,6 +63,7 @@ type (
 	FillType            = gvc.FillType
 	PenType             = gvc.PenType
 	Color               = gvc.Color
+	FontLoader          = gvc.FontLoader
 )
 
 // variables from cgraph package.

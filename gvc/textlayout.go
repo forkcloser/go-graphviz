@@ -27,9 +27,7 @@ const pointsPerInch = 72
 // one, Graphviz sizes text from built-in estimates for Times, Courier and
 // Arial. New installs it; a context built with NewWithPlugins measures
 // with it only when it is among the plugins.
-//
-// Text whose font a FontLoader supplies is left to Graphviz's estimate:
-// the loader is asked for a face for a render job, and layout has none.
+// Text whose font a FontLoader supplies is measured with that font.
 type TextLayoutPlugin struct {
 	plugin *wasm.PluginAPI
 	funcID uint64
@@ -143,23 +141,13 @@ func (l *liveEngines) any() uint64 {
 
 // layoutText measures a span as Graphviz's text-layout plugins do: its
 // width as drawn, in points, and Graphviz's own line height and offsets,
-// which the renderer's vertical placement follows. It reports false, so
-// that Graphviz estimates, when a font loader is set.
+// which the renderer's vertical placement follows. The font is the one the
+// renderer draws the span in, a font loader's included.
 func layoutText(ctx context.Context, span *wasm.Textspan, _ []string) (bool, error) {
-	fontLoaderMu.RLock()
-
-	loaderSet := fontLoader != nil
-
-	fontLoaderMu.RUnlock()
-
-	if loaderSet {
-		return false, nil
-	}
-
 	textFont := toTextFont(span.GetFont())
 	size := textFont.Size()
 
-	loaded, err := fontFor(textFont)
+	loaded, err := fontForSpan(ctx, textFont)
 	if err != nil {
 		return false, err
 	}

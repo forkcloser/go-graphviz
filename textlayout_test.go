@@ -119,25 +119,38 @@ func TestTextLayoutMeasures(t *testing.T) {
 	}
 }
 
-// With a font loader set, the plugin declines, its false reaches Graphviz,
-// and Graphviz estimates: a callback's result used to be left as the slot
-// held, which read as true and left the label measured as nothing.
-func TestTextLayoutDeclinesForFontLoader(t *testing.T) {
-	path, measured := boldFont(t)
+// A font a FontLoader supplies measures the label as well as drawing it:
+// the box fits the label in that font. The loader used to be asked only
+// when drawing, so with one set Graphviz estimated every label.
+func TestTextLayoutMeasuresWithFontLoader(t *testing.T) {
+	_, measured := boldFont(t)
 
-	face := boldFace(t)
+	const name = "Supplied Face"
 
-	graphviz.SetFontLoader(func(context.Context, *graphviz.Job, *graphviz.TextFont) (font.Face, error) {
-		return face, nil
+	dot := `digraph { node [shape=box margin=0 width=0 height=0]; a [label="` + measuredLabel +
+		`" fontname="` + name + `" fontsize=` + strconv.Itoa(measuredSize) + `] }`
+
+	without := nodeWidth(t, dot)
+
+	parsed, err := opentype.Parse(gobold.TTF)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graphviz.SetFontLoader(func(_ context.Context, textFont *graphviz.TextFont) (*opentype.Font, error) {
+		if textFont.Name() == name { //nolint:contextcheck // a TextFont's getters read memory and take no context
+			return parsed, nil
+		}
+
+		return nil, nil //nolint:nilnil // no font asks for the usual resolution
 	})
 	t.Cleanup(func() { graphviz.SetFontLoader(nil) })
 
-	got := nodeWidth(t, boxDot(path))
-	if got < 1 {
-		t.Fatalf("box %.1f points wide: the declined layout was taken as done", got)
+	if got := nodeWidth(t, dot); math.Abs(got-measured) > 1 {
+		t.Errorf("box %.1f points wide, want the loaded font's %.1f", got, measured)
 	}
 
-	if math.Abs(got-measured) <= 1 {
-		t.Errorf("box %.1f points wide, the measured width: the plugin measured despite the loader", got)
+	if math.Abs(without-measured) <= 1 {
+		t.Errorf("without the loader the box is %.1f points wide too: the font name resolves to the same font", without)
 	}
 }
