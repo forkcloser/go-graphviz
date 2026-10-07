@@ -13,6 +13,7 @@ import (
 	"io/fs"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -133,6 +134,42 @@ func TestRasterNodeImageFillsItsBox(t *testing.T) {
 			t.Errorf("imagescale=%s: image drawn at %v on a %v page, want %dx%d centred",
 				tc.scale, got, page, tc.width, tc.height)
 		}
+	}
+}
+
+// A node image named by an absolute path is drawn, from the host's file
+// system and from one SetFileSystem names, as one named relative to the
+// working directory always was. The runtime hands Graphviz the name without
+// its leading slash: on the host Graphviz looked for it under the working
+// directory and silently left the image out, and from a named file system the
+// renderer, which opened the name as written, failed the render.
+func TestRasterNodeImageAbsolutePath(t *testing.T) {
+	data := encodePNG(t, solidImage(40, 40, color.RGBA{R: 255, A: 255}))
+
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "red.png"), data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Chdir(dir)
+
+	for _, tc := range []struct {
+		name   string
+		images fs.FS
+		file   string
+	}{
+		{name: "host absolute", file: filepath.ToSlash(filepath.Join(dir, "red.png"))},
+		{name: "host relative", file: "red.png"},
+		{name: "named absolute", images: fstest.MapFS{"abs/red.png": {Data: data}}, file: "/abs/red.png"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			img := renderWithImages(t, tc.images,
+				`digraph { a [shape=box label="" color=white image="`+tc.file+`"] }`, graphviz.PNG)
+
+			if got := redBounds(img); got.Dx() < 30 || got.Dy() < 30 {
+				t.Errorf("image %s drawn at %v, want about 40x40", tc.file, got)
+			}
+		})
 	}
 }
 

@@ -35,6 +35,12 @@ Graphviz 16 below.
   it is. Graphviz 16.1.0 read its size from the wrong bytes, tens of
   thousands to hundreds of millions of points a side, and the render then
   failed with `ErrPageTooLarge`.
+- A node image named by an absolute path is drawn. From the host's file
+  system it was silently left out, Graphviz having looked for it under the
+  working directory; from one `SetFileSystem` names, the render failed. A
+  name with a leading slash now opens, from a named file system, the name
+  without it, and on the host the path from the root when the working
+  directory has no such file. `SetFileSystem` documents both.
 
 ### Changed
 

@@ -8,7 +8,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -86,17 +85,6 @@ func (m *WasmModule) takeCallbackError() error {
 	err := m.callbackErr
 	m.callbackErr = nil
 	return err
-}
-
-type WasmFileSystem struct {
-	subFS fs.FS
-}
-
-func (fs *WasmFileSystem) Open(name string) (fs.File, error) {
-	if fs.subFS != nil {
-		return fs.subFS.Open(name)
-	}
-	return os.Open(name)
 }
 
 type LookupFuncMap struct {

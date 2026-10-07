@@ -183,6 +183,15 @@ func (g *Graphviz) laidOut(ctx context.Context, graph *Graph, render func(contex
 	})
 }
 
+// SetFileSystem names the file system every file a graph names is read from:
+// the files Graphviz opens, node images among them, and the images the
+// renderer draws. nil restores the default, the host's. It is process-wide,
+// for every instance, and takes effect on the next file opened, renders in
+// progress included.
+//
+// A name is read as an fs.FS name with any leading slash removed, so
+// image="/a/b.png" opens a/b.png. On the host, a name is tried from the
+// working directory and then from the root.
 func SetFileSystem(fsys fs.FS) {
 	wasm.SetWasmFileSystem(fsys)
 }

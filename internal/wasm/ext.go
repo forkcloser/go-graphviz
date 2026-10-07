@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -330,6 +332,47 @@ func SymListZero(ctx context.Context) (*SymList, error) {
 }
 
 var fsMu sync.Mutex
+
+// WasmFileSystem is the file system mounted at the module's root: the one
+// SetWasmFileSystem names, or the host's when it names none.
+type WasmFileSystem struct {
+	subFS fs.FS
+}
+
+// Open opens a file Graphviz or the renderer names. The runtime mounts this
+// file system at /, so Graphviz's names arrive relative to it, /a/b.png as
+// a/b.png, while the renderer's arrive as the graph wrote them; trimming the
+// leading slash makes both open the same file. On the host, a name is tried
+// from the working directory and then from the root, since the mount has lost
+// which of the two the graph meant; a name that resolves today keeps
+// resolving to the same file.
+func (w *WasmFileSystem) Open(name string) (fs.File, error) {
+	fsMu.Lock()
+	sub := w.subFS
+	fsMu.Unlock()
+
+	rel := strings.TrimLeft(name, "/")
+	if rel == "" {
+		rel = "."
+	}
+
+	// An fs.FS returns its *PathError as it is.
+	if sub != nil {
+		return sub.Open(rel) //nolint:wrapcheck // see above
+	}
+
+	file, err := os.Open(rel) // #nosec G304 -- opening the file a graph names is the point
+	if err == nil || !errors.Is(err, fs.ErrNotExist) || filepath.IsAbs(rel) {
+		return file, err //nolint:wrapcheck // see above
+	}
+
+	// #nosec G304 -- as above
+	if rooted, rootErr := os.Open(string(filepath.Separator) + rel); rootErr == nil {
+		return rooted, nil
+	}
+
+	return nil, err //nolint:wrapcheck // see above
+}
 
 func SetWasmFileSystem(fsys fs.FS) {
 	fsMu.Lock()
