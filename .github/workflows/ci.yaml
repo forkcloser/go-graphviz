@@ -226,6 +226,12 @@ jobs:
           WORK="${RUNNER_TEMP}/wasm-b" just wasm
       - name: The second build matches too
         run: git diff --exit-code --stat -- internal/wasm/graphviz.wasm
+      # The blob is built from bind.c, which nori generates from bind.proto
+      # with bind.go; a hand edit to either would pass every check above.
+      - name: The generated bridge matches its generator
+        run: |
+          just bindings
+          git diff --exit-code --stat -- internal/wasm/bind.go internal/wasm/build/bind.c
 
   # The ONE required status check (defaultRequiredChecks in
   # internal/github/audit.go). Requiring the matrix legs by name would bake
