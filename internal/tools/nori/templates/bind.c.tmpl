@@ -6,6 +6,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
+// WASM_EXPORT exports a bridge function from the module under its own name;
+// build.sh links with no other exports but malloc and free.
+#define WASM_EXPORT(name) __attribute__((export_name(#name)))
+
 // this is imported by host function in Go.
 void *wasm_bridge_get_go_funcptr(void *funcbaseptr);
 
@@ -63,6 +67,7 @@ static void to_string_ptr_with_length(void *arg, int length) {
 
 {{- range .ExportEnums }}
 {{ range .Values }}
+WASM_EXPORT(wasm_bridge_get_{{ .Name }})
 int wasm_bridge_get_{{ .Name }}() {
   return {{ .Name }};
 }
@@ -71,6 +76,7 @@ int wasm_bridge_get_{{ .Name }}() {
 
 {{ range .ExportMessages }}
 {{- if .HasConstructor }}
+WASM_EXPORT(wasm_bridge_new_{{ .Name }})
 void *wasm_bridge_new_{{ .Name }}() {
   void *ret = malloc(sizeof({{ .Type }}));
   memset(ret, 0, sizeof({{ .Type }}));
@@ -79,10 +85,12 @@ void *wasm_bridge_new_{{ .Name }}() {
 {{ end }}
 {{- range .Fields }}
 {{- if .Value.IsFunction }}
+WASM_EXPORT(wasm_bridge_set_{{ .Name }})
 void wasm_bridge_set_{{ .Name }}({{ .ReceiverType }} *recv) {
   {{ .Value.Src }} = {{ .Value.FuncName }};
 }
 {{- else }}
+WASM_EXPORT(wasm_bridge_get_{{ .Name }})
 void wasm_bridge_get_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.GoType }}* ret) {
   {{- if and .Value.IsStruct (not .Value.IsSlice) }}
   // The field itself, not a copy: a copy was allocated on every read and
@@ -94,6 +102,7 @@ void wasm_bridge_get_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.GoType }}*
   {{- end }}
 }
 
+WASM_EXPORT(wasm_bridge_set_{{ .Name }})
 void wasm_bridge_set_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.WasmType }} v) {
   {{- template "toCValue" (map "Value" .Value "Dst" .Value.Src "Src" "v" ) }}
 }
@@ -102,6 +111,7 @@ void wasm_bridge_set_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.WasmType }
 {{- end }}
 
 {{ range .ExportFunctions }}
+WASM_EXPORT(wasm_bridge_{{ .Name }})
 void wasm_bridge_{{ .Name }}({{- range .Args -}}{{- .Value.WasmType }} _arg{{- .Index -}}{{- if not .IsLastArg -}}, {{ end -}}{{- end -}}) {
   {{- range .FuncArgs }}
   {{- if not .Value.IsFunction }}
