@@ -13,6 +13,10 @@ Graphviz 16 below.
 
 ### Fixed
 
+- A Go callback that panics during a render, a `RenderEngine` method for
+  one, no longer leaves the instance broken: the panic comes back as an
+  error wrapping `ErrCallbackPanic`, with the panic's value, and the
+  instance keeps rendering. The next render on it used to fail.
 - Rendering and making instances no longer grow the WebAssembly module's
   memory. A render left about 4.5 KiB behind, in PNG or JPEG as in SVG,
   and `New` with `Close` about 4 KiB, which a long-running process

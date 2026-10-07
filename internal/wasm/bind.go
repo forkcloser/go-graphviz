@@ -552,6 +552,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -611,6 +619,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -702,6 +718,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IDAllocator_Map")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -764,6 +788,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -827,6 +859,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IDAllocator_Print")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -864,6 +904,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IDAllocator_Close")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -927,6 +975,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -998,6 +1054,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1058,6 +1122,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1100,6 +1172,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_IOService_Flush")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1161,6 +1241,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_ClientEventCallback_ObjectFunc")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1238,6 +1326,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1287,6 +1383,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1368,6 +1472,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1437,6 +1549,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1491,6 +1611,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DictMake")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1532,6 +1660,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1589,6 +1725,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1642,6 +1786,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DictWalk")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1680,6 +1832,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_UserShape_DataFree")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1718,6 +1878,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_Refresh")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1780,6 +1948,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_ButtonPress")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1842,6 +2018,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_ButtonRelease")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1893,6 +2077,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_Motion")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1959,6 +2151,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_Modify")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -1997,6 +2197,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_Delete")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2063,6 +2271,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_Read")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2115,6 +2331,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_Layout")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2181,6 +2405,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceCallbacks_Render")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2219,6 +2451,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceEngine_Initialize")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2257,6 +2497,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceEngine_Format")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2295,6 +2543,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_DeviceEngine_Finalize")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2333,6 +2589,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginJob")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2371,6 +2635,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndJob")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2409,6 +2681,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginGraph")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2447,6 +2727,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndGraph")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2521,6 +2809,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginLayer")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2559,6 +2855,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndLayer")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2597,6 +2901,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginPage")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2635,6 +2947,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndPage")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2673,6 +2993,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginCluster")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2711,6 +3039,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndCluster")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2749,6 +3085,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginNodes")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2787,6 +3131,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndNodes")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2825,6 +3177,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginEdges")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2863,6 +3223,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndEdges")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2901,6 +3269,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginNode")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2939,6 +3315,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndNode")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -2977,6 +3361,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginEdge")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3015,6 +3407,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndEdge")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3109,6 +3509,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginAnchor")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3147,6 +3555,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndAnchor")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3196,6 +3612,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_BeginLabel")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3234,6 +3658,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_EndLabel")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3297,6 +3729,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_Textspan")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3347,6 +3787,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_ResolveColor")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3417,6 +3865,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_Ellipse")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3498,6 +3954,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_Polygon")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3579,6 +4043,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_Beziercurve")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3649,6 +4121,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_Polyline")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3701,6 +4181,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_Comment")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3796,6 +4284,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_RenderEngine_LibraryShape")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3834,6 +4330,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_LayoutEngine_Layout")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3876,6 +4380,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 			// read; a skipped or failed callback returns zero.
 			var result uint64
 			defer func() { stack[0] = result }()
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
@@ -3937,6 +4449,14 @@ func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
 	).Export("wasm_bridge_TextLayoutEngine_TextLayout")
 	env = env.NewFunctionBuilder().WithGoModuleFunction(
 		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
+			// A panic must not unwind through Graphviz's frames either: it
+			// skips Graphviz's cleanup and leaves the instance broken. It is
+			// parked like a returned error.
+			defer func() {
+				if r := recover(); r != nil {
+					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
+				}
+			}()
 			if mod.callbackErr != nil {
 				// An earlier callback of this call failed; the rest are skipped.
 				return
