@@ -88,7 +88,7 @@ func TestHTMLLabel(t *testing.T) {
 	html.SetLabelHTML(markup)
 
 	var buf bytes.Buffer
-	if err := g.Render(ctx, graph, graphviz.XDOT, &buf); err != nil {
+	if err := g.Render(ctx, graph, graphviz.GV, &buf); err != nil {
 		t.Fatal(err)
 	}
 

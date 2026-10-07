@@ -313,16 +313,16 @@ var (
 var (
 	SetFontLoader       = gvc.SetFontLoader
 	DefaultPlugins      = gvc.DefaultPlugins
-	DeviceQuality       = gvc.WithDeviceQuality
-	DeviceFeatures      = gvc.WithDeviceFeatures
-	DeviceDPI           = gvc.WithDeviceDPI
+	WithDeviceQuality   = gvc.WithDeviceQuality
+	WithDeviceFeatures  = gvc.WithDeviceFeatures
+	WithDeviceDPI       = gvc.WithDeviceDPI
 	NewDevicePlugin     = gvc.NewDevicePlugin
 	PNGDevicePlugin     = gvc.PNGDevicePlugin
 	JPGDevicePlugin     = gvc.JPGDevicePlugin
-	RenderQuality       = gvc.WithRenderQuality
-	RenderFeatures      = gvc.WithRenderFeatures
-	RenderColorType     = gvc.WithRenderColorType
-	RenderPAD           = gvc.WithRenderPAD
+	WithRenderQuality   = gvc.WithRenderQuality
+	WithRenderFeatures  = gvc.WithRenderFeatures
+	WithRenderColorType = gvc.WithRenderColorType
+	WithRenderPAD       = gvc.WithRenderPAD
 	NewRenderPlugin     = gvc.NewRenderPlugin
 	PNGRenderPlugin     = gvc.PNGRenderPlugin
 	JPGRenderPlugin     = gvc.JPGRenderPlugin

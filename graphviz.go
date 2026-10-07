@@ -59,7 +59,15 @@ const (
 type Format string
 
 const (
-	XDOT Format = "dot"
+	// GV is the graph written back as DOT, with the computed layout on it
+	// (dot -Tgv, or -Tdot). As in Graphviz, the render writes the layout onto
+	// the graph as attributes (pos, width, height, …), and they stay on it.
+	GV Format = "gv"
+	// XDOT is GV with Graphviz's drawing operations added (dot -Txdot). They
+	// are written onto the graph too (_draw_, _ldraw_, …), so a later GV
+	// render of the same graph carries them; parse the graph again for a
+	// clean GV.
+	XDOT Format = "xdot"
 	SVG  Format = "svg"
 	PNG  Format = "png"
 	JPG  Format = "jpg"

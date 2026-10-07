@@ -36,7 +36,7 @@ func TestGraphOptionsApplyToOneGraph(t *testing.T) {
 		t.Helper()
 
 		var buf bytes.Buffer
-		if err := g.Render(t.Context(), graph, graphviz.XDOT, &buf); err != nil {
+		if err := g.Render(t.Context(), graph, graphviz.GV, &buf); err != nil {
 			t.Fatal(err)
 		}
 

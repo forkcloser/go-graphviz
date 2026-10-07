@@ -43,7 +43,7 @@ func writeDOT(ctx context.Context) (out []byte, err error) {
 	e.SetLabel("e")
 
 	var buf bytes.Buffer
-	if err := g.Render(ctx, graph, graphviz.XDOT, &buf); err != nil {
+	if err := g.Render(ctx, graph, graphviz.GV, &buf); err != nil {
 		return nil, err
 	}
 

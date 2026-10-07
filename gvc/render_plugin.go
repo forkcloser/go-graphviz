@@ -595,24 +595,8 @@ func (p *Point) X() int {
 	return int(p.wasm.GetX())
 }
 
-func (p *Point) SetX(x int) {
-	p.wasm.SetX(int64(x))
-}
-
 func (p *Point) Y() int {
 	return int(p.wasm.GetY())
-}
-
-func (p *Point) SetY(y int) {
-	p.wasm.SetY(int64(y))
-}
-
-func (p *Point) getWasm() *wasm.Point {
-	if p == nil {
-		return nil
-	}
-
-	return p.wasm
 }
 
 type PointFloat struct {
@@ -631,24 +615,8 @@ func (p *PointFloat) X() float64 {
 	return p.wasm.GetX()
 }
 
-func (p *PointFloat) SetX(x float64) {
-	p.wasm.SetX(x)
-}
-
 func (p *PointFloat) Y() float64 {
 	return p.wasm.GetY()
-}
-
-func (p *PointFloat) SetY(y float64) {
-	p.wasm.SetY(y)
-}
-
-func (p *PointFloat) getWasm() *wasm.PointFloat {
-	if p == nil {
-		return nil
-	}
-
-	return p.wasm
 }
 
 type TextSpan struct {
@@ -667,48 +635,24 @@ func (s *TextSpan) Text() string {
 	return s.wasm.GetStr()
 }
 
-func (s *TextSpan) SetText(v string) {
-	s.wasm.SetStr(v)
-}
-
 func (s *TextSpan) Font() *TextFont {
 	return toTextFont(s.wasm.GetFont())
-}
-
-func (s *TextSpan) SetFont(v *TextFont) {
-	s.wasm.SetFont(v.getWasm())
 }
 
 func (s *TextSpan) YOffsetLayout() float64 {
 	return s.wasm.GetYOffsetLayout()
 }
 
-func (s *TextSpan) SetYOffsetLayout(v float64) {
-	s.wasm.SetYOffsetLayout(v)
-}
-
 func (s *TextSpan) YOffsetCenterLine() float64 {
 	return s.wasm.GetYOffsetCenterLine()
-}
-
-func (s *TextSpan) SetYOffsetCenterLine(v float64) {
-	s.wasm.SetYOffsetCenterLine(v)
 }
 
 func (s *TextSpan) Size() *PointFloat {
 	return toPointFloat(s.wasm.GetSize())
 }
 
-func (s *TextSpan) SetSize(v *PointFloat) {
-	s.wasm.SetSize(v.getWasm())
-}
-
 func (s *TextSpan) Just() int {
 	return int(s.wasm.GetJust())
-}
-
-func (s *TextSpan) SetJust(v int) {
-	s.wasm.SetJust(int64(v))
 }
 
 type TextFont struct {
@@ -727,56 +671,24 @@ func (f *TextFont) Name() string {
 	return f.wasm.GetName()
 }
 
-func (f *TextFont) SetName(v string) {
-	f.wasm.SetName(v)
-}
-
 func (f *TextFont) Color() string {
 	return f.wasm.GetColor()
-}
-
-func (f *TextFont) SetColor(v string) {
-	f.wasm.SetColor(v)
 }
 
 func (f *TextFont) PostScriptAlias() *PostScriptAlias {
 	return toPostScriptAlias(f.wasm.GetPostscriptAlias())
 }
 
-func (f *TextFont) SetPostScriptAlias(v *PostScriptAlias) {
-	f.wasm.SetPostscriptAlias(v.getWasm())
-}
-
 func (f *TextFont) Size() float64 {
 	return f.wasm.GetSize()
-}
-
-func (f *TextFont) SetSize(v float64) {
-	f.wasm.SetSize(v)
 }
 
 func (f *TextFont) Flags() uint {
 	return uint(f.wasm.GetFlags())
 }
 
-func (f *TextFont) SetFlags(v uint) {
-	f.wasm.SetFlags(uint64(v))
-}
-
 func (f *TextFont) Count() uint {
 	return uint(f.wasm.GetCount())
-}
-
-func (f *TextFont) SetCount(v uint) {
-	f.wasm.SetCount(uint64(v))
-}
-
-func (f *TextFont) getWasm() *wasm.TextFont {
-	if f == nil {
-		return nil
-	}
-
-	return f.wasm
 }
 
 type PostScriptAlias struct {
@@ -795,80 +707,36 @@ func (a *PostScriptAlias) Name() string {
 	return a.wasm.GetName()
 }
 
-func (a *PostScriptAlias) SetName(v string) {
-	a.wasm.SetName(v)
-}
-
 func (a *PostScriptAlias) Family() string {
 	return a.wasm.GetFamily()
-}
-
-func (a *PostScriptAlias) SetFamily(v string) {
-	a.wasm.SetFamily(v)
 }
 
 func (a *PostScriptAlias) Weight() string {
 	return a.wasm.GetWeight()
 }
 
-func (a *PostScriptAlias) SetWeight(v string) {
-	a.wasm.SetWeight(v)
-}
-
 func (a *PostScriptAlias) Stretch() string {
 	return a.wasm.GetStretch()
-}
-
-func (a *PostScriptAlias) SetStretch(v string) {
-	a.wasm.SetStretch(v)
 }
 
 func (a *PostScriptAlias) Style() string {
 	return a.wasm.GetStyle()
 }
 
-func (a *PostScriptAlias) SetStyle(v string) {
-	a.wasm.SetStyle(v)
-}
-
 func (a *PostScriptAlias) XFigCode() int {
 	return int(a.wasm.GetXfigCode())
-}
-
-func (a *PostScriptAlias) SetXFigCode(v int) {
-	a.wasm.SetXfigCode(int64(v))
 }
 
 func (a *PostScriptAlias) SVGFontFamily() string {
 	return a.wasm.GetSvgFontFamily()
 }
 
-func (a *PostScriptAlias) SetSVGFontFamily(v string) {
-	a.wasm.SetSvgFontFamily(v)
-}
-
 func (a *PostScriptAlias) SVGFontWeight() string {
 	return a.wasm.GetSvgFontWeight()
 }
 
-func (a *PostScriptAlias) SetSVGFontWeight(v string) {
-	a.wasm.SetSvgFontWeight(v)
-}
-
 func (a *PostScriptAlias) SVGFontStyle() string {
 	return a.wasm.GetSvgFontStyle()
-}
-
-func (a *PostScriptAlias) SetSVGFontStyle(v string) {
-	a.wasm.SetSvgFontStyle(v)
-}
-
-func (a *PostScriptAlias) getWasm() *wasm.PostscriptAlias {
-	if a == nil {
-		return nil
-	}
-
-	return a.wasm
 }
 
 type Scale = PointFloat
@@ -877,32 +745,16 @@ func (j *Job) Zoom() float64 {
 	return j.wasm.GetZoom()
 }
 
-func (j *Job) SetZoom(v float64) {
-	j.wasm.SetZoom(v)
-}
-
 func (j *Job) Scale() *Scale {
 	return toPointFloat(j.wasm.GetScale())
-}
-
-func (j *Job) SetScale(v *Scale) {
-	j.wasm.SetScale(v.getWasm())
 }
 
 func (j *Job) Width() uint64 {
 	return j.wasm.GetWidth()
 }
 
-func (j *Job) SetWidth(v uint64) {
-	j.wasm.SetWidth(v)
-}
-
 func (j *Job) Height() uint64 {
 	return j.wasm.GetHeight()
-}
-
-func (j *Job) SetHeight(v uint64) {
-	j.wasm.SetHeight(v)
 }
 
 // Rotation is how far the page is turned, in degrees: 90 for a graph laid
@@ -919,16 +771,8 @@ func (j *Job) Translation() *Translation {
 	return toPointFloat(j.wasm.GetTranslation())
 }
 
-func (j *Job) SetTranslation(v *Translation) {
-	j.wasm.SetTranslation(v.getWasm())
-}
-
 func (j *Job) OutputData() []byte {
 	return []byte(j.wasm.GetOutputData())
-}
-
-func (j *Job) SetOutputData(v []byte) {
-	j.wasm.SetOutputData(string(v))
 }
 
 func (j *Job) ExternalContext() bool {
@@ -939,24 +783,12 @@ func (j *Job) OutputLangName() string {
 	return j.wasm.GetOutputLangname()
 }
 
-func (j *Job) SetOutputLangName(v string) {
-	j.wasm.SetOutputLangname(v)
-}
-
 func (j *Job) OutputDataPosition() uint {
 	return j.wasm.GetOutputDataPosition()
 }
 
-func (j *Job) SetOutputDataPosition(v uint) {
-	j.wasm.SetOutputDataPosition(v)
-}
-
 func (j *Job) OutputFileName() string {
 	return j.wasm.GetOutputFilename()
-}
-
-func (j *Job) SetOutputFileName(v string) {
-	j.wasm.SetOutputFilename(v)
 }
 
 func (j *Job) Object() *ObjectState {
@@ -965,10 +797,6 @@ func (j *Job) Object() *ObjectState {
 
 func (j *Job) DPI() *PointFloat {
 	return toPointFloat(j.wasm.GetDpi())
-}
-
-func (j *Job) SetDPI(v *PointFloat) {
-	j.wasm.SetDpi(v.getWasm())
 }
 
 type ObjectState struct {
@@ -1005,40 +833,20 @@ func (s *ObjectState) Pen() PenType {
 	return PenType(s.wasm.GetPen())
 }
 
-func (s *ObjectState) SetPen(v PenType) {
-	s.wasm.SetPen(wasm.PenType(v))
-}
-
 func (s *ObjectState) PenWidth() float64 {
 	return s.wasm.GetPenwidth()
-}
-
-func (s *ObjectState) SetPenWidth(v float64) {
-	s.wasm.SetPenwidth(v)
 }
 
 func (s *ObjectState) Fill() FillType {
 	return FillType(s.wasm.GetFill())
 }
 
-func (s *ObjectState) SetFill(v FillType) {
-	s.wasm.SetFill(wasm.FillType(v))
-}
-
 func (s *ObjectState) PenColor() *Color {
 	return toColor(s.wasm.GetPencolor())
 }
 
-func (s *ObjectState) SetPenColor(v *Color) {
-	s.wasm.SetPencolor(v.getWasm())
-}
-
 func (s *ObjectState) FillColor() *Color {
 	return toColor(s.wasm.GetFillcolor())
-}
-
-func (s *ObjectState) SetFillColor(v *Color) {
-	s.wasm.SetFillcolor(v.getWasm())
 }
 
 func (s *ObjectState) StopColor() *Color {
@@ -1051,10 +859,6 @@ func (s *ObjectState) RawStyle() []string {
 
 func (s *ObjectState) Type() ObjectType {
 	return ObjectType(s.wasm.GetType())
-}
-
-func (s *ObjectState) SetType(v ObjectType) {
-	s.wasm.SetType(wasm.ObjectType(v))
 }
 
 func (s *ObjectState) Graph() *cgraph.Graph {
@@ -1150,14 +954,6 @@ func (c *Color) SetType(v ColorType) {
 	c.wasm.SetType(wasm.ColorType(v))
 }
 
-func (c *Color) getWasm() *wasm.Color {
-	if c == nil {
-		return nil
-	}
-
-	return c.wasm
-}
-
 type UserShape struct {
 	wasm *wasm.UserShape
 }
@@ -1174,88 +970,44 @@ func (s *UserShape) Name() string {
 	return s.wasm.GetName()
 }
 
-func (s *UserShape) SetName(v string) {
-	s.wasm.SetName(v)
-}
-
 func (s *UserShape) MacroID() int {
 	return int(s.wasm.GetMacroId())
-}
-
-func (s *UserShape) SetMacroID(v int) {
-	s.wasm.SetMacroId(int64(v))
 }
 
 func (s *UserShape) MustInline() bool {
 	return s.wasm.GetMustInline()
 }
 
-func (s *UserShape) SetMustInline(v bool) {
-	s.wasm.SetMustInline(v)
-}
-
 func (s *UserShape) NoCache() bool {
 	return s.wasm.GetNocache()
-}
-
-func (s *UserShape) SetNoCache(v bool) {
-	s.wasm.SetNocache(v)
 }
 
 func (s *UserShape) ImageType() ImageType {
 	return ImageType(s.wasm.GetType())
 }
 
-func (s *UserShape) SetImageType(v ImageType) {
-	s.wasm.SetType(wasm.ImageType(v))
-}
-
 func (s *UserShape) StringType() string {
 	return s.wasm.GetStringtype()
-}
-
-func (s *UserShape) SetStringType(v string) {
-	s.wasm.SetStringtype(v)
 }
 
 func (s *UserShape) X() int {
 	return int(s.wasm.GetX())
 }
 
-func (s *UserShape) SetX(v int) {
-	s.wasm.SetX(int64(v))
-}
-
 func (s *UserShape) Y() int {
 	return int(s.wasm.GetY())
-}
-
-func (s *UserShape) SetY(v int) {
-	s.wasm.SetY(int64(v))
 }
 
 func (s *UserShape) Width() int {
 	return int(s.wasm.GetW())
 }
 
-func (s *UserShape) SetWidth(v int) {
-	s.wasm.SetW(int64(v))
-}
-
 func (s *UserShape) Height() int {
 	return int(s.wasm.GetH())
 }
 
-func (s *UserShape) SetHeight(v int) {
-	s.wasm.SetH(int64(v))
-}
-
 func (s *UserShape) DPI() int {
 	return int(s.wasm.GetDpi())
-}
-
-func (s *UserShape) SetDPI(v int) {
-	s.wasm.SetDpi(int64(v))
 }
 
 func (s *UserShape) Data() []byte {
@@ -1267,16 +1019,8 @@ func (s *UserShape) Data() []byte {
 	return data
 }
 
-func (s *UserShape) SetData(v []byte) {
-	s.wasm.SetData(v)
-}
-
 func (s *UserShape) DataSize() uint {
 	return uint(s.wasm.GetDatasize())
-}
-
-func (s *UserShape) SetDataSize(v uint) {
-	s.wasm.SetDatasize(uint64(v))
 }
 
 type ImageType int
@@ -1306,16 +1050,8 @@ func (b *Box) LL() *Point {
 	return toPoint(b.wasm.GetLl())
 }
 
-func (b *Box) SetLL(v *Point) {
-	b.wasm.SetLl(v.getWasm())
-}
-
 func (b *Box) UR() *Point {
 	return toPoint(b.wasm.GetUr())
-}
-
-func (b *Box) SetUR(v *Point) {
-	b.wasm.SetUr(v.getWasm())
 }
 
 type BoxFloat struct {
@@ -1334,14 +1070,6 @@ func (f *BoxFloat) LL() *PointFloat {
 	return toPointFloat(f.wasm.GetLl())
 }
 
-func (f *BoxFloat) SetLL(v *PointFloat) {
-	f.wasm.SetLl(v.getWasm())
-}
-
 func (f *BoxFloat) UR() *PointFloat {
 	return toPointFloat(f.wasm.GetUr())
-}
-
-func (f *BoxFloat) SetUR(v *PointFloat) {
-	f.wasm.SetUr(v.getWasm())
 }

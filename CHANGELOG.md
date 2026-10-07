@@ -62,6 +62,16 @@ Graphviz's internals listed under Removed.
 - `graphviz.version` is gone: the Graphviz version is the `graphviz` entry
   in `pins.yaml`, which the build already read and checked the file against.
 
+- Breaking: `XDOT` is Graphviz's xdot, the layout with its drawing
+  operations. It was `"dot"`, plain DOT, which is now `GV`. As in Graphviz,
+  both write their attributes onto the graph they render, so a `GV` render
+  after an `XDOT` render of the same graph carries the drawing operations.
+- Breaking: the root package's plugin options carry the `With` prefix
+  like its graph options and `gvc`'s own: `WithDeviceQuality`,
+  `WithDeviceFeatures`, `WithDeviceDPI`, `WithRenderQuality`,
+  `WithRenderFeatures`, `WithRenderColorType` and `WithRenderPAD`, for
+  `DeviceQuality` and the rest.
+
 ### Removed
 
 Breaking: these were bindings over Graphviz's internals, which no program
@@ -83,6 +93,12 @@ could use correctly.
   attributes, subgraphs, `Parent`, `Root`, `ReLabel` and `Before` are
   unchanged.
 - `gvc.UserShape`'s `Link` and `SetLink`.
+- The setters of what a `RenderEngine` receives, which wrote into the
+  render in progress: `Job`'s (`SetScale`, `SetZoom`, `SetOutputData`, …),
+  and those of `ObjectState`, `TextSpan`, `TextFont`, `PostScriptAlias`,
+  `UserShape`, `Point`, `PointFloat`, `Box` and `BoxFloat`. Their getters
+  stay. `Color` keeps its setters, which `ResolveColor` needs.
+- `gvc.ErrFontNotFound`, which nothing returned any more.
 
 ## [0.4.0] - 2026-10-06
 
