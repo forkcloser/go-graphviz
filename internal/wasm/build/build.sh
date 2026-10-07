@@ -186,6 +186,16 @@ for f in "${neatogen[@]}"; do neatogen_sources+=("${gv}/lib/neatogen/${f}.c"); d
 mkdir -p "${work}/out"
 raw="${work}/out/graphviz.raw.wasm"
 
+# The module exports what Go calls and nothing else: malloc and free, and
+# every wasm_bridge_ function bind.c and patch.c define, whose names Go
+# composes at run time ("wasm_bridge_get_" + a field). Whatever Graphviz code
+# none of them reaches is left out, which --export-all kept.
+exports=("-Wl,--export=malloc" "-Wl,--export=free")
+while read -r name; do
+  exports+=("-Wl,--export=${name}")
+done < <(grep -hoE '^[A-Za-z_][A-Za-z0-9_ *]*[ *]wasm_bridge_[A-Za-z0-9_]+\([^;]*\) *\{' \
+  "${here}/bind.c" "${here}/patch.c" | grep -oE 'wasm_bridge_[A-Za-z0-9_]+' | LC_ALL=C sort -u)
+
 echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm32-wasip1 with wasi-sdk ${wasi_sdk_version}"
 "${sdk}/bin/clang" \
   -g0 -Os \
@@ -208,7 +218,7 @@ echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm
   -Wno-write-strings \
   -Wno-char-subscripts \
   -Wno-writable-strings \
-  -Wl,--export-all \
+  "${exports[@]}" \
   -Wl,--no-entry \
   -Wl,--error-limit=0 \
   -Wl,--import-undefined \

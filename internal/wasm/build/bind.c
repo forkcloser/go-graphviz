@@ -52,208 +52,12 @@ static void to_string_ptr_with_length(void *arg, int length) {
   char **strptr = (char **)arg;
   *(void **)arg = newStringWithLength(*strptr, length);
 }
-void * wasm_bridge_IDAllocator_Open(Agraph_t * arg0, Agdisc_t * arg1);
-
-void * IDAllocator_Open(Agraph_t * _arg0, Agdisc_t * _arg1) {
-  Agraph_t * arg0 = (Agraph_t *)_arg0;
-  Agdisc_t * arg1 = (Agdisc_t *)_arg1;
-  return wasm_bridge_IDAllocator_Open(
-    arg0,
-    arg1
-  );
-}
-
-long int wasm_bridge_IDAllocator_Map(void * arg0, int arg1, GoString * arg2, unsigned long long int* arg3, int arg4);
-
-long int IDAllocator_Map(void * _arg0, int _arg1, char * _arg2, unsigned long long int * _arg3, int _arg4) {
-  void * arg0 = (void *)_arg0;
-  int arg1 = (int)_arg1;
-  GoString *arg2 = newString(_arg2);
-  unsigned long long int * arg3 = (unsigned long long int *)_arg3;
-  int arg4 = (int)_arg4;
-  return wasm_bridge_IDAllocator_Map(
-    arg0,
-    arg1,
-    arg2,
-    arg3,
-    arg4
-  );
-}
-
-void wasm_bridge_IDAllocator_Free(void * arg0, int arg1, unsigned long long int arg2);
-
-void IDAllocator_Free(void * _arg0, int _arg1, unsigned long long int _arg2) {
-  void * arg0 = (void *)_arg0;
-  int arg1 = (int)_arg1;
-  unsigned long long int arg2 = (unsigned long long int)_arg2;
-  return wasm_bridge_IDAllocator_Free(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-char * wasm_bridge_IDAllocator_Print(void * arg0, int arg1, unsigned long long int arg2);
-
-char * IDAllocator_Print(void * _arg0, int _arg1, unsigned long long int _arg2) {
-  void * arg0 = (void *)_arg0;
-  int arg1 = (int)_arg1;
-  unsigned long long int arg2 = (unsigned long long int)_arg2;
-  return wasm_bridge_IDAllocator_Print(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void wasm_bridge_IDAllocator_Close(void * arg0);
-
-void IDAllocator_Close(void * _arg0) {
-  void * arg0 = (void *)_arg0;
-  return wasm_bridge_IDAllocator_Close(
-    arg0
-  );
-}
-
-void wasm_bridge_IDAllocator_IdRegister(void * arg0, int arg1, void * arg2);
-
-void IDAllocator_IdRegister(void * _arg0, int _arg1, void * _arg2) {
-  void * arg0 = (void *)_arg0;
-  int arg1 = (int)_arg1;
-  void * arg2 = (void *)_arg2;
-  return wasm_bridge_IDAllocator_IdRegister(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-int wasm_bridge_IOService_Afread(void * arg0, GoString * arg1, int arg2);
-
-int IOService_Afread(void * _arg0, char * _arg1, int _arg2) {
-  void * arg0 = (void *)_arg0;
-  GoString *arg1 = newString(_arg1);
-  int arg2 = (int)_arg2;
-  return wasm_bridge_IOService_Afread(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-int wasm_bridge_IOService_Putstr(void * arg0, GoString * arg1);
-
-int IOService_Putstr(void * _arg0, const char * _arg1) {
-  void * arg0 = (void *)_arg0;
-  GoString *arg1 = newString(_arg1);
-  return wasm_bridge_IOService_Putstr(
-    arg0,
-    arg1
-  );
-}
-
-int wasm_bridge_IOService_Flush(void * arg0);
-
-int IOService_Flush(void * _arg0) {
-  void * arg0 = (void *)_arg0;
-  return wasm_bridge_IOService_Flush(
-    arg0
-  );
-}
-
-void wasm_bridge_ClientEventCallback_ObjectFunc(Agraph_t * arg0, Agobj_t * arg1, void * arg2);
-
-void ClientEventCallback_ObjectFunc(Agraph_t * _arg0, Agobj_t * _arg1, void * _arg2) {
-  Agraph_t * arg0 = (Agraph_t *)_arg0;
-  Agobj_t * arg1 = (Agobj_t *)_arg1;
-  void * arg2 = (void *)_arg2;
-  return wasm_bridge_ClientEventCallback_ObjectFunc(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void wasm_bridge_ClientEventCallback_ObjectUpdateFunc(Agraph_t * arg0, Agobj_t * arg1, void * arg2, Agsym_t * arg3);
-
-void ClientEventCallback_ObjectUpdateFunc(Agraph_t * _arg0, Agobj_t * _arg1, void * _arg2, Agsym_t * _arg3) {
-  Agraph_t * arg0 = (Agraph_t *)_arg0;
-  Agobj_t * arg1 = (Agobj_t *)_arg1;
-  void * arg2 = (void *)_arg2;
-  Agsym_t * arg3 = (Agsym_t *)_arg3;
-  return wasm_bridge_ClientEventCallback_ObjectUpdateFunc(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-}
-
 int wasm_bridge_UserRef(GoString * arg0);
 
 int UserRef(char * _arg0) {
   GoString *arg0 = newString(_arg0);
   return wasm_bridge_UserRef(
     arg0
-  );
-}
-
-void * wasm_bridge_DictMemory(Dict_t * arg0, void * arg1, unsigned long int arg2, Dtdisc_t * arg3);
-
-void * DictMemory(Dict_t * _arg0, void * _arg1, unsigned long int _arg2, Dtdisc_t * _arg3) {
-  Dict_t * arg0 = (Dict_t *)_arg0;
-  void * arg1 = (void *)_arg1;
-  unsigned long int arg2 = (unsigned long int)_arg2;
-  Dtdisc_t * arg3 = (Dtdisc_t *)_arg3;
-  return wasm_bridge_DictMemory(
-    arg0,
-    arg1,
-    arg2,
-    arg3
-  );
-}
-
-void * wasm_bridge_DictSearch(Dict_t * arg0, void * arg1, int arg2);
-
-void * DictSearch(Dict_t * _arg0, void * _arg1, int _arg2) {
-  Dict_t * arg0 = (Dict_t *)_arg0;
-  void * arg1 = (void *)_arg1;
-  int arg2 = (int)_arg2;
-  return wasm_bridge_DictSearch(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void * wasm_bridge_DictMake(void * arg0, Dtdisc_t * arg1);
-
-void * DictMake(void * _arg0, Dtdisc_t * _arg1) {
-  void * arg0 = (void *)_arg0;
-  Dtdisc_t * arg1 = (Dtdisc_t *)_arg1;
-  return wasm_bridge_DictMake(
-    arg0,
-    arg1
-  );
-}
-
-void wasm_bridge_DictFree(void * arg0);
-
-void DictFree(void * _arg0) {
-  void * arg0 = (void *)_arg0;
-  return wasm_bridge_DictFree(
-    arg0
-  );
-}
-
-int wasm_bridge_DictCompare(void * arg0, void * arg1);
-
-int DictCompare(void * _arg0, void * _arg1) {
-  void * arg0 = (void *)_arg0;
-  void * arg1 = (void *)_arg1;
-  return wasm_bridge_DictCompare(
-    arg0,
-    arg1
   );
 }
 
@@ -265,150 +69,6 @@ int DictWalk(void * _arg0, void * _arg1) {
   return wasm_bridge_DictWalk(
     arg0,
     arg1
-  );
-}
-
-void wasm_bridge_UserShape_DataFree(usershape_t * arg0);
-
-void UserShape_DataFree(usershape_t * _arg0) {
-  usershape_t * arg0 = (usershape_t *)_arg0;
-  return wasm_bridge_UserShape_DataFree(
-    arg0
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_Refresh(GVJ_t * arg0);
-
-void DeviceCallbacks_Refresh(GVJ_t * _arg0) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  return wasm_bridge_DeviceCallbacks_Refresh(
-    arg0
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_ButtonPress(GVJ_t * arg0, int arg1, pointf * arg2);
-
-void DeviceCallbacks_ButtonPress(GVJ_t * _arg0, int _arg1, pointf _arg2) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  int arg1 = (int)_arg1;
-  void *arg2 = malloc(sizeof(_arg2));
-  memcpy(arg2, &_arg2, sizeof(_arg2));
-  return wasm_bridge_DeviceCallbacks_ButtonPress(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_ButtonRelease(GVJ_t * arg0, int arg1, pointf * arg2);
-
-void DeviceCallbacks_ButtonRelease(GVJ_t * _arg0, int _arg1, pointf _arg2) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  int arg1 = (int)_arg1;
-  void *arg2 = malloc(sizeof(_arg2));
-  memcpy(arg2, &_arg2, sizeof(_arg2));
-  return wasm_bridge_DeviceCallbacks_ButtonRelease(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_Motion(GVJ_t * arg0, pointf * arg1);
-
-void DeviceCallbacks_Motion(GVJ_t * _arg0, pointf _arg1) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  void *arg1 = malloc(sizeof(_arg1));
-  memcpy(arg1, &_arg1, sizeof(_arg1));
-  return wasm_bridge_DeviceCallbacks_Motion(
-    arg0,
-    arg1
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_Modify(GVJ_t * arg0, GoString * arg1, GoString * arg2);
-
-void DeviceCallbacks_Modify(GVJ_t * _arg0, const char * _arg1, const char * _arg2) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  GoString *arg1 = newString(_arg1);
-  GoString *arg2 = newString(_arg2);
-  return wasm_bridge_DeviceCallbacks_Modify(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_Delete(GVJ_t * arg0);
-
-void DeviceCallbacks_Delete(GVJ_t * _arg0) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  return wasm_bridge_DeviceCallbacks_Delete(
-    arg0
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_Read(GVJ_t * arg0, GoString * arg1, GoString * arg2);
-
-void DeviceCallbacks_Read(GVJ_t * _arg0, const char * _arg1, const char * _arg2) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  GoString *arg1 = newString(_arg1);
-  GoString *arg2 = newString(_arg2);
-  return wasm_bridge_DeviceCallbacks_Read(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_Layout(GVJ_t * arg0, GoString * arg1);
-
-void DeviceCallbacks_Layout(GVJ_t * _arg0, const char * _arg1) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  GoString *arg1 = newString(_arg1);
-  return wasm_bridge_DeviceCallbacks_Layout(
-    arg0,
-    arg1
-  );
-}
-
-void wasm_bridge_DeviceCallbacks_Render(GVJ_t * arg0, GoString * arg1, GoString * arg2);
-
-void DeviceCallbacks_Render(GVJ_t * _arg0, const char * _arg1, const char * _arg2) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  GoString *arg1 = newString(_arg1);
-  GoString *arg2 = newString(_arg2);
-  return wasm_bridge_DeviceCallbacks_Render(
-    arg0,
-    arg1,
-    arg2
-  );
-}
-
-void wasm_bridge_DeviceEngine_Initialize(GVJ_t * arg0);
-
-void DeviceEngine_Initialize(GVJ_t * _arg0) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  return wasm_bridge_DeviceEngine_Initialize(
-    arg0
-  );
-}
-
-void wasm_bridge_DeviceEngine_Format(GVJ_t * arg0);
-
-void DeviceEngine_Format(GVJ_t * _arg0) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  return wasm_bridge_DeviceEngine_Format(
-    arg0
-  );
-}
-
-void wasm_bridge_DeviceEngine_Finalize(GVJ_t * arg0);
-
-void DeviceEngine_Finalize(GVJ_t * _arg0) {
-  GVJ_t * arg0 = (GVJ_t *)_arg0;
-  return wasm_bridge_DeviceEngine_Finalize(
-    arg0
   );
 }
 
@@ -777,24 +437,6 @@ void RenderEngine_LibraryShape(GVJ_t * _arg0, char * _arg1, pointf * _arg2, unsi
     arg2,
     arg3,
     arg4
-  );
-}
-
-void wasm_bridge_LayoutEngine_Layout(Agraph_t * arg0);
-
-void LayoutEngine_Layout(Agraph_t * _arg0) {
-  Agraph_t * arg0 = (Agraph_t *)_arg0;
-  return wasm_bridge_LayoutEngine_Layout(
-    arg0
-  );
-}
-
-void wasm_bridge_LayoutEngine_Cleanup(Agraph_t * arg0);
-
-void LayoutEngine_Cleanup(Agraph_t * _arg0) {
-  Agraph_t * arg0 = (Agraph_t *)_arg0;
-  return wasm_bridge_LayoutEngine_Cleanup(
-    arg0
   );
 }
 
@@ -1580,46 +1222,10 @@ void *wasm_bridge_new_IDAllocator() {
   return ret;
 }
 
-void wasm_bridge_set_IDAllocator_open(Agiddisc_t *recv) {
-  recv->open = IDAllocator_Open;
-}
-
-void wasm_bridge_set_IDAllocator_map(Agiddisc_t *recv) {
-  recv->map = IDAllocator_Map;
-}
-
-void wasm_bridge_set_IDAllocator_free(Agiddisc_t *recv) {
-  recv->free = IDAllocator_Free;
-}
-
-void wasm_bridge_set_IDAllocator_print(Agiddisc_t *recv) {
-  recv->print = IDAllocator_Print;
-}
-
-void wasm_bridge_set_IDAllocator_close(Agiddisc_t *recv) {
-  recv->close = IDAllocator_Close;
-}
-
-void wasm_bridge_set_IDAllocator_idregister(Agiddisc_t *recv) {
-  recv->idregister = IDAllocator_IdRegister;
-}
-
 void *wasm_bridge_new_IOService() {
   void *ret = malloc(sizeof(Agiodisc_t));
   memset(ret, 0, sizeof(Agiodisc_t));
   return ret;
-}
-
-void wasm_bridge_set_IOService_afread(Agiodisc_t *recv) {
-  recv->afread = IOService_Afread;
-}
-
-void wasm_bridge_set_IOService_putstr(Agiodisc_t *recv) {
-  recv->putstr = IOService_Putstr;
-}
-
-void wasm_bridge_set_IOService_flush(Agiodisc_t *recv) {
-  recv->flush = IOService_Flush;
 }
 
 void *wasm_bridge_new_ClientDiscipline() {
@@ -2132,10 +1738,6 @@ void *wasm_bridge_new_DictMethod() {
   return ret;
 }
 
-void wasm_bridge_set_DictMethod_searchf(Dtmethod_t *recv) {
-  recv->searchf = DictSearch;
-}
-
 void wasm_bridge_get_DictMethod_type(Dtmethod_t *recv, long long int* ret) {
   long long int v = (long long int)recv->type;
   *ret = v;
@@ -2264,26 +1866,10 @@ void wasm_bridge_set_DictDisc_link(Dtdisc_t *recv, long long int v) {
   recv->link = (long long int)v;
 }
 
-void wasm_bridge_set_DictDisc_makef(Dtdisc_t *recv) {
-  recv->makef = DictMake;
-}
-
-void wasm_bridge_set_DictDisc_freef(Dtdisc_t *recv) {
-  recv->freef = DictFree;
-}
-
-void wasm_bridge_set_DictDisc_comparf(Dtdisc_t *recv) {
-  recv->comparf = DictCompare;
-}
-
 void *wasm_bridge_new_Dict() {
   void *ret = malloc(sizeof(Dict_t));
   memset(ret, 0, sizeof(Dict_t));
   return ret;
-}
-
-void wasm_bridge_set_Dict_searchf(Dict_t *recv) {
-  recv->searchf = DictSearch;
 }
 
 void wasm_bridge_get_Dict_disc(Dict_t *recv, Dtdisc_t ** ret) {
@@ -2761,10 +2347,6 @@ void wasm_bridge_get_UserShape_datasize(usershape_t *recv, unsigned long long in
 
 void wasm_bridge_set_UserShape_datasize(usershape_t *recv, unsigned long long int v) {
   recv->datasize = (unsigned long long int)v;
-}
-
-void wasm_bridge_set_UserShape_datafree(usershape_t *recv) {
-  recv->datafree = UserShape_DataFree;
 }
 
 void *wasm_bridge_new_PluginActiveLoadImage() {
@@ -3493,42 +3075,6 @@ void *wasm_bridge_new_DeviceCallbacks() {
   void *ret = malloc(sizeof(gvdevice_callbacks_t));
   memset(ret, 0, sizeof(gvdevice_callbacks_t));
   return ret;
-}
-
-void wasm_bridge_set_DeviceCallbacks_refresh(gvdevice_callbacks_t *recv) {
-  recv->refresh = DeviceCallbacks_Refresh;
-}
-
-void wasm_bridge_set_DeviceCallbacks_button_press(gvdevice_callbacks_t *recv) {
-  recv->button_press = DeviceCallbacks_ButtonPress;
-}
-
-void wasm_bridge_set_DeviceCallbacks_button_release(gvdevice_callbacks_t *recv) {
-  recv->button_release = DeviceCallbacks_ButtonRelease;
-}
-
-void wasm_bridge_set_DeviceCallbacks_motion(gvdevice_callbacks_t *recv) {
-  recv->motion = DeviceCallbacks_Motion;
-}
-
-void wasm_bridge_set_DeviceCallbacks_modify(gvdevice_callbacks_t *recv) {
-  recv->modify = DeviceCallbacks_Modify;
-}
-
-void wasm_bridge_set_DeviceCallbacks_del(gvdevice_callbacks_t *recv) {
-  recv->del = DeviceCallbacks_Delete;
-}
-
-void wasm_bridge_set_DeviceCallbacks_read(gvdevice_callbacks_t *recv) {
-  recv->read = DeviceCallbacks_Read;
-}
-
-void wasm_bridge_set_DeviceCallbacks_layout(gvdevice_callbacks_t *recv) {
-  recv->layout = DeviceCallbacks_Layout;
-}
-
-void wasm_bridge_set_DeviceCallbacks_render(gvdevice_callbacks_t *recv) {
-  recv->render = DeviceCallbacks_Render;
 }
 
 void *wasm_bridge_new_Job() {
@@ -4460,18 +4006,6 @@ void *wasm_bridge_new_DeviceEngine() {
   return ret;
 }
 
-void wasm_bridge_set_DeviceEngine_initialize(gvdevice_engine_t *recv) {
-  recv->initialize = DeviceEngine_Initialize;
-}
-
-void wasm_bridge_set_DeviceEngine_format(gvdevice_engine_t *recv) {
-  recv->format = DeviceEngine_Format;
-}
-
-void wasm_bridge_set_DeviceEngine_finalize(gvdevice_engine_t *recv) {
-  recv->finalize = DeviceEngine_Finalize;
-}
-
 void *wasm_bridge_new_PostscriptAlias() {
   void *ret = malloc(sizeof(PostscriptAlias));
   memset(ret, 0, sizeof(PostscriptAlias));
@@ -4810,14 +4344,6 @@ void *wasm_bridge_new_LayoutEngine() {
   void *ret = malloc(sizeof(gvlayout_engine_t));
   memset(ret, 0, sizeof(gvlayout_engine_t));
   return ret;
-}
-
-void wasm_bridge_set_LayoutEngine_layout(gvlayout_engine_t *recv) {
-  recv->layout = LayoutEngine_Layout;
-}
-
-void wasm_bridge_set_LayoutEngine_cleanup(gvlayout_engine_t *recv) {
-  recv->cleanup = LayoutEngine_Cleanup;
 }
 
 void *wasm_bridge_new_TextLayoutEngine() {

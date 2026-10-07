@@ -90,126 +90,11 @@ message GraphDescriptor {
 message IDAllocator {
   option (nori.message).alias = "Agiddisc_t";
 
-  message Open {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Graph"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args {
-        kind: STRUCT
-        ref: "ClientDiscipline"
-        pointer: 1
-      }
-      return {
-        kind: VOIDPTR
-      }
-    };
-  }
-  message Map {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-      args { kind: INT }
-      args { kind: CHARPTR }
-      args {
-        kind: UINT64
-        pointer: 1
-      }
-      args { kind: INT }
-      return { kind: INT32 }
-    };
-  }
-  message Free {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-      args { kind: INT }
-      args { kind: UINT64 }
-    };
-  }
-  message Print {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-      args { kind: INT }
-      args { kind: UINT64 }
-      return { kind: CHARPTR }
-    };
-  }
-  message Close {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-    };
-  }
-  message IdRegister {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-      args { kind: INT }
-      args { kind: VOIDPTR }
-    };
-  }
-  Open open = 1;
-  Map map = 2;
-  Free free = 4;
-  Print print = 5;
-  Close close = 6;
-  IdRegister idregister = 7;
 }
 
 message IOService {
   option (nori.message).alias = "Agiodisc_t";
 
-  message Afread {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-      args { kind: CHARPTR }
-      args { kind: INT }
-      return { kind: INT }
-    };
-  }
-  message Putstr {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-      return { kind: INT }
-    };
-  }
-  message Flush {
-    option (nori.message).funcptr = {
-      args {
-        kind: VOIDPTR
-        funcbaseptr: true
-      }
-      return { kind: INT }
-    };
-  }
-  Afread afread = 1;
-  Putstr putstr = 2;
-  Flush flush = 3;
 }
 
 message ClientDiscipline {
@@ -228,51 +113,6 @@ message State {
 message ClientEventCallback {
   option (nori.message).alias = "Agcbdisc_t";
 
-  message ObjectFunc {
-    option (nori.message) = {
-      alias: "agobjfn_t"
-      funcptr: {
-        args {
-          kind: STRUCT
-          ref: "Graph"
-          pointer: 1
-          funcbaseptr: true
-        }
-        args {
-          kind: STRUCT
-          ref: "Object"
-          pointer: 1
-        }
-        args { kind: VOIDPTR }
-      }
-    };
-  }
-  message ObjectUpdateFunc {
-    option (nori.message) = {
-      alias: "agobjupdfn_t"
-      funcptr: {
-        args {
-          kind: STRUCT
-          ref: "Graph"
-          pointer: 1
-          funcbaseptr: true
-        }
-        args {
-          kind: STRUCT
-          ref: "Object"
-          pointer: 1
-        }
-        args {
-          kind: VOIDPTR
-        }
-        args {
-          kind: STRUCT
-          ref: "Sym"
-          pointer: 1
-        }
-      }
-    };
-  }
 };
 
 message CallbackStack {
@@ -1386,7 +1226,6 @@ message DictHold {
 message DictMethod {
   option (nori.message).alias = "Dtmethod_t";
 
-  DictSearch searchf = 1;
   int64 type = 2;
 }
 
@@ -1419,15 +1258,11 @@ message DictDisc {
   int64 key = 1;
   int64 size = 2;
   int64 link = 3;
-  DictMake makef = 4;
-  DictFree freef = 5;
-  DictCompare comparf = 6;
 }
 
 message Dict {
   option (nori.message).alias = "Dict_t";
 
-  DictSearch searchf = 1;
   DictDisc disc = 2 [(nori.field).type.pointer = 1];
   DictData data = 3;
   DictMethod meth = 4 [(nori.field).type.pointer = 1];
@@ -1448,74 +1283,6 @@ message DictStat {
     kind: UINT32
     array: true
   }];
-}
-
-message DictMemory {
-  option (nori.message).funcptr = {
-    args {
-      kind: STRUCT
-      ref: "Dict"
-      pointer: 1
-      funcbaseptr: true
-    }
-    args { kind: VOIDPTR }
-    args { kind: UINT32 }
-    args {
-      kind: STRUCT
-      ref: "DictDisc"
-      pointer: 1
-    }
-    return { kind: VOIDPTR }
-  };
-}
-
-message DictSearch {
-  option (nori.message).funcptr = {
-    args {
-      kind: STRUCT
-      ref: "Dict"
-      pointer: 1
-      funcbaseptr: true
-    }
-    args { kind: VOIDPTR }
-    args { kind: INT }
-    return { kind: VOIDPTR }
-  };
-}
-
-message DictMake {
-  option (nori.message).funcptr = {
-    args {
-      kind: VOIDPTR
-      funcbaseptr: true
-    }
-    args {
-      kind: STRUCT
-      ref: "DictDisc"
-      pointer: 1
-    }
-    return { kind: VOIDPTR }
-  };
-}
-
-message DictFree {
-  option (nori.message).funcptr = {
-    args {
-      kind: VOIDPTR
-      funcbaseptr: true
-    }
-  };
-}
-
-message DictCompare {
-  option (nori.message).funcptr = {
-    args {
-      kind: VOIDPTR
-      funcbaseptr: true
-    }
-    args { kind: VOIDPTR }
-    return { kind: INT }
-  };
 }
 
 message DictWalk {
@@ -1765,17 +1532,6 @@ enum ImageType {
 message UserShape {
   option (nori.message).alias = "usershape_t";
 
-  message DataFree {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "UserShape"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-
   DictLink link = 1;
   string name = 2 [(nori.field).type = {
     kind: CHARPTR
@@ -1794,7 +1550,6 @@ message UserShape {
   int64 dpi = 13;
   nori.Any data = 14 [(nori.field).type.kind = VOIDPTR];
   uint64 datasize = 15;
-  DataFree datafree = 16;
 }
 
 message PluginActiveLoadImage {
@@ -1940,156 +1695,6 @@ message ObjectState {
 message DeviceCallbacks {
   option (nori.message).alias = "gvdevice_callbacks_t";
 
-  message Refresh {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-
-  message ButtonPress {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args { kind: INT }
-      args {
-        kind: STRUCT
-        ref: "PointFloat"
-      }
-    };
-  }
-
-  message ButtonRelease {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args { kind: INT }
-      args {
-        kind: STRUCT
-        ref: "PointFloat"
-      }
-    };
-  }
-
-  message Motion {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args {
-        kind: STRUCT
-        ref: "PointFloat"
-      }
-    };
-  }
-
-  message Modify {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-    };
-  }
-
-  message Delete {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-
-  message Read {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-    };
-  }
-
-  message Layout {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-    };
-  }
-
-  message Render {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-      args {
-        kind: CHARPTR
-        const: true
-      }
-    };
-  }
-
-  Refresh refresh = 1;
-  ButtonPress button_press = 2;
-  ButtonRelease button_release = 3;
-  Motion motion = 4;
-  Modify modify = 5;
-  Delete del = 6;
-  Read read = 7;
-  Layout layout = 8;
-  Render render = 9;
 }
 
 enum EmitType {
@@ -2356,39 +1961,6 @@ message DeviceEngine {
     alias: "gvdevice_engine_t"
   };
 
-  message Initialize {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-  message Format {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-  message Finalize {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Job"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-  Initialize initialize = 1;
-  Format format = 2;
-  Finalize finalize = 3;
 }
 
 message PostscriptAlias {
@@ -2876,30 +2448,6 @@ message LayoutEngine {
     alias: "gvlayout_engine_t"
   };
 
-  message Layout {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Graph"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-
-  message Cleanup {
-    option (nori.message).funcptr = {
-      args {
-        kind: STRUCT
-        ref: "Graph"
-        pointer: 1
-        funcbaseptr: true
-      }
-    };
-  }
-
-  Layout layout = 1;
-  Cleanup cleanup = 2;
 }
 
 message TextLayoutEngine {
@@ -2960,7 +2508,6 @@ message LoadImageEngine {
 }
 
 message Engine {
-
 }
 
 message LayoutFeatures {
