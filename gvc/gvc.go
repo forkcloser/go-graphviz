@@ -295,3 +295,9 @@ const outputFileMode = 0o644
 
 // ErrNoContext is returned when Graphviz cannot allocate a rendering context.
 var ErrNoContext = errors.New("graphviz context could not be created")
+
+// ErrCallbackPanic is returned by a render, or any call Graphviz makes Go
+// callbacks during, when one of them panicked; the panic's value follows
+// it. The call finishes as when a callback returns an error, and the
+// Context stays usable.
+var ErrCallbackPanic = wasm.ErrCallbackPanic

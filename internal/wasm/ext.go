@@ -466,3 +466,9 @@ func (v *Context) RenderOutput(ctx context.Context, graph *Graph, format string)
 
 	return data, mod.toInt(ret), nil
 }
+
+// ErrCallbackPanic is the error a render, layout or other call returns when
+// a Go callback it made panicked; the panic's value follows it. The panic is
+// recovered where Graphviz called the callback and the call finishes like
+// one whose callback returned an error, so the instance stays usable.
+var ErrCallbackPanic = errors.New("callback panicked")

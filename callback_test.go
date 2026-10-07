@@ -11,6 +11,7 @@ import (
 	"testing/fstest"
 
 	"github.com/forkcloser/go-graphviz"
+	"github.com/forkcloser/go-graphviz/gvc"
 )
 
 var errPage = errors.New("page refused")
@@ -129,5 +130,63 @@ func TestLoadImageError(t *testing.T) {
 
 	if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
 		t.Fatalf("the instance no longer renders after a callback error: %v", err)
+	}
+}
+
+// panickingEngine is a render engine whose BeginPage panics.
+type panickingEngine struct {
+	*graphviz.DefaultRenderEngine
+}
+
+func (*panickingEngine) BeginPage(_ context.Context, _ *graphviz.Job) error {
+	panic("page panicked")
+}
+
+// A panic in a render callback reaches the caller as an error, and the
+// instance it happened on keeps working, as with a returned error: the
+// panic used to unwind through Graphviz's frames, skipping its cleanup, and
+// the next render on the instance failed.
+func TestRenderEnginePanic(t *testing.T) {
+	ctx := t.Context()
+
+	render, err := graphviz.NewRenderPlugin(ctx, "panic", &panickingEngine{new(graphviz.DefaultRenderEngine)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	device, err := graphviz.NewDevicePlugin(ctx, "panic:panic")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	g, err := graphviz.NewWithPlugins(ctx, render, device)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	graph, err := graphviz.ParseBytes([]byte("digraph { a -> b }"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	var buf bytes.Buffer
+
+	err = g.Render(ctx, graph, "panic", &buf)
+	if !errors.Is(err, gvc.ErrCallbackPanic) || !strings.Contains(err.Error(), "page panicked") {
+		t.Fatalf("Render returned %v, want %v carrying the panic's value", err, gvc.ErrCallbackPanic)
+	}
+
+	buf.Reset()
+
+	if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
+		t.Fatalf("the instance no longer renders after a callback panic: %v", err)
+	}
+
+	if buf.Len() == 0 {
+		t.Fatal("empty SVG after a callback panic")
 	}
 }
