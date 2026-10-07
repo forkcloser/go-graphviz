@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math"
 	"runtime"
 	"strings"
 	"sync"
@@ -374,41 +373,96 @@ func SetTextspanSize(ctx context.Context, span *Textspan, width, height float64)
 	return mod.setField(ctx, "Textspan_size", span.getPtr(), point)
 }
 
-// Where textspan_t (Graphviz's lib/common/textspan.h) keeps the two words a
-// text-layout plugin owns, in wasm32: after the str and font pointers, the
-// layout pointer and the function that frees it.
-const (
-	textspanLayout     = 8
-	textspanFreeLayout = 12
-)
-
-// errMemoryWrite is a write outside the module's memory.
-var errMemoryWrite = errors.New("failed to write wasm memory")
-
 // ClearTextspanLayout nulls a span's layout and free_layout, as every
 // text-layout plugin must: Graphviz frees a span's layout with its
 // free_layout when both are set, and measures the text of an HTML label in
-// a span it leaves uninitialized. The bridge has no accessor for either
-// field, so the words are written in the module's memory.
+// a span it leaves uninitialized.
 func ClearTextspanLayout(ctx context.Context, span *Textspan) error {
-	if mod.mod == nil {
-		return mod.unavailable()
-	}
-
-	_, leave, _ := mod.lock.enter(ctx)
-	defer leave()
-
-	memory := mod.mod.Memory()
-
-	ptr := span.getPtr()
-	if ptr > math.MaxUint32-textspanFreeLayout {
-		return fmt.Errorf("%w: text span at %d", errMemoryWrite, ptr)
-	}
-
-	base := uint32(ptr)
-	if !memory.WriteUint32Le(base+textspanLayout, 0) || !memory.WriteUint32Le(base+textspanFreeLayout, 0) {
-		return fmt.Errorf("%w: text span at %d and memory size is %d", errMemoryWrite, base, memory.Size())
+	if _, err := mod.invoke(ctx, "wasm_bridge_Textspan_clearLayout", span.getPtr()); err != nil {
+		return fmt.Errorf("wasm_bridge_Textspan_clearLayout: %w", err)
 	}
 
 	return nil
+}
+
+// WriteJobOutput hands a device's encoded page to Graphviz through
+// gvwrite, as Graphviz's own devices do: rendering into memory, it appends
+// to the buffer gvRenderData allocated and returns.
+func WriteJobOutput(ctx context.Context, job *Job, data []byte) (err error) {
+	if len(data) == 0 {
+		return nil
+	}
+
+	buf, err := mod.malloc(ctx, uint64(len(data)))
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if freeErr := mod.free(ctx, buf); freeErr != nil && err == nil {
+			err = freeErr
+		}
+	}()
+
+	if err := mod.write(ctx, buf, data); err != nil {
+		return err
+	}
+
+	if _, err := mod.invoke(ctx, "wasm_bridge_Job_writeOutput", job.getPtr(), buf, uint64(len(data))); err != nil {
+		return fmt.Errorf("wasm_bridge_Job_writeOutput: %w", err)
+	}
+
+	return nil
+}
+
+// RenderOutput renders graph in format into memory and returns the output.
+// gvRenderData allocates the output for its caller, which frees it with
+// gvFreeRenderData, a plain free; the generated RenderData reads the output
+// without freeing it, so every render left its output in the module. This
+// reads it as owned, freeing the buffer and the bridge's wrapper.
+func (v *Context) RenderOutput(ctx context.Context, graph *Graph, format string) (data string, result int, err error) {
+	ctx = v.callContext(ctx)
+
+	graphArg, err := mod.toObjectWasmValue(ctx, graph)
+	if err != nil {
+		return "", 0, err
+	}
+
+	formatArg, err := mod.toStringWasmValue(ctx, format)
+	if err != nil {
+		return "", 0, err
+	}
+
+	defer func() { _ = mod.free(ctx, formatArg) }()
+
+	dataSlot, err := mod.NewPtr(ctx)
+	if err != nil {
+		return "", 0, err
+	}
+
+	defer func() { _ = mod.free(ctx, dataSlot) }()
+
+	lengthSlot, err := mod.NewPtr(ctx)
+	if err != nil {
+		return "", 0, err
+	}
+
+	defer func() { _ = mod.free(ctx, lengthSlot) }()
+
+	ret, err := mod.callWithRet(ctx, "Context_renderData", v.getPtr(), graphArg, formatArg, dataSlot, lengthSlot)
+	if err != nil {
+		return "", 0, err
+	}
+
+	wrapper, err := mod.readU64(ctx, dataSlot)
+	if err != nil {
+		return "", 0, err
+	}
+
+	data, err = mod.readString(ctx, wrapper, true)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return data, mod.toInt(ret), nil
 }

@@ -124,7 +124,7 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	return nil
 }
 
-func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
+func (r *ImageRenderer) EndPage(ctx context.Context, job *Job) error {
 	page := r.page()
 	r.images = nil
 
@@ -147,8 +147,9 @@ func (r *ImageRenderer) EndPage(_ context.Context, job *Job) error {
 		}
 	}
 
-	job.SetOutputData(buf.Bytes())
-	job.SetOutputDataPosition(uint(len(buf.Bytes())))
+	if err := wasm.WriteJobOutput(ctx, job.wasm, buf.Bytes()); err != nil {
+		return fmt.Errorf("writing the page: %w", err)
+	}
 
 	return nil
 }
