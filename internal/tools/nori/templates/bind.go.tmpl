@@ -420,10 +420,19 @@ func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([
 	return ret, nil
 }
 
+// malloc allocates size bytes in the module. A size past the 32-bit address
+// space, or one the module cannot grow to hold, is ErrOutOfMemory: writing
+// to the null pointer malloc returns then would overwrite low memory.
 func (m *WasmModule) malloc(ctx context.Context, size uint64) (uint64, error) {
+	if size > maxAllocation {
+		return 0, fmt.Errorf("%w: %d bytes", ErrOutOfMemory, size)
+	}
 	ret, err := m.invoke(ctx, "malloc", size)
 	if err != nil {
 		return 0, err
+	}
+	if ret[0] == 0 && size > 0 {
+		return 0, fmt.Errorf("%w: %d bytes", ErrOutOfMemory, size)
 	}
 	return ret[0], nil
 }
