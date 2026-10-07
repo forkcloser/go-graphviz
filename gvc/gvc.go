@@ -68,7 +68,14 @@ func (c *Context) Close() error {
 	return err
 }
 
+// Layout lays the graph out with the named engine. It first returns the
+// error a typed setter met on the graph (cgraph.Graph.Err), if one did: the
+// graph does not hold what the program set.
 func (c *Context) Layout(ctx context.Context, g *cgraph.Graph, engine string) error {
+	if err := g.Err(); err != nil {
+		return fmt.Errorf("setting an attribute of the graph: %w", err)
+	}
+
 	res, err := c.gvc.Layout(ctx, toGraphWasm(g), engine)
 	if err != nil {
 		return err

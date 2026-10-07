@@ -92,6 +92,10 @@ func (g *Graph) SafeSetHTML(name, value, def string) error {
 }
 
 func (g *Graph) Close() error {
+	if root := g.wasm.GetRoot(); wasm.WasmPtr(root) == wasm.WasmPtr(g.wasm) {
+		forgetSetterErrors(root)
+	}
+
 	res, err := g.wasm.Close(context.Background())
 	if err != nil {
 		return err

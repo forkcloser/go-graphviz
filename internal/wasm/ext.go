@@ -515,3 +515,11 @@ func (v *Context) RenderOutput(ctx context.Context, graph *Graph, format string)
 // recovered where Graphviz called the callback and the call finishes like
 // one whose callback returned an error, so the instance stays usable.
 var ErrCallbackPanic = errors.New("callback panicked")
+
+// ErrOutOfMemory is returned by a call that needed more WebAssembly memory
+// than the module can hold.
+var ErrOutOfMemory = errors.New("out of WebAssembly memory")
+
+// maxAllocation is the largest size malloc can be asked for: the module's
+// addresses are 32 bits.
+const maxAllocation = 1<<32 - 1

@@ -105,7 +105,6 @@ golangci:
             - gochecknoglobals # 21
         - path: ^cgraph/attribute\.go$
           linters: # 487 findings
-            - errcheck # 210
             - gochecknoglobals # 2
         - path: ^cgraph/cgraph\.go$
           linters: # 280 findings

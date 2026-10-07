@@ -12,8 +12,21 @@ Graphviz's internals listed under Removed.
 
 ## [Unreleased]
 
+### Added
+
+- `cgraph.Graph.Err`: the first error a typed setter (`SetLabel`,
+  `SetShape` and the rest, which return their receiver to chain) met on the
+  graph, its subgraphs, nodes or edges. The setters dropped it. `gvc`'s
+  `Layout`, and so every render, returns it before laying out; closing the
+  root graph forgets it. What fails a setter is the WebAssembly module:
+  memory it cannot allocate, or a module that did not load.
+
 ### Fixed
 
+- A call that needs more WebAssembly memory than the module can hold fails
+  with an out-of-memory error. The bridge took the null pointer `malloc`
+  returned then as an address and wrote the string there, over low memory,
+  and a size past 32 bits was cut to its low half.
 - The bridge no longer reads WebAssembly address 0 for a NULL-terminated
   array that is itself NULL, as Graphviz passes a text layout's font path:
   every label laid out read there, harmless only while that word was zero.
