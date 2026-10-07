@@ -1308,9 +1308,9 @@ void *wasm_bridge_new_Object() {
 }
 
 void wasm_bridge_get_Object_tag(Agobj_t *recv, Agtag_t ** ret) {
-  void *v = malloc(sizeof(recv->tag));
-  memcpy(v, &recv->tag, sizeof(recv->tag));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->tag;
 }
 
 void wasm_bridge_set_Object_tag(Agobj_t *recv, void * v) {
@@ -1333,9 +1333,9 @@ void *wasm_bridge_new_SubNode() {
 }
 
 void wasm_bridge_get_SubNode_seq_link(Agsubnode_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->seq_link));
-  memcpy(v, &recv->seq_link, sizeof(recv->seq_link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->seq_link;
 }
 
 void wasm_bridge_set_SubNode_seq_link(Agsubnode_t *recv, void * v) {
@@ -1343,9 +1343,9 @@ void wasm_bridge_set_SubNode_seq_link(Agsubnode_t *recv, void * v) {
 }
 
 void wasm_bridge_get_SubNode_id_link(Agsubnode_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->id_link));
-  memcpy(v, &recv->id_link, sizeof(recv->id_link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->id_link;
 }
 
 void wasm_bridge_set_SubNode_id_link(Agsubnode_t *recv, void * v) {
@@ -1404,9 +1404,9 @@ void *wasm_bridge_new_Node() {
 }
 
 void wasm_bridge_get_Node_base(Agnode_t *recv, Agobj_t ** ret) {
-  void *v = malloc(sizeof(recv->base));
-  memcpy(v, &recv->base, sizeof(recv->base));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->base;
 }
 
 void wasm_bridge_set_Node_base(Agnode_t *recv, void * v) {
@@ -1423,9 +1423,9 @@ void wasm_bridge_set_Node_root(Agnode_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Node_mainsub(Agnode_t *recv, Agsubnode_t ** ret) {
-  void *v = malloc(sizeof(recv->mainsub));
-  memcpy(v, &recv->mainsub, sizeof(recv->mainsub));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->mainsub;
 }
 
 void wasm_bridge_set_Node_mainsub(Agnode_t *recv, void * v) {
@@ -1439,9 +1439,9 @@ void *wasm_bridge_new_Edge() {
 }
 
 void wasm_bridge_get_Edge_base(Agedge_t *recv, Agobj_t ** ret) {
-  void *v = malloc(sizeof(recv->base));
-  memcpy(v, &recv->base, sizeof(recv->base));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->base;
 }
 
 void wasm_bridge_set_Edge_base(Agedge_t *recv, void * v) {
@@ -1449,9 +1449,9 @@ void wasm_bridge_set_Edge_base(Agedge_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Edge_id_link(Agedge_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->id_link));
-  memcpy(v, &recv->id_link, sizeof(recv->id_link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->id_link;
 }
 
 void wasm_bridge_set_Edge_id_link(Agedge_t *recv, void * v) {
@@ -1459,9 +1459,9 @@ void wasm_bridge_set_Edge_id_link(Agedge_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Edge_seq_link(Agedge_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->seq_link));
-  memcpy(v, &recv->seq_link, sizeof(recv->seq_link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->seq_link;
 }
 
 void wasm_bridge_set_Edge_seq_link(Agedge_t *recv, void * v) {
@@ -1484,9 +1484,9 @@ void *wasm_bridge_new_EdgePair() {
 }
 
 void wasm_bridge_get_EdgePair_out(Agedgepair_t *recv, Agedge_t ** ret) {
-  void *v = malloc(sizeof(recv->out));
-  memcpy(v, &recv->out, sizeof(recv->out));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->out;
 }
 
 void wasm_bridge_set_EdgePair_out(Agedgepair_t *recv, void * v) {
@@ -1494,9 +1494,9 @@ void wasm_bridge_set_EdgePair_out(Agedgepair_t *recv, void * v) {
 }
 
 void wasm_bridge_get_EdgePair_in(Agedgepair_t *recv, Agedge_t ** ret) {
-  void *v = malloc(sizeof(recv->in));
-  memcpy(v, &recv->in, sizeof(recv->in));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->in;
 }
 
 void wasm_bridge_set_EdgePair_in(Agedgepair_t *recv, void * v) {
@@ -1705,9 +1705,9 @@ void *wasm_bridge_new_CommonFields() {
 }
 
 void wasm_bridge_get_CommonFields_disc(Agclos_t *recv, Agdisc_t ** ret) {
-  void *v = malloc(sizeof(recv->disc));
-  memcpy(v, &recv->disc, sizeof(recv->disc));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->disc;
 }
 
 void wasm_bridge_set_CommonFields_disc(Agclos_t *recv, void * v) {
@@ -1715,9 +1715,9 @@ void wasm_bridge_set_CommonFields_disc(Agclos_t *recv, void * v) {
 }
 
 void wasm_bridge_get_CommonFields_state(Agclos_t *recv, Agdstate_t ** ret) {
-  void *v = malloc(sizeof(recv->state));
-  memcpy(v, &recv->state, sizeof(recv->state));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->state;
 }
 
 void wasm_bridge_set_CommonFields_state(Agclos_t *recv, void * v) {
@@ -1809,9 +1809,9 @@ void *wasm_bridge_new_Graph() {
 }
 
 void wasm_bridge_get_Graph_base(Agraph_t *recv, Agobj_t ** ret) {
-  void *v = malloc(sizeof(recv->base));
-  memcpy(v, &recv->base, sizeof(recv->base));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->base;
 }
 
 void wasm_bridge_set_Graph_base(Agraph_t *recv, void * v) {
@@ -1819,9 +1819,9 @@ void wasm_bridge_set_Graph_base(Agraph_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Graph_desc(Agraph_t *recv, Agdesc_t ** ret) {
-  void *v = malloc(sizeof(recv->desc));
-  memcpy(v, &recv->desc, sizeof(recv->desc));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->desc;
 }
 
 void wasm_bridge_set_Graph_desc(Agraph_t *recv, void * v) {
@@ -1829,9 +1829,9 @@ void wasm_bridge_set_Graph_desc(Agraph_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Graph_seq_link(Agraph_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->seq_link));
-  memcpy(v, &recv->seq_link, sizeof(recv->seq_link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->seq_link;
 }
 
 void wasm_bridge_set_Graph_seq_link(Agraph_t *recv, void * v) {
@@ -1839,9 +1839,9 @@ void wasm_bridge_set_Graph_seq_link(Agraph_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Graph_id_link(Agraph_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->id_link));
-  memcpy(v, &recv->id_link, sizeof(recv->id_link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->id_link;
 }
 
 void wasm_bridge_set_Graph_id_link(Agraph_t *recv, void * v) {
@@ -1927,9 +1927,9 @@ void *wasm_bridge_new_Attr() {
 }
 
 void wasm_bridge_get_Attr_h(Agattr_t *recv, Agrec_t ** ret) {
-  void *v = malloc(sizeof(recv->h));
-  memcpy(v, &recv->h, sizeof(recv->h));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->h;
 }
 
 void wasm_bridge_set_Attr_h(Agattr_t *recv, void * v) {
@@ -1976,9 +1976,9 @@ void *wasm_bridge_new_Sym() {
 }
 
 void wasm_bridge_get_Sym_link(Agsym_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->link));
-  memcpy(v, &recv->link, sizeof(recv->link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->link;
 }
 
 void wasm_bridge_set_Sym_link(Agsym_t *recv, void * v) {
@@ -2055,9 +2055,9 @@ void *wasm_bridge_new_DataDict() {
 }
 
 void wasm_bridge_get_DataDict_h(Agdatadict_t *recv, Agrec_t ** ret) {
-  void *v = malloc(sizeof(recv->h));
-  memcpy(v, &recv->h, sizeof(recv->h));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->h;
 }
 
 void wasm_bridge_set_DataDict_h(Agdatadict_t *recv, void * v) {
@@ -2104,9 +2104,9 @@ void *wasm_bridge_new_DictHold() {
 }
 
 void wasm_bridge_get_DictHold_hdr(Dthold_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->hdr));
-  memcpy(v, &recv->hdr, sizeof(recv->hdr));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->hdr;
 }
 
 void wasm_bridge_set_DictHold_hdr(Dthold_t *recv, void * v) {
@@ -2290,9 +2290,9 @@ void wasm_bridge_set_Dict_disc(Dict_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Dict_data(Dict_t *recv, Dtdata_t ** ret) {
-  void *v = malloc(sizeof(recv->data));
-  memcpy(v, &recv->data, sizeof(recv->data));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->data;
 }
 
 void wasm_bridge_set_Dict_data(Dict_t *recv, void * v) {
@@ -2414,9 +2414,9 @@ void *wasm_bridge_new_Context() {
 }
 
 void wasm_bridge_get_Context_common(GVC_t *recv, GVCOMMON_t ** ret) {
-  void *v = malloc(sizeof(recv->common));
-  memcpy(v, &recv->common, sizeof(recv->common));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->common;
 }
 
 void wasm_bridge_set_Context_common(GVC_t *recv, void * v) {
@@ -2620,9 +2620,9 @@ void *wasm_bridge_new_UserShape() {
 }
 
 void wasm_bridge_get_UserShape_link(usershape_t *recv, Dtlink_t ** ret) {
-  void *v = malloc(sizeof(recv->link));
-  memcpy(v, &recv->link, sizeof(recv->link));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->link;
 }
 
 void wasm_bridge_set_UserShape_link(usershape_t *recv, void * v) {
@@ -3003,9 +3003,9 @@ void wasm_bridge_set_ObjectState_emit_state(obj_state_t *recv, int v) {
 }
 
 void wasm_bridge_get_ObjectState_pencolor(obj_state_t *recv, gvcolor_t ** ret) {
-  void *v = malloc(sizeof(recv->pencolor));
-  memcpy(v, &recv->pencolor, sizeof(recv->pencolor));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pencolor;
 }
 
 void wasm_bridge_set_ObjectState_pencolor(obj_state_t *recv, void * v) {
@@ -3013,9 +3013,9 @@ void wasm_bridge_set_ObjectState_pencolor(obj_state_t *recv, void * v) {
 }
 
 void wasm_bridge_get_ObjectState_fillcolor(obj_state_t *recv, gvcolor_t ** ret) {
-  void *v = malloc(sizeof(recv->fillcolor));
-  memcpy(v, &recv->fillcolor, sizeof(recv->fillcolor));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->fillcolor;
 }
 
 void wasm_bridge_set_ObjectState_fillcolor(obj_state_t *recv, void * v) {
@@ -3023,9 +3023,9 @@ void wasm_bridge_set_ObjectState_fillcolor(obj_state_t *recv, void * v) {
 }
 
 void wasm_bridge_get_ObjectState_stopcolor(obj_state_t *recv, gvcolor_t ** ret) {
-  void *v = malloc(sizeof(recv->stopcolor));
-  memcpy(v, &recv->stopcolor, sizeof(recv->stopcolor));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->stopcolor;
 }
 
 void wasm_bridge_set_ObjectState_stopcolor(obj_state_t *recv, void * v) {
@@ -3657,9 +3657,9 @@ void wasm_bridge_set_Job_output_lang(GVJ_t *recv, long long int v) {
 }
 
 void wasm_bridge_get_Job_render(GVJ_t *recv, gvplugin_active_render_t ** ret) {
-  void *v = malloc(sizeof(recv->render));
-  memcpy(v, &recv->render, sizeof(recv->render));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->render;
 }
 
 void wasm_bridge_set_Job_render(GVJ_t *recv, void * v) {
@@ -3667,9 +3667,9 @@ void wasm_bridge_set_Job_render(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_device(GVJ_t *recv, gvplugin_active_device_t ** ret) {
-  void *v = malloc(sizeof(recv->device));
-  memcpy(v, &recv->device, sizeof(recv->device));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->device;
 }
 
 void wasm_bridge_set_Job_device(GVJ_t *recv, void * v) {
@@ -3677,9 +3677,9 @@ void wasm_bridge_set_Job_device(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_loadimage(GVJ_t *recv, gvplugin_active_loadimage_t ** ret) {
-  void *v = malloc(sizeof(recv->loadimage));
-  memcpy(v, &recv->loadimage, sizeof(recv->loadimage));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->loadimage;
 }
 
 void wasm_bridge_set_Job_loadimage(GVJ_t *recv, void * v) {
@@ -3696,9 +3696,9 @@ void wasm_bridge_set_Job_callbacks(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_device_dpi(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->device_dpi));
-  memcpy(v, &recv->device_dpi, sizeof(recv->device_dpi));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->device_dpi;
 }
 
 void wasm_bridge_set_Job_device_dpi(GVJ_t *recv, void * v) {
@@ -3787,9 +3787,9 @@ void wasm_bridge_set_Job_layer_num(GVJ_t *recv, long long int v) {
 }
 
 void wasm_bridge_get_Job_pages_array_size(GVJ_t *recv, point ** ret) {
-  void *v = malloc(sizeof(recv->pagesArraySize));
-  memcpy(v, &recv->pagesArraySize, sizeof(recv->pagesArraySize));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pagesArraySize;
 }
 
 void wasm_bridge_set_Job_pages_array_size(GVJ_t *recv, void * v) {
@@ -3797,9 +3797,9 @@ void wasm_bridge_set_Job_pages_array_size(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_pages_array_first(GVJ_t *recv, point ** ret) {
-  void *v = malloc(sizeof(recv->pagesArrayFirst));
-  memcpy(v, &recv->pagesArrayFirst, sizeof(recv->pagesArrayFirst));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pagesArrayFirst;
 }
 
 void wasm_bridge_set_Job_pages_array_first(GVJ_t *recv, void * v) {
@@ -3807,9 +3807,9 @@ void wasm_bridge_set_Job_pages_array_first(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_pages_array_major(GVJ_t *recv, point ** ret) {
-  void *v = malloc(sizeof(recv->pagesArrayMajor));
-  memcpy(v, &recv->pagesArrayMajor, sizeof(recv->pagesArrayMajor));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pagesArrayMajor;
 }
 
 void wasm_bridge_set_Job_pages_array_major(GVJ_t *recv, void * v) {
@@ -3817,9 +3817,9 @@ void wasm_bridge_set_Job_pages_array_major(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_pages_array_minor(GVJ_t *recv, point ** ret) {
-  void *v = malloc(sizeof(recv->pagesArrayMinor));
-  memcpy(v, &recv->pagesArrayMinor, sizeof(recv->pagesArrayMinor));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pagesArrayMinor;
 }
 
 void wasm_bridge_set_Job_pages_array_minor(GVJ_t *recv, void * v) {
@@ -3827,9 +3827,9 @@ void wasm_bridge_set_Job_pages_array_minor(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_pages_array_elem(GVJ_t *recv, point ** ret) {
-  void *v = malloc(sizeof(recv->pagesArrayElem));
-  memcpy(v, &recv->pagesArrayElem, sizeof(recv->pagesArrayElem));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pagesArrayElem;
 }
 
 void wasm_bridge_set_Job_pages_array_elem(GVJ_t *recv, void * v) {
@@ -3846,9 +3846,9 @@ void wasm_bridge_set_Job_num_pages(GVJ_t *recv, long long int v) {
 }
 
 void wasm_bridge_get_Job_bb(GVJ_t *recv, boxf ** ret) {
-  void *v = malloc(sizeof(recv->bb));
-  memcpy(v, &recv->bb, sizeof(recv->bb));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->bb;
 }
 
 void wasm_bridge_set_Job_bb(GVJ_t *recv, void * v) {
@@ -3856,9 +3856,9 @@ void wasm_bridge_set_Job_bb(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_pad(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->pad));
-  memcpy(v, &recv->pad, sizeof(recv->pad));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pad;
 }
 
 void wasm_bridge_set_Job_pad(GVJ_t *recv, void * v) {
@@ -3866,9 +3866,9 @@ void wasm_bridge_set_Job_pad(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_clip(GVJ_t *recv, boxf ** ret) {
-  void *v = malloc(sizeof(recv->clip));
-  memcpy(v, &recv->clip, sizeof(recv->clip));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->clip;
 }
 
 void wasm_bridge_set_Job_clip(GVJ_t *recv, void * v) {
@@ -3876,9 +3876,9 @@ void wasm_bridge_set_Job_clip(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_page_box(GVJ_t *recv, boxf ** ret) {
-  void *v = malloc(sizeof(recv->pageBox));
-  memcpy(v, &recv->pageBox, sizeof(recv->pageBox));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pageBox;
 }
 
 void wasm_bridge_set_Job_page_box(GVJ_t *recv, void * v) {
@@ -3886,9 +3886,9 @@ void wasm_bridge_set_Job_page_box(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_page_size(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->pageSize));
-  memcpy(v, &recv->pageSize, sizeof(recv->pageSize));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pageSize;
 }
 
 void wasm_bridge_set_Job_page_size(GVJ_t *recv, void * v) {
@@ -3896,9 +3896,9 @@ void wasm_bridge_set_Job_page_size(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_focus(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->focus));
-  memcpy(v, &recv->focus, sizeof(recv->focus));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->focus;
 }
 
 void wasm_bridge_set_Job_focus(GVJ_t *recv, void * v) {
@@ -3924,9 +3924,9 @@ void wasm_bridge_set_Job_rotation(GVJ_t *recv, long long int v) {
 }
 
 void wasm_bridge_get_Job_view(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->view));
-  memcpy(v, &recv->view, sizeof(recv->view));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->view;
 }
 
 void wasm_bridge_set_Job_view(GVJ_t *recv, void * v) {
@@ -3934,9 +3934,9 @@ void wasm_bridge_set_Job_view(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_canvas_box(GVJ_t *recv, boxf ** ret) {
-  void *v = malloc(sizeof(recv->canvasBox));
-  memcpy(v, &recv->canvasBox, sizeof(recv->canvasBox));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->canvasBox;
 }
 
 void wasm_bridge_set_Job_canvas_box(GVJ_t *recv, void * v) {
@@ -3944,9 +3944,9 @@ void wasm_bridge_set_Job_canvas_box(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_margin(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->margin));
-  memcpy(v, &recv->margin, sizeof(recv->margin));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->margin;
 }
 
 void wasm_bridge_set_Job_margin(GVJ_t *recv, void * v) {
@@ -3954,9 +3954,9 @@ void wasm_bridge_set_Job_margin(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_dpi(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->dpi));
-  memcpy(v, &recv->dpi, sizeof(recv->dpi));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->dpi;
 }
 
 void wasm_bridge_set_Job_dpi(GVJ_t *recv, void * v) {
@@ -3982,9 +3982,9 @@ void wasm_bridge_set_Job_height(GVJ_t *recv, unsigned long long int v) {
 }
 
 void wasm_bridge_get_Job_page_bounding_box(GVJ_t *recv, box ** ret) {
-  void *v = malloc(sizeof(recv->pageBoundingBox));
-  memcpy(v, &recv->pageBoundingBox, sizeof(recv->pageBoundingBox));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pageBoundingBox;
 }
 
 void wasm_bridge_set_Job_page_bounding_box(GVJ_t *recv, void * v) {
@@ -3992,9 +3992,9 @@ void wasm_bridge_set_Job_page_bounding_box(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_bounding_box(GVJ_t *recv, box ** ret) {
-  void *v = malloc(sizeof(recv->boundingBox));
-  memcpy(v, &recv->boundingBox, sizeof(recv->boundingBox));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->boundingBox;
 }
 
 void wasm_bridge_set_Job_bounding_box(GVJ_t *recv, void * v) {
@@ -4002,9 +4002,9 @@ void wasm_bridge_set_Job_bounding_box(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_scale(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->scale));
-  memcpy(v, &recv->scale, sizeof(recv->scale));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->scale;
 }
 
 void wasm_bridge_set_Job_scale(GVJ_t *recv, void * v) {
@@ -4012,9 +4012,9 @@ void wasm_bridge_set_Job_scale(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_translation(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->translation));
-  memcpy(v, &recv->translation, sizeof(recv->translation));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->translation;
 }
 
 void wasm_bridge_set_Job_translation(GVJ_t *recv, void * v) {
@@ -4022,9 +4022,9 @@ void wasm_bridge_set_Job_translation(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_devscale(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->devscale));
-  memcpy(v, &recv->devscale, sizeof(recv->devscale));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->devscale;
 }
 
 void wasm_bridge_set_Job_devscale(GVJ_t *recv, void * v) {
@@ -4086,9 +4086,9 @@ void wasm_bridge_set_Job_button(GVJ_t *recv, unsigned long long int v) {
 }
 
 void wasm_bridge_get_Job_pointer(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->pointer));
-  memcpy(v, &recv->pointer, sizeof(recv->pointer));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->pointer;
 }
 
 void wasm_bridge_set_Job_pointer(GVJ_t *recv, void * v) {
@@ -4096,9 +4096,9 @@ void wasm_bridge_set_Job_pointer(GVJ_t *recv, void * v) {
 }
 
 void wasm_bridge_get_Job_oldpointer(GVJ_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->oldpointer));
-  memcpy(v, &recv->oldpointer, sizeof(recv->oldpointer));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->oldpointer;
 }
 
 void wasm_bridge_set_Job_oldpointer(GVJ_t *recv, void * v) {
@@ -4172,9 +4172,9 @@ void *wasm_bridge_new_BoxFloat() {
 }
 
 void wasm_bridge_get_BoxFloat_ll(boxf *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->LL));
-  memcpy(v, &recv->LL, sizeof(recv->LL));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->LL;
 }
 
 void wasm_bridge_set_BoxFloat_ll(boxf *recv, void * v) {
@@ -4182,9 +4182,9 @@ void wasm_bridge_set_BoxFloat_ll(boxf *recv, void * v) {
 }
 
 void wasm_bridge_get_BoxFloat_ur(boxf *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->UR));
-  memcpy(v, &recv->UR, sizeof(recv->UR));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->UR;
 }
 
 void wasm_bridge_set_BoxFloat_ur(boxf *recv, void * v) {
@@ -4198,9 +4198,9 @@ void *wasm_bridge_new_Box() {
 }
 
 void wasm_bridge_get_Box_ll(box *recv, point ** ret) {
-  void *v = malloc(sizeof(recv->LL));
-  memcpy(v, &recv->LL, sizeof(recv->LL));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->LL;
 }
 
 void wasm_bridge_set_Box_ll(box *recv, void * v) {
@@ -4208,9 +4208,9 @@ void wasm_bridge_set_Box_ll(box *recv, void * v) {
 }
 
 void wasm_bridge_get_Box_ur(box *recv, point ** ret) {
-  void *v = malloc(sizeof(recv->UR));
-  memcpy(v, &recv->UR, sizeof(recv->UR));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->UR;
 }
 
 void wasm_bridge_set_Box_ur(box *recv, void * v) {
@@ -4646,9 +4646,9 @@ void wasm_bridge_set_Textspan_y_offset_center_line(textspan_t *recv, double v) {
 }
 
 void wasm_bridge_get_Textspan_size(textspan_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->size));
-  memcpy(v, &recv->size, sizeof(recv->size));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->size;
 }
 
 void wasm_bridge_set_Textspan_size(textspan_t *recv, void * v) {
@@ -4855,9 +4855,9 @@ void wasm_bridge_set_DeviceFeatures_flags(gvdevice_features_t *recv, long long i
 }
 
 void wasm_bridge_get_DeviceFeatures_default_margin(gvdevice_features_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->default_margin));
-  memcpy(v, &recv->default_margin, sizeof(recv->default_margin));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->default_margin;
 }
 
 void wasm_bridge_set_DeviceFeatures_default_margin(gvdevice_features_t *recv, void * v) {
@@ -4865,9 +4865,9 @@ void wasm_bridge_set_DeviceFeatures_default_margin(gvdevice_features_t *recv, vo
 }
 
 void wasm_bridge_get_DeviceFeatures_default_pagesize(gvdevice_features_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->default_pagesize));
-  memcpy(v, &recv->default_pagesize, sizeof(recv->default_pagesize));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->default_pagesize;
 }
 
 void wasm_bridge_set_DeviceFeatures_default_pagesize(gvdevice_features_t *recv, void * v) {
@@ -4875,9 +4875,9 @@ void wasm_bridge_set_DeviceFeatures_default_pagesize(gvdevice_features_t *recv, 
 }
 
 void wasm_bridge_get_DeviceFeatures_default_dpi(gvdevice_features_t *recv, pointf ** ret) {
-  void *v = malloc(sizeof(recv->default_dpi));
-  memcpy(v, &recv->default_dpi, sizeof(recv->default_dpi));
-  *ret = v;
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&recv->default_dpi;
 }
 
 void wasm_bridge_set_DeviceFeatures_default_dpi(gvdevice_features_t *recv, void * v) {

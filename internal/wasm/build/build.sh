@@ -133,6 +133,22 @@ grep -q 'size_t oldsz = lp->u.txt.nspans;' "${labels}" || {
   exit 1
 }
 
+# A second fix: Graphviz keeps every image file it sizes open for the life of
+# the process, closing it after use only once 50 are open, and a host file
+# system pins an open file (Windows will not delete it). Nothing reads the
+# handle after sizing here, the renderer reads images itself, and
+# gvusershape_file_access reopens a closed file when anything does, so
+# gvusershape_file_release always closes it.
+usershape="${gv}/lib/gvc/gvusershape.c"
+if grep -q '^  if (us->nocache) {$' "${usershape}"; then
+  sed -i.orig 's/^  if (us->nocache) {$/  if (us->f) {/' "${usershape}"
+  rm -f "${usershape}.orig"
+fi
+grep -q '^  if (us->f) {$' "${usershape}" || {
+  echo "gvusershape.c: gvusershape_file_release does not look like the one this fix is for" >&2
+  exit 1
+}
+
 # Graphviz's lib/neatogen has sources for optional engines (ipsep, the vpsc
 # constraint solver) that the configure flags upstream used excluded; the
 # list below is the engine set the original container build compiled.

@@ -11,6 +11,29 @@ Graphviz 16 below.
 
 ## [Unreleased]
 
+### Fixed
+
+- Rendering and making instances no longer grow the WebAssembly module's
+  memory. A render left about 4.5 KiB behind, in PNG or JPEG as in SVG,
+  and `New` with `Close` about 4 KiB, which a long-running process
+  accumulated without bound: the output Graphviz allocates for the caller
+  was never freed, the PNG and JPEG device replaced Graphviz's output
+  buffer instead of writing into it, every read of a struct-valued field
+  allocated a copy, and every instance built its own plugins.
+- Graphviz closes a node image's file once it has sized it. It kept up to
+  50 open for the life of the process, which on Windows pins the files.
+- `NewWithPlugins` with no plugins handed Graphviz an unterminated plugin
+  list, and could fail with an out-of-bounds memory access.
+
+### Changed
+
+- `DefaultPlugins` builds its plugins once and returns the same ones to
+  every caller; they stay registered for the life of the process.
+- A struct-valued field read through the bindings, such as `Job.Scale`,
+  `ObjectState.PenColor` or `BoxFloat.LL`, is the field itself rather than
+  a copy: setting through it changes the struct, and it is valid as long
+  as the struct is, which for what a callback receives is the callback.
+
 ## [0.4.0] - 2026-10-06
 
 ### Changed

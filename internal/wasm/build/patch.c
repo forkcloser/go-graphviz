@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "gvplugin.h"
 #include "gvplugin_render.h"
+#include "gvio.h"
+#include "textspan.h"
 
 static const char *tmpfilename = "tmpfile";
 
@@ -51,6 +53,22 @@ void wasm_bridge_SymList_default(GoSlice **ret) {
     data += 2;
   }
   *ret = v;
+}
+
+// A device that encodes the page itself hands the bytes to Graphviz through
+// gvwrite, as its own devices do: in memory, gvwrite appends to the buffer
+// gvRenderData allocated, which setting output_data would replace and leak.
+void wasm_bridge_Job_writeOutput(GVJ_t *job, const char *data, size_t len) {
+  gvwrite(job, data, len);
+}
+
+// A text-layout plugin owns a span's layout and the function that frees it,
+// and must null both when it keeps no layout: Graphviz frees a layout with
+// free_layout when both are set, and measures the text of an HTML label in a
+// span it leaves uninitialized.
+void wasm_bridge_Textspan_clearLayout(textspan_t *span) {
+  span->layout = NULL;
+  span->free_layout = NULL;
 }
 
 int main() { return 0; }

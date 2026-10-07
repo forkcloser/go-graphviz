@@ -8,7 +8,7 @@ import (
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
-// ClearTextspanLayout writes the two words textspan_t keeps between its
+// ClearTextspanLayout nulls the two words textspan_t keeps between its
 // font pointer and its first double, and nothing else: the double the
 // bridge writes as yoffset_layout is found right after them, unchanged,
 // and the font is still the span's.

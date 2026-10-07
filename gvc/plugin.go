@@ -2,6 +2,8 @@ package gvc
 
 import (
 	"context"
+	"slices"
+	"sync"
 
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
@@ -17,7 +19,71 @@ type Plugin interface {
 	release()
 }
 
+// sharedDefaults is the default plugin set, built once per process and
+// shared by every context New makes: each set holds a few kilobytes of the
+// module's memory that nothing frees, and New used to build one per
+// context. The set is pinned, so closing a context never drops its
+// callbacks.
+type sharedDefaults struct {
+	mu      sync.Mutex
+	plugins []Plugin
+	// lists is the symbol list of plugins, built for the first context.
+	lists []*wasm.SymList
+}
+
+var defaults sharedDefaults //nolint:gochecknoglobals // one plugin set for the process's one module
+
+// DefaultPlugins returns the plugins New installs: PNG and JPEG rendering
+// and output, image loading into both, and text layout. They are built on
+// the first call and the same plugins are returned to every caller; they
+// stay registered for the life of the process.
 func DefaultPlugins(ctx context.Context) ([]Plugin, error) {
+	defaults.mu.Lock()
+	defer defaults.mu.Unlock()
+
+	if defaults.plugins == nil {
+		plugins, err := newDefaultPlugins(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, plugin := range plugins {
+			plugin.acquire()
+		}
+
+		defaults.plugins = plugins
+	}
+
+	return slices.Clone(defaults.plugins), nil
+}
+
+// pluginLists returns the symbol list Graphviz loads plugins from. The
+// list of the default set is built once and shared, as the set is: New
+// built one per context, a few hundred bytes of the module's memory that
+// nothing freed. Any other set gets its own list: its plugins can be
+// collected once their contexts close, and a list kept for them could be
+// handed to new plugins at the same addresses.
+func pluginLists(ctx context.Context, plugins []Plugin) ([]*wasm.SymList, error) {
+	defaults.mu.Lock()
+	defer defaults.mu.Unlock()
+
+	if defaults.plugins == nil || !slices.Equal(plugins, defaults.plugins) {
+		return newPlugins(ctx, plugins...)
+	}
+
+	if defaults.lists == nil {
+		lists, err := newPlugins(ctx, plugins...)
+		if err != nil {
+			return nil, err
+		}
+
+		defaults.lists = lists
+	}
+
+	return defaults.lists, nil
+}
+
+func newDefaultPlugins(ctx context.Context) ([]Plugin, error) {
 	pngRenderPlugin, err := PNGRenderPlugin(ctx)
 	if err != nil {
 		return nil, err

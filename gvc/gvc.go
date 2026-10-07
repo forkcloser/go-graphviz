@@ -34,7 +34,7 @@ func New(ctx context.Context) (*Context, error) {
 }
 
 func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
-	plgs, err := newPlugins(ctx, plugins...)
+	plgs, err := pluginLists(ctx, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -78,12 +78,7 @@ func (c *Context) Layout(ctx context.Context, g *cgraph.Graph, engine string) er
 }
 
 func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format string, w io.Writer) error {
-	var (
-		rendered    string
-		renderedLen uint
-	)
-
-	res, err := c.gvc.RenderData(ctx, toGraphWasm(graph), format, &rendered, &renderedLen)
+	rendered, res, err := c.gvc.RenderOutput(ctx, toGraphWasm(graph), format)
 	if err != nil {
 		return err
 	}
@@ -227,8 +222,16 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error)
 		return nil, err
 	}
 
+	symTerm, err := wasm.SymListZero(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Graphviz reads the list up to an entry with no name; without the
+	// terminator, a context with no plugins of its own read past the end
+	// of the built-in list.
 	if len(plugins) == 0 {
-		return defaults, nil
+		return append(defaults, symTerm), nil
 	}
 
 	sym, err := wasm.NewSymList(ctx)
@@ -266,11 +269,6 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error)
 	}
 
 	if err = sym.SetAddress(lib); err != nil {
-		return nil, err
-	}
-
-	symTerm, err := wasm.SymListZero(ctx)
-	if err != nil {
 		return nil, err
 	}
 

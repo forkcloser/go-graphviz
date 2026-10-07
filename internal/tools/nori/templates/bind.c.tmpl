@@ -84,8 +84,14 @@ void wasm_bridge_set_{{ .Name }}({{ .ReceiverType }} *recv) {
 }
 {{- else }}
 void wasm_bridge_get_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.GoType }}* ret) {
+  {{- if and .Value.IsStruct (not .Value.IsSlice) }}
+  // The field itself, not a copy: a copy was allocated on every read and
+  // never freed. The handle lives as long as the struct holding it.
+  *ret = (void *)&{{ .Value.Src }};
+  {{- else }}
   {{- template "toGoValue" .Value }}
   *ret = {{ .Value.Dst }};
+  {{- end }}
 }
 
 void wasm_bridge_set_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.WasmType }} v) {

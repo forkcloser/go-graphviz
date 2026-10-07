@@ -33,8 +33,15 @@ func (m *WasmModule) ReadWord(ctx context.Context, addr uint64) error {
 	return err
 }
 
-// TextspanLayoutWords reads the layout and free_layout words of a span, at
-// the offsets ClearTextspanLayout writes.
+// Where textspan_t (Graphviz's lib/common/textspan.h) keeps its layout
+// pointer and the function that frees it, in wasm32: after the str and font
+// pointers. The test reads them to check the bridge's clearLayout.
+const (
+	textspanLayout     = 8
+	textspanFreeLayout = 12
+)
+
+// TextspanLayoutWords reads the layout and free_layout words of a span.
 func TextspanLayoutWords(ctx context.Context, span *Textspan) (layout, freeLayout uint64, err error) {
 	if layout, err = mod.readU32(ctx, span.getPtr()+textspanLayout); err != nil {
 		return 0, 0, err
