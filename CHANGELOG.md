@@ -48,6 +48,8 @@ Graphviz 16 below.
   `ObjectState.PenColor` or `BoxFloat.LL`, is the field itself rather than
   a copy: setting through it changes the struct, and it is valid as long
   as the struct is, which for what a callback receives is the callback.
+- `graphviz.version` is gone: the Graphviz version is the `graphviz` entry
+  in `pins.yaml`, which the build already read and checked the file against.
 
 ## [0.4.0] - 2026-10-06
 

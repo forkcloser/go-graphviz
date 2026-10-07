@@ -39,11 +39,6 @@ pin() {
 }
 
 graphviz_version="$(pin graphviz version)"
-recorded="$(tr -d '[:space:]' < "${root}/graphviz.version")"
-[ "${graphviz_version}" = "${recorded}" ] || {
-  echo "graphviz.version says ${recorded}, pins.yaml says ${graphviz_version}: move both" >&2
-  exit 1
-}
 expat_tag="$(pin expat version)"      # R_2_8_5, the tag libexpat releases under
 expat_version="${expat_tag#R_}"
 expat_version="${expat_version//_/.}" # 2.8.5
