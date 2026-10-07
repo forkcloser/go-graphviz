@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"golang.org/x/image/draw"
@@ -25,9 +26,13 @@ var (
 	imageHashJSON = filepath.Join("testdata", "imagehash.json")
 )
 
-const (
-	imageThreshold = 40
-)
+// imageThreshold is how many of the 64 hash bits a render may differ from
+// the reference by. The references are dot 16.1.0's, the Graphviz this
+// module embeds; measured against them the renders differ by at most 10
+// bits, and a render with every label blank, the regression 0.3.0 shipped,
+// by more than 14 on six graphs of the corpus. The hash is coarse: this
+// catches gross differences, the raster text cross-check the finer ones.
+const imageThreshold = 14
 
 // TestGenerateHashes rewrites testdata/imagehash.json from the system `dot`,
 // the reference the compatibility test compares against. It runs only when
@@ -43,8 +48,17 @@ func TestGenerateHashes(t *testing.T) {
 	}
 }
 
+// generatorKey names the entry of imagehash.json that records the `dot -V`
+// the references were made with; every other key is a graph's path.
+const generatorKey = "generator"
+
 func generateTestData() error {
-	pathToHash := map[string]string{}
+	version, versionErr := exec.Command("dot", "-V").CombinedOutput()
+	if versionErr != nil {
+		return fmt.Errorf("dot -V: %w: %s", versionErr, version)
+	}
+
+	pathToHash := map[string]string{generatorKey: strings.TrimSpace(string(version))}
 
 	for _, path := range testPaths {
 		if err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
@@ -166,10 +180,7 @@ func compareWithDot(t *testing.T, path, want string) {
 // 9 by 8 pixels, each row's 8 neighbouring pairs compared by luminosity, a
 // bit set where the left one is darker, first row in the high bits. It is
 // goimagehash's DifferenceHash, which made the reference hashes, with
-// x/image/draw's bilinear scaling in place of nfnt/resize's. Measured over
-// the corpus when the switch was made, the two disagree by at most 10 bits,
-// and this one sits at most 25 bits from the references (goimagehash: 26),
-// under the threshold of 40.
+// x/image/draw's bilinear scaling in place of nfnt/resize's.
 func differenceHash(img image.Image) uint64 {
 	const (
 		width  = 9
