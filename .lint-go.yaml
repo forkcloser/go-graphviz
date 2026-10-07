@@ -189,10 +189,9 @@ golangci:
           main:
             allow:
               # The module's declared dependencies: the WebAssembly runtime the
-              # embedded Graphviz runs on, the raster renderer's drawing library,
-              # and the Go team's image, font and draw packages.
+              # embedded Graphviz runs on, and the Go team's image, font,
+              # vector and draw packages the raster renderer draws with.
               - github.com/tetratelabs/wazero
-              - github.com/fogleman/gg
               - golang.org/x/image
       # internal/wasm is this module's own binding, generated from bind.proto;
       # an error it returns is already the module's own, and cgraph and gvc
@@ -222,12 +221,6 @@ golangci:
         # run does not, and reports both entries as matching nothing.
         - internal/wasm/bind.go
         - internal/tools/nori/nori/nori.pb.go
-licenses:
-  ignore:
-    # golang/freetype is BSD-3-Clause or FTL at the user's choice, both on
-    # the baseline's allowed list; go-licenses cannot classify the dual text
-    # and reports the module as unlicensed. A classifier limitation, judged.
-    - github.com/golang/freetype
 nilaway:
   # ONBOARDING BACKLOG, not a judgment: NilAway's findings print without
   # failing the lane until alignment reaches them.

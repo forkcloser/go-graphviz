@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	_ "image/gif" // node images: Graphviz recognizes GIF
 	"image/jpeg"
 	"image/png"
@@ -13,7 +14,6 @@ import (
 	"math"
 	"sync"
 
-	"github.com/fogleman/gg"
 	_ "golang.org/x/image/bmp" // node images: Graphviz recognizes BMP
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
@@ -23,15 +23,12 @@ import (
 )
 
 const (
-	// Pen styles, in points: Graphviz draws a dashed line as four on, four
-	// off, and a dotted one as two on, four off.
-	dashLength = 4.0
+	// Pen styles, in points, Graphviz's Cairo renderer's: a dashed line is
+	// six on, six off, and a dotted one two on, six off.
+	dashLength = 6.0
 	dotLength  = 2.0
 	// half centres a span or an image on its anchor.
 	half = 2.0
-	// colorChannelMax is the top of Graphviz's 8-bit colour channels; gg
-	// takes channels in [0, 1].
-	colorChannelMax = 255.0
 	// lanczosLobes is the support of the Lanczos kernel in pixels (three
 	// lobes), the resampling filter node images have always used here.
 	lanczosLobes = 3.0
@@ -68,7 +65,7 @@ const MaxPagePixels = 1 << 28
 type ImageRenderer struct {
 	*DefaultRenderEngine
 
-	ctx *gg.Context
+	ctx *canvas
 	// scaleX and scaleY take a length in points along the canvas's axes to
 	// pixels, and lineScale takes a pen width or a dash; BeginPage sets
 	// them from the job. rotated says the canvas holds a landscape page
@@ -92,7 +89,7 @@ type ImageRenderer struct {
 // ((p.x, -p.y) + (tx, -ty)). Pen widths and dashes are lengths in that
 // space too, so they shrink and grow with the page.
 //
-// gg cannot turn glyphs, so a landscape page (rotation 90) is drawn upright
+// The canvas does not turn glyphs, so a landscape page (rotation 90) is drawn upright
 // on a canvas with the sides swapped and turned when it is finished: there
 // a point lands at (height + sy × (p.x + tx), sx × (-p.y - ty)), and the
 // finished page's pixel (X, Y) is the canvas's (height-1-Y, X).
@@ -111,13 +108,13 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 	case 0:
 		r.rotated = false
 		r.scaleX, r.scaleY = scale.X(), scale.Y()
-		r.ctx = gg.NewContext(int(width), int(height))
-		r.ctx.Translate(r.scaleX*translation.X(), -r.scaleY*translation.Y())
+		r.ctx = newCanvas(int(width), int(height))
+		r.ctx.translate(r.scaleX*translation.X(), -r.scaleY*translation.Y())
 	case landscape:
 		r.rotated = true
 		r.scaleX, r.scaleY = scale.Y(), scale.X()
-		r.ctx = gg.NewContext(int(height), int(width))
-		r.ctx.Translate(float64(height)+r.scaleX*translation.X(), -r.scaleY*translation.Y())
+		r.ctx = newCanvas(int(height), int(width))
+		r.ctx.translate(float64(height)+r.scaleX*translation.X(), -r.scaleY*translation.Y())
 	default:
 		return fmt.Errorf("%w: %d degrees", ErrRotation, rotation)
 	}
@@ -156,11 +153,7 @@ func (r *ImageRenderer) EndPage(ctx context.Context, job *Job) error {
 }
 
 func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat, span *TextSpan) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.setColor(job.Object().PenColor())
-
+	col := nrgba(job.Object().PenColor())
 	size, dpi := span.Font().Size()*job.Zoom(), resolution(job.DPI())
 
 	primary, err := r.spanFace(ctx, job, span.Font(), size, dpi)
@@ -193,8 +186,7 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 	y := r.toY(job, pos.Y()+span.YOffsetCenterLine())
 
 	for _, run := range runs {
-		r.ctx.SetFontFace(run.face)
-		r.ctx.DrawStringAnchored(run.text, penX, -y, 0, 0)
+		r.ctx.drawString(run.face, run.text, penX, -y, col)
 		penX += advance([]textRun{run})
 	}
 
@@ -202,41 +194,32 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 }
 
 func (r *ImageRenderer) Ellipse(_ context.Context, job *Job, points []*PointFloat, filled bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
 	radiusX := r.toX(job, points[1].X()-points[0].X())
 	radiusY := r.toY(job, points[1].Y()-points[0].Y())
-	r.ctx.DrawEllipse(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()), radiusX, radiusY)
+	r.ctx.ellipse(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()), radiusX, radiusY)
 	r.paint(job, filled)
 
 	return nil
 }
 
 func (r *ImageRenderer) Polygon(_ context.Context, job *Job, points []*PointFloat, filled bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
+	r.ctx.moveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
 	for i := 1; i < len(points); i++ {
-		r.ctx.LineTo(r.toX(job, points[i].X()), r.toY(job, -points[i].Y()))
+		r.ctx.lineTo(r.toX(job, points[i].X()), r.toY(job, -points[i].Y()))
 	}
 
-	r.ctx.ClosePath()
+	r.ctx.closePath()
 	r.paint(job, filled)
 
 	return nil
 }
 
 func (r *ImageRenderer) Polyline(_ context.Context, job *Job, points []*PointFloat) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
+	r.ctx.moveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
 	for i := 1; i < len(points); i++ {
-		r.ctx.LineTo(r.toX(job, points[i].X()), r.toY(job, -points[i].Y()))
+		r.ctx.lineTo(r.toX(job, points[i].X()), r.toY(job, -points[i].Y()))
 	}
 
 	r.paint(job, false)
@@ -245,13 +228,10 @@ func (r *ImageRenderer) Polyline(_ context.Context, job *Job, points []*PointFlo
 }
 
 func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, points []*PointFloat, filled bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
-	r.ctx.MoveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
+	r.ctx.moveTo(r.toX(job, points[0].X()), r.toY(job, -points[0].Y()))
 
 	for i := 1; i < len(points); i += 3 {
-		r.ctx.CubicTo(
+		r.ctx.cubicTo(
 			r.toX(job, points[i].X()),
 			r.toY(job, -points[i].Y()),
 			r.toX(job, points[i+1].X()),
@@ -270,9 +250,6 @@ func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, points []*Point
 // which already applies imagescale and imagepos: stretched to the box under
 // the page's transform, as Graphviz's Cairo image loader draws it.
 func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, box *BoxFloat, _ bool) error {
-	r.ctx.Push()
-	defer r.ctx.Pop()
-
 	left, top := r.toX(job, box.LL().X()), r.toY(job, -box.UR().Y())
 	width := int(math.Round(r.toX(job, box.UR().X()-box.LL().X())))
 	height := int(math.Round(r.toY(job, box.UR().Y()-box.LL().Y())))
@@ -290,7 +267,7 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 		return err
 	}
 
-	r.ctx.DrawImage(img, int(math.Round(left)), int(math.Round(top)))
+	r.ctx.drawImage(img, left, top)
 
 	return nil
 }
@@ -442,7 +419,7 @@ func resolution(dpi *PointFloat) float64 {
 
 // page is the finished page: the canvas, turned back for a landscape page.
 func (r *ImageRenderer) page() *image.RGBA {
-	canvas := imageRGBA(r.ctx.Image())
+	canvas := r.ctx.img
 	if !r.rotated {
 		return canvas
 	}
@@ -462,19 +439,6 @@ func (r *ImageRenderer) page() *image.RGBA {
 	return turned
 }
 
-// imageRGBA returns img as an *image.RGBA, copying it only when it is some
-// other type.
-func imageRGBA(img image.Image) *image.RGBA {
-	if rgba, ok := img.(*image.RGBA); ok {
-		return rgba
-	}
-
-	rgba := image.NewRGBA(img.Bounds())
-	draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Src)
-
-	return rgba
-}
-
 // paint finishes the current path the way Graphviz's renderers do: the fill
 // colour inside when the shape is filled, then the pen along the edge in
 // the pen colour, width and style, unless the pen is none. Both colours
@@ -482,20 +446,17 @@ func imageRGBA(img image.Image) *image.RGBA {
 func (r *ImageRenderer) paint(job *Job, filled bool) {
 	object := job.Object()
 
+	defer r.ctx.clearPath()
+
 	if filled {
-		r.setColor(object.FillColor())
-		r.ctx.FillPreserve()
+		r.ctx.fill(nrgba(object.FillColor()))
 	}
 
 	if object.Pen() == PenNone {
-		r.ctx.ClearPath()
-
 		return
 	}
 
-	r.setPenStyle(job)
-	r.setColor(object.PenColor())
-	r.ctx.Stroke()
+	r.ctx.stroke(nrgba(object.PenColor()), object.PenWidth()*r.lineScale, r.dashes(object))
 }
 
 // toX and toY take a length in points along the canvas's axes to pixels.
@@ -507,16 +468,20 @@ func (r *ImageRenderer) toY(_ *Job, y float64) float64 {
 	return r.scaleY * y
 }
 
-// setColor sets the drawing colour from Graphviz's 8-bit channels, alpha
-// included.
-func (r *ImageRenderer) setColor(color *Color) {
-	rgba := color.RGBAUint()
-	r.ctx.SetRGBA(
-		float64(rgba[0])/colorChannelMax,
-		float64(rgba[1])/colorChannelMax,
-		float64(rgba[2])/colorChannelMax,
-		float64(rgba[3])/colorChannelMax,
-	)
+// nrgba is a Graphviz colour from its 8-bit channels, alpha included.
+func nrgba(c *Color) color.NRGBA {
+	rgba := c.RGBAUint()
+
+	return color.NRGBA{R: channel(rgba[0]), G: channel(rgba[1]), B: channel(rgba[2]), A: channel(rgba[3])}
+}
+
+// channel is an 8-bit colour channel, which Graphviz hands over widened.
+func channel(v uint) uint8 {
+	if v > math.MaxUint8 {
+		return math.MaxUint8
+	}
+
+	return uint8(v)
 }
 
 func (*ImageRenderer) isPNG(job *Job) bool {
@@ -527,17 +492,18 @@ func (*ImageRenderer) isJPG(job *Job) bool {
 	return job.OutputLangName() == "jpg"
 }
 
-func (r *ImageRenderer) setPenStyle(job *Job) {
-	object := job.Object()
+// dashes is the dash pattern of the object's pen, in pixels: none for a
+// solid pen.
+func (r *ImageRenderer) dashes(object *ObjectState) []float64 {
 	switch object.Pen() {
 	case PenDashed:
-		r.ctx.SetDash(dashLength * r.lineScale)
+		return []float64{dashLength * r.lineScale}
 	case PenDotted:
-		r.ctx.SetDash(dotLength*r.lineScale, dashLength*r.lineScale)
+		return []float64{dotLength * r.lineScale, dashLength * r.lineScale}
 	case PenSolid, PenNone:
 	}
 
-	r.ctx.SetLineWidth(object.PenWidth() * r.lineScale)
+	return nil
 }
 
 type FontLoader func(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error)

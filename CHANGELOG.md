@@ -74,6 +74,15 @@ Graphviz's internals listed under Removed.
   `WithRenderFeatures`, `WithRenderColorType` and `WithRenderPAD`, for
   `DeviceQuality` and the rest.
 
+- PNG and JPEG output is drawn by the module's own canvas over
+  `golang.org/x/image` instead of `fogleman/gg`, the way Graphviz's Cairo
+  renderer draws: lines meet in mitred corners (bevelled past Cairo's miter
+  limit of 10) and end flat, where they were round; dashed lines are six
+  points on, six off, and dotted lines two on, six off, Graphviz's lengths,
+  where they were four and four, two and four; a node image is placed on
+  whole pixels. Against `dot` 16.1.0, graphs whose layout matches render
+  closer (the `dot` smoke test). A PNG render takes about 5% longer.
+
 ### Removed
 
 Breaking: these were bindings over Graphviz's internals, which no program
@@ -101,6 +110,8 @@ could use correctly.
   `UserShape`, `Point`, `PointFloat`, `Box` and `BoxFloat`. Their getters
   stay. `Color` keeps its setters, which `ResolveColor` needs.
 - `gvc.ErrFontNotFound`, which nothing returned any more.
+- The dependencies on `github.com/fogleman/gg` and, through it, the
+  archived `github.com/golang/freetype`.
 
 ## [0.4.0] - 2026-10-06
 
