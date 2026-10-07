@@ -13,6 +13,9 @@ Graphviz 16 below.
 
 ### Fixed
 
+- The bridge no longer reads WebAssembly address 0 for a NULL-terminated
+  array that is itself NULL, as Graphviz passes a text layout's font path:
+  every label laid out read there, harmless only while that word was zero.
 - A Go callback that panics during a render, a `RenderEngine` method for
   one, no longer leaves the instance broken: the panic comes back as an
   error wrapping `ErrCallbackPanic`, with the panic's value, and the

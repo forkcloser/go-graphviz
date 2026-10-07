@@ -803,7 +803,9 @@ bool wasm_bridge_TextLayoutEngine_TextLayout(textspan_t * arg0, GoSlice * arg1);
 bool TextLayoutEngine_TextLayout(textspan_t * _arg0, char ** _arg1) {
   textspan_t * arg0 = (textspan_t *)_arg0;GoSlice *arg1 = (GoSlice *)malloc(sizeof(GoSlice));
   int arg1_length = 0;
-  for (int i = 0; _arg1[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; _arg1 != NULL && _arg1[i] != NULL; i++) {
     arg1_length++;
   }
   arg1->len = arg1_length;
@@ -1947,7 +1949,9 @@ void wasm_bridge_set_Attr_dict(Agattr_t *recv, void * v) {
 
 void wasm_bridge_get_Attr_str(Agattr_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->str[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->str != NULL && recv->str[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -2167,7 +2171,9 @@ void wasm_bridge_set_DictData_here(Dtdata_t *recv, void * v) {
 
 void wasm_bridge_get_DictData_htab(Dtdata_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->hh._htab[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->hh._htab != NULL && recv->hh._htab[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -2443,7 +2449,9 @@ void wasm_bridge_set_Context_config_found(GVC_t *recv, bool v) {
 
 void wasm_bridge_get_Context_input_filenames(GVC_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->input_filenames[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->input_filenames != NULL && recv->input_filenames[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -2800,7 +2808,9 @@ void *wasm_bridge_new_Common() {
 
 void wasm_bridge_get_Common_info(GVCOMMON_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->info[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->info != NULL && recv->info[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -2860,7 +2870,9 @@ void wasm_bridge_set_Common_auto_outfile_names(GVCOMMON_t *recv, bool v) {
 
 void wasm_bridge_get_Common_show_boxes(GVCOMMON_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->show_boxes[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->show_boxes != NULL && recv->show_boxes[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -2884,7 +2896,9 @@ void wasm_bridge_set_Common_show_boxes(GVCOMMON_t *recv, GoSlice * v) {
 
 void wasm_bridge_get_Common_lib(GVCOMMON_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->lib[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->lib != NULL && recv->lib[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -3079,7 +3093,9 @@ void wasm_bridge_set_ObjectState_penwidth(obj_state_t *recv, double v) {
 
 void wasm_bridge_get_ObjectState_rawstyle(obj_state_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->rawstyle[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->rawstyle != NULL && recv->rawstyle[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -4910,7 +4926,9 @@ void wasm_bridge_set_RenderFeatures_default_pad(gvrender_features_t *recv, doubl
 
 void wasm_bridge_get_RenderFeatures_known_colors(gvrender_features_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; recv->knowncolors[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; recv->knowncolors != NULL && recv->knowncolors[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -6519,7 +6537,9 @@ void wasm_bridge_Context_info(void * _arg0, GoSlice ** _arg1) {
     arg0
   );GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; ret[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; ret != NULL && ret[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
@@ -6767,7 +6787,9 @@ void wasm_bridge_Context_pluginList(void * _arg0, void * _arg1, void * _arg2, Go
     arg2
   );GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
   int v_length = 0;
-  for (int i = 0; ret[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; ret != NULL && ret[i] != NULL; i++) {
     v_length++;
   }
   v->len = v_length;
