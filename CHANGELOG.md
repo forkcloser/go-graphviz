@@ -12,6 +12,15 @@ Graphviz's internals listed under Removed.
 
 ## [Unreleased]
 
+### Added
+
+- `cgraph.Graph.Err`: the first error a typed setter (`SetLabel`,
+  `SetShape` and the rest, which return their receiver to chain) met on the
+  graph, its subgraphs, nodes or edges. The setters dropped it. `gvc`'s
+  `Layout`, and so every render, returns it before laying out; closing the
+  root graph forgets it. What fails a setter is the WebAssembly module:
+  memory it cannot allocate, or a module that did not load.
+
 ### Fixed
 
 - A call that needs more WebAssembly memory than the module can hold fails
