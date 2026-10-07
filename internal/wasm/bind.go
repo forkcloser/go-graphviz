@@ -8480,14 +8480,6 @@ func (v *Engine) withToken(token *callToken) *Engine {
 	}
 	return v
 }
-func NewEngine(ctx context.Context) (*Engine, error) {
-	o, err := mod.newObject(ctx, "Engine")
-	if err != nil {
-		return nil, err
-	}
-	return newEngine(o), nil
-}
-
 func newEngine(ptr uint64) *Engine {
 	if ptr == 0 {
 		return nil
@@ -8776,14 +8768,6 @@ func (v *Features) withToken(token *callToken) *Features {
 	}
 	return v
 }
-func NewFeatures(ctx context.Context) (*Features, error) {
-	o, err := mod.newObject(ctx, "Features")
-	if err != nil {
-		return nil, err
-	}
-	return newFeatures(o), nil
-}
-
 func newFeatures(ptr uint64) *Features {
 	if ptr == 0 {
 		return nil
