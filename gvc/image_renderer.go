@@ -67,6 +67,7 @@ const MaxPagePixels = 1 << 28
 
 type ImageRenderer struct {
 	*DefaultRenderEngine
+
 	ctx *gg.Context
 	// scaleX and scaleY take a length in points along the canvas's axes to
 	// pixels, and lineScale takes a pen width or a dash; BeginPage sets

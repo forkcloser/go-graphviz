@@ -149,6 +149,8 @@ func TestParseFile(t *testing.T) {
 	// The file is written and closed before it is parsed: Windows refuses to
 	// remove an open file, and t.TempDir removes the directory at test end.
 	createTempFile := func(t *testing.T, content string) string {
+		t.Helper()
+
 		file, err := os.CreateTemp(t.TempDir(), "*")
 		if err != nil {
 			t.Fatalf("There was an error creating a temporary file. Error: %+v", err)
