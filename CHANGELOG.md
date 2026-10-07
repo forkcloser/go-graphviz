@@ -44,6 +44,9 @@ Graphviz 16 below.
 
 ### Changed
 
+- The embedded WebAssembly module is 26% smaller, 1.18 MB from 1.59 MB: it
+  exports only the functions the bindings call, so the Graphviz code none
+  of them reaches is no longer built in.
 - A render allocates on the order of its page: the bindings keep each
   function they call in the WebAssembly module instead of having a call
   engine built for every call. A PNG render of a graph of about 40 nodes
