@@ -1,60 +1,40 @@
 package graphviz
 
 import (
-	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/gvc"
 )
 
-// types from cdt package.
-type (
-	Dict       = cdt.Dict
-	DictLink   = cdt.Link
-	DictMethod = cdt.Method
-	DictDisc   = cdt.Disc
-	DictStat   = cdt.Stat
-)
-
 // types from cgraph package.
 type (
-	Graph            = cgraph.Graph
-	Node             = cgraph.Node
-	SubNode          = cgraph.SubNode
-	Edge             = cgraph.Edge
-	GraphDescriptor  = cgraph.Desc
-	ClientDiscipline = cgraph.Disc
-	Symbol           = cgraph.Symbol
-	Record           = cgraph.Record
-	Tag              = cgraph.Tag
-	Object           = cgraph.Object
-	CommonFields     = cgraph.CommonFields
-	State            = cgraph.State
-	CallbackStack    = cgraph.CallbackStack
-	Attribute        = cgraph.Attr
-	DataDict         = cgraph.DataDict
-	ObjectTag        = cgraph.ObjectTag
-	ID               = cgraph.ID
-	ArrowType        = cgraph.ArrowType
-	ClusterMode      = cgraph.ClusterMode
-	DirType          = cgraph.DirType
-	ImagePos         = cgraph.ImagePos
-	JustType         = cgraph.JustType
-	LabelLocation    = cgraph.LabelLocation
-	ModeType         = cgraph.ModeType
-	ModelType        = cgraph.ModelType
-	OrderingType     = cgraph.OrderingType
-	OutputMode       = cgraph.OutputMode
-	PackMode         = cgraph.PackMode
-	PageDir          = cgraph.PageDir
-	QuadType         = cgraph.QuadType
-	RankDir          = cgraph.RankDir
-	RatioType        = cgraph.RatioType
-	Shape            = cgraph.Shape
-	SmoothType       = cgraph.SmoothType
-	StartType        = cgraph.StartType
-	GraphStyle       = cgraph.GraphStyle
-	NodeStyle        = cgraph.NodeStyle
-	EdgeStyle        = cgraph.EdgeStyle
+	Graph           = cgraph.Graph
+	Node            = cgraph.Node
+	Edge            = cgraph.Edge
+	GraphDescriptor = cgraph.Desc
+	Symbol          = cgraph.Symbol
+	ObjectTag       = cgraph.ObjectTag
+	ID              = cgraph.ID
+	ArrowType       = cgraph.ArrowType
+	ClusterMode     = cgraph.ClusterMode
+	DirType         = cgraph.DirType
+	ImagePos        = cgraph.ImagePos
+	JustType        = cgraph.JustType
+	LabelLocation   = cgraph.LabelLocation
+	ModeType        = cgraph.ModeType
+	ModelType       = cgraph.ModelType
+	OrderingType    = cgraph.OrderingType
+	OutputMode      = cgraph.OutputMode
+	PackMode        = cgraph.PackMode
+	PageDir         = cgraph.PageDir
+	QuadType        = cgraph.QuadType
+	RankDir         = cgraph.RankDir
+	RatioType       = cgraph.RatioType
+	Shape           = cgraph.Shape
+	SmoothType      = cgraph.SmoothType
+	StartType       = cgraph.StartType
+	GraphStyle      = cgraph.GraphStyle
+	NodeStyle       = cgraph.NodeStyle
+	EdgeStyle       = cgraph.EdgeStyle
 )
 
 // types from gvc package.

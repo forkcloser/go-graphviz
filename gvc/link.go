@@ -3,7 +3,6 @@ package gvc
 import (
 	_ "unsafe" // for go:linkname
 
-	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
@@ -19,9 +18,3 @@ func toNode(*wasm.Node) *cgraph.Node
 
 //go:linkname toEdge github.com/forkcloser/go-graphviz/cgraph.toEdge
 func toEdge(*wasm.Edge) *cgraph.Edge
-
-//go:linkname toDictLink github.com/forkcloser/go-graphviz/cdt.toLink
-func toDictLink(*wasm.DictLink) *cdt.Link
-
-//go:linkname toDictLinkWasm github.com/forkcloser/go-graphviz/cdt.toLinkWasm
-func toDictLinkWasm(*cdt.Link) *wasm.DictLink

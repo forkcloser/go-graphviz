@@ -1,6 +1,6 @@
 // Package graphviz is the facade of the library: a Graphviz instance built
 // from the embedded WebAssembly module, the graph it lays out and renders, and
-// aliases for every type of the cgraph, cdt and gvc packages, so a program
+// aliases for every type of the cgraph and gvc packages, so a program
 // imports this one package for the whole API.
 //
 // One WebAssembly module serves the whole process, and Graphviz is
@@ -157,7 +157,7 @@ func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
 		opt(&call)
 	}
 
-	graph, err := cgraph.Open(call.name, call.dir, nil)
+	graph, err := cgraph.Open(call.name, call.dir)
 	if err != nil {
 		return nil, err
 	}

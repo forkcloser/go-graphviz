@@ -134,7 +134,7 @@ from [limen](https://github.com/farcloser/limen) (see `AGENTS.md`).
    checked against the digests in [pins.yaml](./pins.yaml). No container and no
    `configure` run: the build is reproducible, and CI rebuilds the committed
    blob on Linux and macOS and compares the bytes.
-3. Uses Graphviz functionality from a sub-packages ( `cdt` `cgraph` `gvc` ) via the `internal/wasm` package.
+3. Uses Graphviz functionality from the sub-packages `cgraph` and `gvc` via the `internal/wasm` package.
 4. `graphviz` package provides facade interface for all sub packages.
 
 # License

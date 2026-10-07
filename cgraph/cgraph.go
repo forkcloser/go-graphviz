@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
@@ -27,131 +26,16 @@ func toGraph(v *wasm.Graph) *Graph {
 	return &Graph{wasm: v}
 }
 
-func (g *Graph) Base() *Object {
-	return toObject(g.wasm.GetBase())
-}
-
-func (g *Graph) SetBase(v *Object) {
-	g.wasm.SetBase(v.getWasm())
-}
-
-func (g *Graph) Desc() *Desc {
-	return toDesc(g.wasm.GetDesc())
-}
-
-func (g *Graph) SetDesc(v *Desc) {
-	g.wasm.SetDesc(v.getWasm())
-}
-
-func (g *Graph) SeqLink() *cdt.Link {
-	return toDictLink(g.wasm.GetSeqLink())
-}
-
-func (g *Graph) SetSeqLink(v *cdt.Link) {
-	g.wasm.SetSeqLink(toDictLinkWasm(v))
-}
-
-func (g *Graph) IDLink() *cdt.Link {
-	return toDictLink(g.wasm.GetIdLink())
-}
-
-func (g *Graph) SetIDLink(v *cdt.Link) {
-	g.wasm.SetIdLink(toDictLinkWasm(v))
-}
-
-func (g *Graph) NSeq() *cdt.Dict {
-	return toDict(g.wasm.GetNSeq())
-}
-
-func (g *Graph) SetNSeq(v *cdt.Dict) {
-	g.wasm.SetNSeq(toDictWasm(v))
-}
-
-func (g *Graph) ESeq() *cdt.Dict {
-	return toDict(g.wasm.GetESeq())
-}
-
-func (g *Graph) SetESeq(v *cdt.Dict) {
-	g.wasm.SetESeq(toDictWasm(v))
-}
-
-func (g *Graph) EID() *cdt.Dict {
-	return toDict(g.wasm.GetEId())
-}
-
-func (g *Graph) SetEID(v *cdt.Dict) {
-	g.wasm.SetEId(toDictWasm(v))
-}
-
-func (g *Graph) GSeq() *cdt.Dict {
-	return toDict(g.wasm.GetGSeq())
-}
-
-func (g *Graph) SetGSeq(v *cdt.Dict) {
-	g.wasm.SetGSeq(toDictWasm(v))
-}
-
-func (g *Graph) GID() *cdt.Dict {
-	return toDict(g.wasm.GetGId())
-}
-
-func (g *Graph) SetGID(v *cdt.Dict) {
-	g.wasm.SetGId(toDictWasm(v))
-}
-
 func (g *Graph) Parent() *Graph {
 	return toGraph(g.wasm.GetParent())
-}
-
-func (g *Graph) SetParent(v *Graph) {
-	g.wasm.SetParent(v.getWasm())
 }
 
 func (g *Graph) GraphRoot() *Graph {
 	return toGraph(g.wasm.GetRoot())
 }
 
-func (g *Graph) SetGraphRoot(v *Graph) {
-	g.wasm.SetRoot(v.getWasm())
-}
-
-func (g *Graph) CommonFields() *CommonFields {
-	return toCommonFields(g.wasm.GetClos())
-}
-
-func (g *Graph) SetCommonFields(v *CommonFields) {
-	g.wasm.SetClos(v.getWasm())
-}
-
 func (g *Graph) CopyAttr(t *Graph) error {
 	res, err := wasm.CopyAttr(context.Background(), g.wasm, t.getWasm())
-	if err != nil {
-		return err
-	}
-
-	return toError(res)
-}
-
-// BindRecord attach a new record of the given size to the object.
-func (g *Graph) BindRecord(name string, size uint, moveToFront int) error {
-	if _, err := wasm.BindRecord(context.Background(), g.wasm, name, size, moveToFront); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (g *Graph) Record(name string, moveToFront int) (*Record, error) {
-	res, err := wasm.GetRecord(context.Background(), g.wasm, name, moveToFront)
-	if err != nil {
-		return nil, err
-	}
-
-	return toRecord(res), nil
-}
-
-func (g *Graph) DeleteRecord(name string) error {
-	res, err := wasm.DeleteRecord(context.Background(), g.wasm, name)
 	if err != nil {
 		return err
 	}
@@ -315,15 +199,6 @@ func (g *Graph) PreviousNode(n *Node) (*Node, error) {
 	return toNode(res), nil
 }
 
-func (g *Graph) SubRep(n *Node) (*SubNode, error) {
-	res, err := g.wasm.SubRep(context.Background(), n.getWasm())
-	if err != nil {
-		return nil, err
-	}
-
-	return toSubNode(res), nil
-}
-
 func (g *Graph) CreateEdgeByName(name string, start, end *Node) (*Edge, error) {
 	res, err := g.wasm.Edge(context.Background(), start.getWasm(), end.getWasm(), name, 1)
 	if err != nil {
@@ -481,56 +356,6 @@ func (g *Graph) DeleteEdge(e *Edge) (bool, error) {
 	return res == 1, nil
 }
 
-func (g *Graph) Strdup(s string) (string, error) {
-	return g.wasm.Strdup(context.Background(), s)
-}
-
-func (g *Graph) StrdupHTML(s string) (string, error) {
-	return g.wasm.StrdupHTML(context.Background(), s)
-}
-
-// StrdupText is Strdup for a value that is plain text, never HTML-like, in a
-// graph where the two kinds are told apart (Graphviz 13 and later).
-func (g *Graph) StrdupText(s string) (string, error) {
-	return g.wasm.StrdupText(context.Background(), s)
-}
-
-func (g *Graph) StrBind(s string) (string, error) {
-	return g.wasm.StrBind(context.Background(), s)
-}
-
-// StrBindText looks a plain-text string up in the graph's string pool.
-func (g *Graph) StrBindText(s string) (string, error) {
-	return g.wasm.StrBindText(context.Background(), s)
-}
-
-// StrBindHTML looks an HTML-like string up in the graph's string pool.
-func (g *Graph) StrBindHTML(s string) (string, error) {
-	return g.wasm.StrBindHTML(context.Background(), s)
-}
-
-// StrFree releases a plain-text string obtained from Strdup, StrdupText or
-// the StrBind family. Graphviz 13 keeps text and HTML-like strings in
-// separate pools; a string from StrdupHTML is released with StrFreeHTML.
-func (g *Graph) StrFree(s string) error {
-	res, err := g.wasm.StrFree(context.Background(), s, false)
-	if err != nil {
-		return err
-	}
-
-	return toError(res)
-}
-
-// StrFreeHTML releases an HTML-like string obtained from StrdupHTML.
-func (g *Graph) StrFreeHTML(s string) error {
-	res, err := g.wasm.StrFree(context.Background(), s, true)
-	if err != nil {
-		return err
-	}
-
-	return toError(res)
-}
-
 func (g *Graph) Attr(kind int, name, value string) (*Symbol, error) {
 	res, err := g.wasm.Attr(context.Background(), kind, name, value)
 	if err != nil {
@@ -547,14 +372,6 @@ func (g *Graph) NextAttr(kind int, attr *Symbol) (*Symbol, error) {
 	}
 
 	return toSymbol(res), nil
-}
-
-func (g *Graph) Init(kind int, recName string, recSize, moveToFront int) error {
-	return g.wasm.Init(context.Background(), kind, recName, recSize, moveToFront)
-}
-
-func (g *Graph) Clean(kind int, recName string) error {
-	return g.wasm.Clean(context.Background(), kind, recName)
 }
 
 func (g *Graph) CreateSubGraphByName(name string) (*Graph, error) {
@@ -700,28 +517,8 @@ func toNode(v *wasm.Node) *Node {
 	return &Node{wasm: v}
 }
 
-func (n *Node) Base() *Object {
-	return toObject(n.wasm.GetBase())
-}
-
-func (n *Node) SetBase(v *Object) {
-	n.wasm.SetBase(v.getWasm())
-}
-
 func (n *Node) Root() *Graph {
 	return toGraph(n.wasm.GetRoot())
-}
-
-func (n *Node) SetRootGraph(v *Graph) {
-	n.wasm.SetRoot(v.getWasm())
-}
-
-func (n *Node) MainSub() *SubNode {
-	return toSubNode(n.wasm.GetMainsub())
-}
-
-func (n *Node) SetMainSub(v *SubNode) {
-	n.wasm.SetMainsub(v.getWasm())
 }
 
 func (n *Node) Name() (string, error) {
@@ -730,32 +527,6 @@ func (n *Node) Name() (string, error) {
 
 func (n *Node) CopyAttr(t *Node) error {
 	res, err := wasm.CopyAttr(context.Background(), n.wasm, t.getWasm())
-	if err != nil {
-		return err
-	}
-
-	return toError(res)
-}
-
-func (n *Node) BindRecord(name string, size uint, moveToFront int) error {
-	if _, err := wasm.BindRecord(context.Background(), n.wasm, name, size, moveToFront); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (n *Node) Record(name string, moveToFront int) (*Record, error) {
-	res, err := wasm.GetRecord(context.Background(), n.wasm, name, moveToFront)
-	if err != nil {
-		return nil, err
-	}
-
-	return toRecord(res), nil
-}
-
-func (n *Node) DeleteRecord(name string) error {
-	res, err := wasm.DeleteRecord(context.Background(), n.wasm, name)
 	if err != nil {
 		return err
 	}
@@ -837,82 +608,6 @@ func (n *Node) getWasm() *wasm.Node {
 	return n.wasm
 }
 
-type SubNode struct {
-	wasm *wasm.SubNode
-}
-
-func toSubNode(v *wasm.SubNode) *SubNode {
-	if v == nil {
-		return nil
-	}
-
-	return &SubNode{wasm: v}
-}
-
-func (n *SubNode) SeqLink() *cdt.Link {
-	return toDictLink(n.wasm.GetSeqLink())
-}
-
-func (n *SubNode) SetSeqLink(v *cdt.Link) {
-	n.wasm.SetSeqLink(toDictLinkWasm(v))
-}
-
-func (n *SubNode) IDLink() *cdt.Link {
-	return toDictLink(n.wasm.GetIdLink())
-}
-
-func (n *SubNode) SetIDLink(v *cdt.Link) {
-	n.wasm.SetIdLink(toDictLinkWasm(v))
-}
-
-func (n *SubNode) Node() *Node {
-	return toNode(n.wasm.GetNode())
-}
-
-func (n *SubNode) SetNode(v *Node) {
-	n.wasm.SetNode(v.getWasm())
-}
-
-func (n *SubNode) InID() *cdt.Link {
-	return toDictLink(n.wasm.GetInId())
-}
-
-func (n *SubNode) SetInID(v *cdt.Link) {
-	n.wasm.SetInId(toDictLinkWasm(v))
-}
-
-func (n *SubNode) OutID() *cdt.Link {
-	return toDictLink(n.wasm.GetOutId())
-}
-
-func (n *SubNode) SetOutID(v *cdt.Link) {
-	n.wasm.SetOutId(toDictLinkWasm(v))
-}
-
-func (n *SubNode) InSeq() *cdt.Link {
-	return toDictLink(n.wasm.GetInSeq())
-}
-
-func (n *SubNode) SetInSeq(v *cdt.Link) {
-	n.wasm.SetInSeq(toDictLinkWasm(v))
-}
-
-func (n *SubNode) OutSeq() *cdt.Link {
-	return toDictLink(n.wasm.GetOutSeq())
-}
-
-func (n *SubNode) SetOutSeq(v *cdt.Link) {
-	n.wasm.SetOutSeq(toDictLinkWasm(v))
-}
-
-func (n *SubNode) getWasm() *wasm.SubNode {
-	if n == nil {
-		return nil
-	}
-
-	return n.wasm
-}
-
 type Edge struct {
 	wasm *wasm.Edge
 }
@@ -923,38 +618,6 @@ func toEdge(v *wasm.Edge) *Edge {
 	}
 
 	return &Edge{wasm: v}
-}
-
-func (e *Edge) Base() *Object {
-	return toObject(e.wasm.GetBase())
-}
-
-func (e *Edge) SetBase(v *Object) {
-	e.wasm.SetBase(v.getWasm())
-}
-
-func (e *Edge) SeqLink() *cdt.Link {
-	return toDictLink(e.wasm.GetSeqLink())
-}
-
-func (e *Edge) SetSeqLink(v *cdt.Link) {
-	e.wasm.SetSeqLink(toDictLinkWasm(v))
-}
-
-func (e *Edge) IDLink() *cdt.Link {
-	return toDictLink(e.wasm.GetIdLink())
-}
-
-func (e *Edge) SetIDLink(v *cdt.Link) {
-	e.wasm.SetIdLink(toDictLinkWasm(v))
-}
-
-func (e *Edge) Node() *Node {
-	return toNode(e.wasm.GetNode())
-}
-
-func (e *Edge) SetNode(v *Node) {
-	e.wasm.SetNode(v.getWasm())
 }
 
 func (e *Edge) Head() (*Node, error) {
@@ -981,32 +644,6 @@ func (e *Edge) Name() (string, error) {
 
 func (e *Edge) CopyAttr(t *Edge) error {
 	res, err := wasm.CopyAttr(context.Background(), e.wasm, t.getWasm())
-	if err != nil {
-		return err
-	}
-
-	return toError(res)
-}
-
-func (e *Edge) BindRecord(name string, size uint, moveToFront int) error {
-	if _, err := wasm.BindRecord(context.Background(), e.wasm, name, size, moveToFront); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *Edge) Record(name string, moveToFront int) (*Record, error) {
-	res, err := wasm.GetRecord(context.Background(), e.wasm, name, moveToFront)
-	if err != nil {
-		return nil, err
-	}
-
-	return toRecord(res), nil
-}
-
-func (e *Edge) DeleteRecord(name string) error {
-	res, err := wasm.DeleteRecord(context.Background(), e.wasm, name)
 	if err != nil {
 		return err
 	}
@@ -1090,26 +727,6 @@ func (d *Desc) getWasm() *wasm.GraphDescriptor {
 	return d.wasm
 }
 
-type Disc struct {
-	wasm *wasm.ClientDiscipline
-}
-
-func toDisc(v *wasm.ClientDiscipline) *Disc {
-	if v == nil {
-		return nil
-	}
-
-	return &Disc{wasm: v}
-}
-
-func (d *Disc) getWasm() *wasm.ClientDiscipline {
-	if d == nil {
-		return nil
-	}
-
-	return d.wasm
-}
-
 // Symbol symbol in one of the above dictionaries.
 type Symbol struct {
 	wasm *wasm.Sym
@@ -1123,62 +740,20 @@ func toSymbol(v *wasm.Sym) *Symbol {
 	return &Symbol{wasm: v}
 }
 
-func (s *Symbol) Link() *cdt.Link {
-	return toDictLink(s.wasm.GetLink())
-}
-
-func (s *Symbol) SetLink(v *cdt.Link) {
-	s.wasm.SetLink(toDictLinkWasm(v))
-}
-
 func (s *Symbol) Name() string {
 	return s.wasm.GetName()
-}
-
-func (s *Symbol) SetName(v string) {
-	s.wasm.SetName(v)
 }
 
 func (s *Symbol) DefaultValue() string {
 	return s.wasm.GetDefval()
 }
 
-func (s *Symbol) SetDefaultValue(v string) {
-	s.wasm.SetDefval(v)
-}
-
 func (s *Symbol) ID() int {
 	return int(s.wasm.GetId())
 }
 
-// SetID sets the symbol's index; the field is a 32-bit int in libcgraph, so
-// the parameter is too.
-func (s *Symbol) SetID(v int32) {
-	s.wasm.SetId(v)
-}
-
 func (s *Symbol) Kind() uint {
 	return uint(s.wasm.GetKind())
-}
-
-func (s *Symbol) SetKind(v uint32) {
-	s.wasm.SetKind(v)
-}
-
-func (s *Symbol) Fixed() uint {
-	return uint(s.wasm.GetFixed())
-}
-
-func (s *Symbol) SetFixed(v uint32) {
-	s.wasm.SetFixed(v)
-}
-
-func (s *Symbol) Print() uint {
-	return uint(s.wasm.GetPrint())
-}
-
-func (s *Symbol) SetPrint(v uint32) {
-	s.wasm.SetPrint(v)
 }
 
 func (s *Symbol) getWasm() *wasm.Sym {
@@ -1187,257 +762,6 @@ func (s *Symbol) getWasm() *wasm.Sym {
 	}
 
 	return s.wasm
-}
-
-// Record generic runtime record.
-type Record struct {
-	wasm *wasm.Record
-}
-
-func toRecord(v *wasm.Record) *Record {
-	if v == nil {
-		return nil
-	}
-
-	return &Record{wasm: v}
-}
-
-func (r *Record) Name() string {
-	return r.wasm.GetName()
-}
-
-func (r *Record) SetName(v string) {
-	r.wasm.SetName(v)
-}
-
-func (r *Record) Next() *Record {
-	return toRecord(r.wasm.GetNext())
-}
-
-func (r *Record) SetNext(v *Record) {
-	r.wasm.SetNext(v.getWasm())
-}
-
-func (r *Record) getWasm() *wasm.Record {
-	if r == nil {
-		return nil
-	}
-
-	return r.wasm
-}
-
-type Tag struct {
-	wasm *wasm.Tag
-}
-
-func toTag(v *wasm.Tag) *Tag {
-	if v == nil {
-		return nil
-	}
-
-	return &Tag{wasm: v}
-}
-
-func (t *Tag) ObjectTag() ObjectTag {
-	return ObjectTag(t.wasm.GetObjectType())
-}
-
-func (t *Tag) ID() ID {
-	return ID(t.wasm.GetId())
-}
-
-func (t *Tag) SetID(v ID) {
-	t.wasm.SetId(uint64(v))
-}
-
-func (t *Tag) getWasm() *wasm.Tag {
-	if t == nil {
-		return nil
-	}
-
-	return t.wasm
-}
-
-type Object struct {
-	wasm *wasm.Object
-}
-
-func toObject(v *wasm.Object) *Object {
-	if v == nil {
-		return nil
-	}
-
-	return &Object{wasm: v}
-}
-
-func (o *Object) Tag() *Tag {
-	return toTag(o.wasm.GetTag())
-}
-
-func (o *Object) SetTag(v *Tag) {
-	o.wasm.SetTag(v.getWasm())
-}
-
-func (o *Object) Data() *Record {
-	return toRecord(o.wasm.GetData())
-}
-
-func (o *Object) SetData(v *Record) {
-	o.wasm.SetData(v.getWasm())
-}
-
-func (o *Object) SafeSet(name, value, def string) error {
-	res, err := wasm.SafeSetStr(context.Background(), o.wasm, name, value, def)
-	if err != nil {
-		return err
-	}
-
-	return toError(res)
-}
-
-func (o *Object) getWasm() *wasm.Object {
-	if o == nil {
-		return nil
-	}
-
-	return o.wasm
-}
-
-type CommonFields struct {
-	wasm *wasm.CommonFields
-}
-
-func toCommonFields(v *wasm.CommonFields) *CommonFields {
-	if v == nil {
-		return nil
-	}
-
-	return &CommonFields{wasm: v}
-}
-
-func (c *CommonFields) Disc() *Disc {
-	return toDisc(c.wasm.GetDisc())
-}
-
-func (c *CommonFields) SetDisc(v *Disc) {
-	c.wasm.SetDisc(v.getWasm())
-}
-
-func (c *CommonFields) State() *State {
-	return toState(c.wasm.GetState())
-}
-
-func (c *CommonFields) SetState(v *State) {
-	c.wasm.SetState(v.getWasm())
-}
-
-func (c *CommonFields) StrDict() *cdt.Dict {
-	return toDict(c.wasm.GetStrdict())
-}
-
-func (c *CommonFields) SetStrDict(v *cdt.Dict) {
-	c.wasm.SetStrdict(toDictWasm(v))
-}
-
-func (c *CommonFields) Seq() [3]uint64 {
-	res := c.wasm.GetSeq()
-	return [3]uint64{res[0], res[1], res[2]}
-}
-
-func (c *CommonFields) SetSeq(v [3]uint64) {
-	c.wasm.SetSeq(v[:])
-}
-
-func (c *CommonFields) Callback() *CallbackStack {
-	return toCallbackStack(c.wasm.GetCb())
-}
-
-func (c *CommonFields) SetCallback(v *CallbackStack) {
-	c.wasm.SetCb(v.getWasm())
-}
-
-func (c *CommonFields) LookupByName() [3]*cdt.Dict {
-	res := c.wasm.GetLookupByName()
-	return [3]*cdt.Dict{toDict(res[0]), toDict(res[1]), toDict(res[2])}
-}
-
-func (c *CommonFields) SetLookupByName(v [3]*cdt.Dict) {
-	args := make([]*wasm.Dict, len(v))
-	for i := range args {
-		args[i] = toDictWasm(v[i])
-	}
-
-	c.wasm.SetLookupByName(args)
-}
-
-func (c *CommonFields) LookupByID() [3]*cdt.Dict {
-	res := c.wasm.GetLookupById()
-	return [3]*cdt.Dict{toDict(res[0]), toDict(res[1]), toDict(res[2])}
-}
-
-func (c *CommonFields) SetLookupByID(v [3]*cdt.Dict) {
-	args := make([]*wasm.Dict, len(v))
-	for i := range args {
-		args[i] = toDictWasm(v[i])
-	}
-
-	c.wasm.SetLookupById(args)
-}
-
-func (c *CommonFields) getWasm() *wasm.CommonFields {
-	if c == nil {
-		return nil
-	}
-
-	return c.wasm
-}
-
-type State struct {
-	wasm *wasm.State
-}
-
-func toState(v *wasm.State) *State {
-	if v == nil {
-		return nil
-	}
-
-	return &State{wasm: v}
-}
-
-func (s *State) getWasm() *wasm.State {
-	if s == nil {
-		return nil
-	}
-
-	return s.wasm
-}
-
-type CallbackStack struct {
-	wasm *wasm.CallbackStack
-}
-
-func toCallbackStack(v *wasm.CallbackStack) *CallbackStack {
-	if v == nil {
-		return nil
-	}
-
-	return &CallbackStack{wasm: v}
-}
-
-func (c *CallbackStack) getWasm() *wasm.CallbackStack {
-	if c == nil {
-		return nil
-	}
-
-	return c.wasm
-}
-
-type Attr struct {
-	wasm *wasm.Attr
-}
-
-type DataDict struct {
-	wasm *wasm.DataDict
 }
 
 type ID uint64
@@ -1478,12 +802,14 @@ func ParseFile(path string) (*Graph, error) {
 	return ParseBytes(file)
 }
 
-func Open(name string, desc *Desc, disc *Disc) (*Graph, error) {
+// Open makes a new, empty graph of the given name and kind (Directed,
+// StrictDirected, UnDirected or StrictUnDirected).
+func Open(name string, desc *Desc) (*Graph, error) {
 	if errInit != nil {
 		return nil, errInit
 	}
 
-	graph, err := wasm.Open(context.Background(), name, desc.getWasm(), disc.getWasm())
+	graph, err := wasm.Open(context.Background(), name, desc.getWasm(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1505,42 +831,6 @@ var (
 	EDGE    ObjectTag = ObjectTag(wasm.EDGE)
 )
 
-func (a *Attr) Header() *Record {
-	return toRecord(a.wasm.GetH())
-}
-
-func (a *Attr) SetHeader(v *Record) {
-	a.wasm.SetH(v.getWasm())
-}
-
-func (a *Attr) Dict() *cdt.Dict {
-	return toDict(a.wasm.GetDict())
-}
-
-func (a *Attr) SetDict(v *cdt.Dict) {
-	a.wasm.SetDict(toDictWasm(v))
-}
-
-func (a *Attr) Str() []string {
-	return a.wasm.GetStr()
-}
-
-func (a *Attr) SetStr(v []string) {
-	a.wasm.SetStr(v)
-}
-
-func (d *DataDict) Header() *Record {
-	return toRecord(d.wasm.GetH())
-}
-
-func (d *DataDict) SetHeader(v *Record) {
-	d.wasm.SetH(v.getWasm())
-}
-
-func HTMLStr(s string) (bool, error) {
-	return wasm.HtmlStr(context.Background(), s)
-}
-
 // Canon returns s in the form the DOT writer would print it: quoted and
 // escaped as needed, or wrapped in angle brackets when html is non-zero.
 // Graphviz 13 removed agcanon; this is what it did, over agstrcanon.
@@ -1552,26 +842,11 @@ func Canon(s string, html int) (string, error) {
 	return CanonStr(s)
 }
 
-// StrCanon canonicalizes s into buf, which must hold at least 2*len(s)+3
-// bytes (agstrcanon's own bound); CanonStr sizes the buffer itself.
-func StrCanon(s, buf string) (string, error) {
-	return wasm.StrCanon(context.Background(), s, buf)
-}
-
 // CanonStr returns s quoted and escaped as the DOT writer would print it.
 // Graphviz 14 removed agcanonStr in favour of agstrcanon with a caller-owned
 // buffer; the buffer is sized here.
 func CanonStr(s string) (string, error) {
 	return wasm.StrCanon(context.Background(), s, string(make([]byte, 2*len(s)+3)))
-}
-
-func AttrSym(obj *Object, name string) (*Symbol, error) {
-	sym, err := wasm.AttrSym(context.Background(), obj.getWasm(), name)
-	if err != nil {
-		return nil, err
-	}
-
-	return toSymbol(sym), nil
 }
 
 // toError maps a Graphviz result code: zero is success, anything else is a

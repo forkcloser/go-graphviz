@@ -6,8 +6,9 @@ All notable changes to this fork are recorded here. The format follows
 fork point, upstream [`goccy/go-graphviz`](https://github.com/goccy/go-graphviz)
 v0.2.10 (commit `76e0497`), which is also upstream's current `master`; see
 [UPSTREAM.md](UPSTREAM.md). For a user of `github.com/goccy/go-graphviz`,
-switching is a change of import path, Go 1.26, and the label change under
-Graphviz 16 below.
+switching is a change of import path, Go 1.26, the label change under
+Graphviz 16 below, and, for a program that used them, the bindings over
+Graphviz's internals listed under Removed.
 
 ## [Unreleased]
 
@@ -60,6 +61,28 @@ Graphviz 16 below.
   as the struct is, which for what a callback receives is the callback.
 - `graphviz.version` is gone: the Graphviz version is the `graphviz` entry
   in `pins.yaml`, which the build already read and checked the file against.
+
+### Removed
+
+Breaking: these were bindings over Graphviz's internals, which no program
+could use correctly.
+
+- The `cdt` package, and the root package's `Dict` aliases. Its
+  dictionaries had no constructor for what they need, and `Walk` did
+  nothing.
+- From `cgraph`, everything that wrote to or exposed Graphviz's internal
+  structures: the field getters and setters of `Graph`, `Node` and `Edge`
+  (`SetBase`, `SeqLink`, `SetGID`, `SetParent`, `MainSub`, `Edge.Node`,
+  …), the per-object records (`BindRecord`, `Record`, `DeleteRecord`,
+  `Init`, `Clean`), the string pool (`Strdup`, `StrBind`, `StrFree` and
+  their variants), `SubRep`, `HTMLStr`, `StrCanon`, `AttrSym`, `Symbol`'s
+  setters, `Fixed` and `Print`, and the types `SubNode`, `Record`, `Tag`,
+  `Object`, `CommonFields`, `State`, `CallbackStack`, `Attr`, `DataDict`
+  and `Disc`, with their root aliases. `cgraph.Open` loses its discipline
+  argument, which only took nil. Building, reading and walking graphs,
+  attributes, subgraphs, `Parent`, `Root`, `ReLabel` and `Before` are
+  unchanged.
+- `gvc.UserShape`'s `Link` and `SetLink`.
 
 ## [0.4.0] - 2026-10-06
 
