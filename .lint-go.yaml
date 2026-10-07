@@ -103,9 +103,6 @@ golangci:
         - path: ^alias\.go$
           linters: # 111 findings
             - gochecknoglobals # 21
-        - path: ^cdt/cdt\.go$
-          linters: # 48 findings
-            - errcheck # 3
         - path: ^cgraph/attribute\.go$
           linters: # 487 findings
             - errcheck # 210
@@ -153,9 +150,6 @@ golangci:
         - path: ^alias\.go$
           linters: [revive]
           text: '^exported:' # 90 revive findings at enrolment; only the doc-comment rule stays exempt
-        - path: ^cdt/cdt\.go$
-          linters: [revive]
-          text: '^exported:' # 34 revive findings at enrolment; only the doc-comment rule stays exempt
         - path: ^cgraph/attribute\.go$
           linters: [revive]
           text: '^exported:' # 254 revive findings at enrolment; only the doc-comment rule stays exempt
@@ -201,21 +195,20 @@ golangci:
               - github.com/fogleman/gg
               - golang.org/x/image
       # internal/wasm is this module's own binding, generated from bind.proto;
-      # an error it returns is already the module's own, and cgraph, cdt and
-      # gvc are the thin typed layer over it, as the root package is over them.
+      # an error it returns is already the module's own, and cgraph and gvc
+      # are the thin typed layer over it, as the root package is over them.
       # Wrapping at those boundaries would add a second, identical message to
       # every call; errors from other modules and the standard library are
       # wrapped where they arise.
       wrapcheck:
         ignore-package-globs:
           - github.com/forkcloser/go-graphviz/internal/wasm
-          - github.com/forkcloser/go-graphviz/cdt
           - github.com/forkcloser/go-graphviz/cgraph
           - github.com/forkcloser/go-graphviz/gvc
       revive:
         rules:
           # revive counts public type declarations per file. The root package
-          # re-exports every type of cgraph, cdt and gvc as aliases so one
+          # re-exports every type of cgraph and gvc as aliases so one
           # import covers the API, and cgraph and gvc mirror libcgraph's and
           # libgvc's structs and enums one to one; the counts are the C API's
           # and the facade's, not a design to shrink, so the rule is off.

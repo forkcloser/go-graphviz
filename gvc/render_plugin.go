@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/forkcloser/go-graphviz/cdt"
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
@@ -1169,14 +1168,6 @@ func toUserShape(v *wasm.UserShape) *UserShape {
 	}
 
 	return &UserShape{wasm: v}
-}
-
-func (s *UserShape) Link() *cdt.Link {
-	return toDictLink(s.wasm.GetLink())
-}
-
-func (s *UserShape) SetLink(v *cdt.Link) {
-	s.wasm.SetLink(toDictLinkWasm(v))
 }
 
 func (s *UserShape) Name() string {
