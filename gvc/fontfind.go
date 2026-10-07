@@ -1,15 +1,10 @@
 package gvc
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 )
-
-// ErrFontNotFound is returned when no font file answers to a requested name,
-// on the platform's font directories or in a TrueType collection.
-var ErrFontNotFound = errors.New("font not found")
 
 // fontSuffixes are the file types the raster renderer can load: TrueType,
 // TrueType collections and OpenType.
