@@ -27,6 +27,10 @@ Graphviz 16 below.
 
 ### Changed
 
+- A render allocates on the order of its page: the bindings keep each
+  function they call in the WebAssembly module instead of having a call
+  engine built for every call. A PNG render of a graph of about 40 nodes
+  went from 320 MB allocated and 30 ms to 7 MB and 13 ms.
 - `DefaultPlugins` builds its plugins once and returns the same ones to
   every caller; they stay registered for the life of the process.
 - A struct-valued field read through the bindings, such as `Job.Scale`,

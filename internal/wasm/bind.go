@@ -43,6 +43,34 @@ type WasmModule struct {
 	// skipped, Graphviz finishes normally, and the entry point that made the
 	// call returns the parked error (see takeCallbackError).
 	callbackErr error
+	// functions keeps each exported function the bindings call, for reuse:
+	// wazero builds a call engine, with its own stack, for every function
+	// it hands out, and building one per call was most of what a render
+	// allocated. Only touched under lock.
+	functions map[string]*exportedFunction
+}
+
+// exportedFunction is a kept exported function and whether a call is in
+// it: a wazero function is not re-entrant, so a call nested in one (a
+// callback reaching back into the same export) is given a fresh one.
+type exportedFunction struct {
+	fn   api.Function
+	busy bool
+}
+
+// function returns the exported function name for a call, and the func
+// that ends its use.
+func (m *WasmModule) function(name string) (api.Function, func()) {
+	kept, ok := m.functions[name]
+	if ok && kept.busy {
+		return m.mod.ExportedFunction(name), func() {}
+	}
+	if !ok {
+		kept = &exportedFunction{fn: m.mod.ExportedFunction(name)}
+		m.functions[name] = kept
+	}
+	kept.busy = true
+	return kept.fn, func() { kept.busy = false }
 }
 
 // failCallback parks the first error a callback returns; later ones are
@@ -427,6 +455,7 @@ func init() {
 // newWasmModule is a module with its registries and no instance yet.
 func newWasmModule() *WasmModule {
 	return &WasmModule{
+		functions:     map[string]*exportedFunction{},
 		fs:            &WasmFileSystem{},
 		lookupFuncMap: &LookupFuncMap{},
 		callbackFuncMap: &CallbackFuncMap{
@@ -4348,7 +4377,9 @@ func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([
 	}
 	ctx, leave, outermost := m.lock.enter(ctx)
 	defer leave()
-	ret, err := m.mod.ExportedFunction(name).Call(ctx, args...)
+	fn, done := m.function(name)
+	ret, err := fn.Call(ctx, args...)
+	done()
 	if !outermost {
 		// A nested call (a host function reaching back in, a free after a
 		// callback failed) leaves the parked error to the call that owns it.
