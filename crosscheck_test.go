@@ -11,9 +11,11 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
+	"unicode"
 
 	"github.com/forkcloser/go-graphviz"
 )
@@ -192,6 +194,107 @@ func inkBand(withText, withoutText image.Image, page svgPage, text svgText) (ink
 	return ink, area
 }
 
+// inkEdges is where, in font sizes from the text's baseline (positive
+// below), the text's ink starts at the top and ends at the bottom: the
+// highest and lowest pixel rows, from a font size above the baseline to
+// inkWindowBelow of one below, whose ink is at least a fifth of the
+// densest row's, over the band's middle columns. Glyphs sit on their
+// baseline and reach up to their x-height or cap height; descenders, and a
+// neighbouring line's edges, are too sparse to count. ok is false when the
+// window holds no ink.
+func inkEdges(withText, withoutText image.Image, page svgPage, text svgText) (topEdge, bottomEdge float64, ok bool) {
+	bounds := withText.Bounds()
+
+	width := 0.5 * text.size * float64(len([]rune(text.content)))
+	centre := text.x
+
+	switch text.anchor {
+	case "start":
+		centre += width / 2
+	case "end":
+		centre -= width / 2
+	}
+
+	half := max(0.15*text.size, 0.3*width)
+	x0, y0 := page.toPixel(bounds, centre-half, text.y-text.size)
+	x1, y1 := page.toPixel(bounds, centre+half, text.y+inkWindowBelow*text.size)
+	left, right := max(int(min(x0, x1)), bounds.Min.X), min(int(max(x0, x1)), bounds.Max.X-1)
+	top, bottom := max(int(min(y0, y1)), bounds.Min.Y), min(int(max(y0, y1)), bounds.Max.Y-1)
+
+	rows := make([]int, 0, bottom-top+1)
+	densest := 0
+
+	for y := top; y <= bottom; y++ {
+		count := 0
+
+		for x := left; x <= right; x++ {
+			a, okA := color.NRGBAModel.Convert(withText.At(x, y)).(color.NRGBA)
+			b, okB := color.NRGBAModel.Convert(withoutText.At(x, y)).(color.NRGBA)
+
+			if okA && okB && distance(a, b) > inkContrast {
+				count++
+			}
+		}
+
+		rows = append(rows, count)
+		densest = max(densest, count)
+	}
+
+	if densest == 0 {
+		return 0, 0, false
+	}
+
+	_, baseline := page.toPixel(bounds, text.x, text.y)
+	fontPixels := page.scale * float64(bounds.Dy()) / page.height * text.size
+	first := slices.IndexFunc(rows, func(count int) bool { return count*inkRowShare >= densest })
+
+	last := first
+
+	for i, count := range slices.Backward(rows) {
+		if count*inkRowShare >= densest {
+			last = i
+
+			break
+		}
+	}
+
+	return (float64(top+first) - baseline) / fontPixels, (float64(top+last) + 1 - baseline) / fontPixels, true
+}
+
+// inkWindowBelow is how far below its baseline, in font sizes, a text's ink
+// is looked for: past a descender, short of the next line of a label.
+const inkWindowBelow = 0.3
+
+// minInkBottom and maxInkBottom bound where a text's ink may end, and
+// maxInkTop how low it may start, in font sizes from its baseline. Measured
+// on the corpus when the check was written, drawn text ends from 0.28 above
+// its baseline to 0.38 below (dense descenders: "pipe", "type") and starts
+// no lower than 0.35 above it (lower case alone). With every line drawn
+// half a font size too high, half too low or 0.3 too low, this check fails
+// 52, 53 and 33 of the 54 graphs with text, where the band check alone
+// fails 1, 36 and 1. The weak side is upward: where drawn text ends spreads
+// over 0.66 of a font size, so a line drawn 0.3 too high passes in all but
+// 4 graphs and 0.2 too high in all but 1, while 0.2 too low fails 28. The
+// window's top is at a font size above the baseline, which taller
+// glyphs and a previous line's descenders reach, so how high ink may start is
+// not bounded: a line drawn high is caught by where it ends.
+const (
+	minInkBottom = -0.40
+	maxInkBottom = 0.45
+	maxInkTop    = -0.30
+)
+
+// reachesXHeight reports whether text has a letter or a digit, whose ink
+// reaches the x-height that maxInkTop asks for; punctuation alone ("-", ".")
+// does not.
+func reachesXHeight(text string) bool {
+	return strings.IndexFunc(text, func(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }) >= 0
+}
+
+// inkRowShare is the divisor of the densest row's ink a row needs to count
+// as the text's own: a fifth.
+const inkRowShare = 5
+
 func distance(a, b color.NRGBA) int {
 	d := func(x, y uint8) int {
 		if x > y {
@@ -324,8 +427,10 @@ func knownGap(path, text string) (string, bool) {
 // Every text Graphviz places in a rendering is drawn by the raster renderer
 // where Graphviz put it. Graphviz's own SVG renderer gives each text's
 // baseline from the same layout; the PNG must have ink in the band above
-// that baseline where the glyphs lie. A text drawn nowhere, or a line too
-// high or too low, leaves its band empty.
+// that baseline where the glyphs lie, and that ink must end on the baseline.
+// A text drawn nowhere leaves its band empty; a line drawn too high or too
+// low ends away from its baseline, even where a neighbouring line's ink
+// fills its band.
 func TestRasterTextMatchesSVG(t *testing.T) {
 	for _, dir := range testPaths {
 		if err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
@@ -383,7 +488,7 @@ func crossCheckText(t *testing.T, path string) {
 
 	pixelsPerPoint := page.scale * float64(img.Bounds().Dy()) / page.height
 
-	var missing []string
+	var missing, misplaced []string
 
 	small := 0
 
@@ -392,6 +497,17 @@ func crossCheckText(t *testing.T, path string) {
 			small++
 
 			continue
+		}
+
+		if topEdge, bottomEdge, ok := inkEdges(img, textless, page, text); ok && !page.rotated &&
+			((topEdge > maxInkTop && reachesXHeight(text.content)) ||
+				bottomEdge < minInkBottom || bottomEdge > maxInkBottom) {
+			if _, gap := knownGap(path, text.content); !gap {
+				misplaced = append(misplaced, fmt.Sprintf(
+					"%q at (%.0f, %.0f) size %.0f: ink from %.2f to %.2f font sizes off its baseline",
+					text.content, text.x, text.y, text.size, topEdge, bottomEdge,
+				))
+			}
 		}
 
 		if ink, area := inkBand(img, textless, page, text); area == 0 || float64(ink) < minInkShare*float64(area) {
@@ -415,5 +531,10 @@ func crossCheckText(t *testing.T, path string) {
 	if len(missing) > 0 {
 		t.Errorf("%d of %d texts have too little ink where Graphviz placed them:\n  %s",
 			len(missing), len(page.texts), strings.Join(missing, "\n  "))
+	}
+
+	if len(misplaced) > 0 {
+		t.Errorf("%d of %d texts are not drawn on their baseline:\n  %s",
+			len(misplaced), len(page.texts), strings.Join(misplaced, "\n  "))
 	}
 }
