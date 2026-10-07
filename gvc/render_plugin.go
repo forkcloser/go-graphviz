@@ -49,6 +49,11 @@ func (p *RenderPlugin) release() {
 	}
 }
 
+// RenderEngine is Graphviz's render plugin interface, one method per
+// callback gvrender_engine_t declares; a renderer that needs only some of
+// them embeds DefaultRenderEngine.
+//
+//nolint:interfacebloat // the shape of Graphviz's own interface, not one to split
 type RenderEngine interface {
 	BeginJob(ctx context.Context, job *Job) error
 	EndJob(ctx context.Context, job *Job) error
@@ -940,7 +945,7 @@ func (j *Job) SetOutputLangName(v string) {
 }
 
 func (j *Job) OutputDataPosition() uint {
-	return uint(j.wasm.GetOutputDataPosition())
+	return j.wasm.GetOutputDataPosition()
 }
 
 func (j *Job) SetOutputDataPosition(v uint) {

@@ -1643,7 +1643,7 @@ const (
 // SetModel
 // This value specifies how the distance matrix is computed for the input graph.
 // The distance matrix specifies the ideal distance between every pair of nodes.
-// neato attemps to find a layout which best achieves these distances.
+// neato attempts to find a layout which best achieves these distances.
 // By default, it uses the length of the shortest path, where the length of each edge is given by its len attribute.
 // If model is "circuit", neato uses the circuit resistance model to compute the distances.
 // This tends to emphasize clusters.
