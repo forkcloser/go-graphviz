@@ -1,0 +1,51 @@
+--- lib/gvc/gvusershape.c
++++ lib/gvc/gvusershape.c
+@@ -372,23 +372,34 @@
+ }
+ 
+ static void webp_size(usershape_t *us) {
+-  int w, h;
++  // go-graphviz: the canvas size of each of the three WebP layouts, read
++  // where the format keeps it (VP8L: lossless; VP8X: extended, for alpha,
++  // animation or metadata; VP8: plain lossy).
++  unsigned char b[30];
++  size_t n;
+ 
+   us->dpi = 0;
+-  fseek(us->f, 15, SEEK_SET);
+-  if (fgetc(us->f) == 'X') { // VP8X
+-    fseek(us->f, 24, SEEK_SET);
+-    if (get_int_lsb_first(us->f, 4, &w) && get_int_lsb_first(us->f, 4, &h)) {
+-      us->w = w;
+-      us->h = h;
+-    }
+-  } else { // VP8
+-    fseek(us->f, 26, SEEK_SET);
+-    if (get_int_lsb_first(us->f, 2, &w) && get_int_lsb_first(us->f, 2, &h)) {
+-      us->w = w;
+-      us->h = h;
+-    }
++  if (fseek(us->f, 0, SEEK_SET) != 0 || (n = fread(b, 1, sizeof(b), us->f)) < 25)
++    return;
++  if (b[15] != 'L' && n < sizeof(b))
++    return;
++  switch (b[15]) {
++  case 'L': { // VP8L: after the 0x2f signature, width-1 and height-1, 14 bits each
++    unsigned long bits = (unsigned long)b[21] | (unsigned long)b[22] << 8 |
++                         (unsigned long)b[23] << 16 | (unsigned long)b[24] << 24;
++    us->w = (int)(bits & 0x3fff) + 1;
++    us->h = (int)((bits >> 14) & 0x3fff) + 1;
++    break;
+   }
++  case 'X': // VP8X: canvas width-1 and height-1, 24 bits each, at 24 and 27
++    us->w = (int)(b[24] | b[25] << 8 | b[26] << 16) + 1;
++    us->h = (int)(b[27] | b[28] << 8 | b[29] << 16) + 1;
++    break;
++  default: // VP8: width and height, 14 bits each above two scale bits, at 26 and 28
++    us->w = (b[26] | b[27] << 8) & 0x3fff;
++    us->h = (b[28] | b[29] << 8) & 0x3fff;
++    break;
++  }
+ }
+ 
+ static void gif_size(usershape_t *us) {

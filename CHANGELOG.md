@@ -28,6 +28,10 @@ Graphviz 16 below.
   50 open for the life of the process, which on Windows pins the files.
 - `NewWithPlugins` with no plugins handed Graphviz an unterminated plugin
   list, and could fail with an out-of-bounds memory access.
+- A lossless or extended WebP node image, any WebP with alpha, is sized as
+  it is. Graphviz 16.1.0 read its size from the wrong bytes, tens of
+  thousands to hundreds of millions of points a side, and the render then
+  failed with `ErrPageTooLarge`.
 
 ### Changed
 

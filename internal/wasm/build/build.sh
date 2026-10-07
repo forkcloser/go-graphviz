@@ -149,6 +149,32 @@ grep -q '^  if (us->f) {$' "${usershape}" || {
   exit 1
 }
 
+# A third: webp_size reads a WebP's size from where only a plain lossy one
+# keeps it, so a lossless (VP8L) or extended (VP8X) WebP, any with alpha,
+# came out tens of thousands to hundreds of millions of points a side, as it
+# does in dot 16.1.0. webp-size.patch reads each layout's canvas size from
+# where the format keeps it.
+# The patch is applied only to the file it was written against, this
+# Graphviz's gvusershape.c after the edit above, by digest: patch applies a
+# hunk with fuzz without failing, and macOS's says nothing when it does, so
+# after a Graphviz bump a fuzzed hunk could land on a changed webp_size and
+# bring its marker with it. A new Graphviz means rechecking the patch and
+# this digest together.
+webp_size_base=75ea4df566d9627b88748d1f684c6edddeb50aafee074e969a12b7dad796b048
+if ! grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${usershape}"; then
+  echo "${webp_size_base}  ${usershape}" | sha256 -c - > /dev/null || {
+    echo "gvusershape.c: not the file webp-size.patch was written against; recheck the patch for this Graphviz" >&2
+    exit 1
+  }
+  # POSIX options only: -p0 for the paths the patch names, -N to refuse a
+  # patch already applied.
+  (cd "${gv}" && patch -p0 -N) < "${here}/webp-size.patch"
+fi
+grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${usershape}" || {
+  echo "gvusershape.c: webp-size.patch did not apply" >&2
+  exit 1
+}
+
 # Graphviz's lib/neatogen has sources for optional engines (ipsep, the vpsc
 # constraint solver) that the configure flags upstream used excluded; the
 # list below is the engine set the original container build compiled.
