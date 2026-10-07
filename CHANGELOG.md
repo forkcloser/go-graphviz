@@ -45,10 +45,12 @@ Graphviz's internals listed under Removed.
 
 ### Changed
 
-- The embedded WebAssembly module is 27% smaller, 1.17 MB from 1.59 MB: it
+- The embedded WebAssembly module is 30% smaller, 1.12 MB from 1.59 MB: it
   exports only the functions the bindings call, so the Graphviz code none
   of them reaches is no longer built in, and the bridge no longer carries
-  the 32 Graphviz callbacks nothing could register.
+  what nothing calls: 32 Graphviz callbacks nothing could register, and,
+  after the API removals below, 206 struct fields, 62 functions and 20
+  types.
 - A render allocates on the order of its page: the bindings keep each
   function they call in the WebAssembly module instead of having a call
   engine built for every call. A PNG render of a graph of about 40 nodes
