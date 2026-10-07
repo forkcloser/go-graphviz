@@ -204,7 +204,9 @@ void wasm_bridge_{{ .Name }}({{- range .Args -}}{{- .Value.WasmType }} _arg{{- .
   int {{ .Dst }}_length = _arg{{ .ArrayNumArgIndex }};
   {{- else if or .IsStringKind .Type.Pointer }}
   int {{ .Dst }}_length = 0;
-  for (int i = 0; {{ .Src }}[i] != NULL; i++) {
+  // A NULL-terminated array may itself be NULL (Graphviz passes a text
+  // layout's fontpath only when verbose); scanning it would read address 0.
+  for (int i = 0; {{ .Src }} != NULL && {{ .Src }}[i] != NULL; i++) {
     {{ .Dst }}_length++;
   }
   {{- else }}

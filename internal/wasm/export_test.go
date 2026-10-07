@@ -65,3 +65,15 @@ func FillTextspanLayout(span *Textspan) {
 	mod.mod.Memory().WriteUint32Le(base+textspanLayout, ^uint32(0))
 	mod.mod.Memory().WriteUint32Le(base+textspanFreeLayout, ^uint32(0))
 }
+
+// PoisonNullPage writes ones over the module's first eight bytes, where a
+// read through a NULL pointer lands, and returns what restores them.
+func PoisonNullPage() func() {
+	memory := mod.mod.Memory()
+	saved, _ := memory.Read(0, 8)
+	saved = append([]byte(nil), saved...)
+
+	memory.Write(0, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
+
+	return func() { memory.Write(0, saved) }
+}
