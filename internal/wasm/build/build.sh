@@ -289,6 +289,7 @@ echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm
   "${expat}/lib/xmlparse.c" \
   "${expat}/lib/xmltok.c" \
   "${expat}/lib/xmlrole.c" \
+  "${expat}/lib/xcs.c" \
   "${expat}/lib/random_getentropy.c" \
   "${here}/patch.c" \
   "${here}/bind.c" \

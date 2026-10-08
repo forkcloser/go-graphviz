@@ -14,6 +14,10 @@ Graphviz's internals listed under Removed.
 
 ### Changed
 
+- expat 2.9.0 (from 2.8.5) in the embedded WebAssembly module, which parses
+  HTML labels with it: fixes CVE-2026-102633 (an integer overflow) and
+  CVE-2026-77214 (a length validated against the bytes available), both
+  reachable through a label.
 - Errors from the WebAssembly binding wrap sentinels instead of being
   one-off messages: a call before the module is loaded, a memory access
   outside it, and a callback setter whose `Register_` function was not
