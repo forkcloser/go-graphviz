@@ -1,6 +1,7 @@
 package gvc
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
@@ -529,9 +530,12 @@ func best(faces []installedFace, style fontStyle) (installedFace, bool) {
 }
 
 // loadedFont is a parsed font, the source of faces at every size.
+// fromLoader marks a font a FontLoader supplied, whose faces are kept in
+// the bounded loaderFaces rather than for the life of the process.
 type loadedFont struct {
-	key  string
-	font *sfnt.Font
+	key        string
+	font       *sfnt.Font
+	fromLoader bool
 }
 
 // fontCaches is what font resolution keeps for the life of the process:
@@ -546,6 +550,8 @@ type fontCaches struct {
 	loaded   map[string]*loadedFont
 	resolved map[string]*loadedFont
 	faces    map[string]font.Face
+	// loaderFaces holds the last faces of fonts a FontLoader supplied.
+	loaderFaces map[string]font.Face
 }
 
 func newFontCaches() *fontCaches {
@@ -554,6 +560,8 @@ func newFontCaches() *fontCaches {
 		loaded:    map[string]*loadedFont{},
 		resolved:  map[string]*loadedFont{},
 		faces:     map[string]font.Face{},
+
+		loaderFaces: map[string]font.Face{},
 	}
 	caches.fallback = sync.OnceValue(func() *glyphFallback { return newGlyphFallback(caches.installed()) })
 
@@ -701,6 +709,31 @@ func fileFace(path string, style fontStyle) (installedFace, bool) {
 	return best(faces, style)
 }
 
+// fontForSpan is the font a span is set in, for measuring and drawing
+// alike: the font loader's, when one is set and answers, otherwise what the
+// span's font resolves to among the installed and embedded fonts.
+func fontForSpan(ctx context.Context, textFont *TextFont) (*loadedFont, error) {
+	fontLoaderMu.RLock()
+
+	loader := fontLoader
+
+	fontLoaderMu.RUnlock()
+
+	if loader != nil {
+		supplied, err := loader(ctx, textFont)
+		if err != nil {
+			return nil, err
+		}
+
+		if supplied != nil {
+			// The faces made from it are cached by this key, one per font.
+			return &loadedFont{key: fmt.Sprintf("loader|%p", supplied), font: supplied, fromLoader: true}, nil
+		}
+	}
+
+	return fontFor(textFont)
+}
+
 // fontFor resolves a span's font, once per name, alias and flags.
 func fontFor(textFont *TextFont) (*loadedFont, error) {
 	request := requestFor(textFont.Name(), textFont.PostScriptAlias(), textFont.Flags())
@@ -726,14 +759,21 @@ func fontFor(textFont *TextFont) (*loadedFont, error) {
 	return loaded, nil
 }
 
-// face is f at size points and dpi dots per inch, made once.
+// face is f at size points and dpi dots per inch, made once: for the life
+// of the process for a font resolved here, and among the last few for a
+// font a FontLoader supplied, which may be a new one on every call.
 func (f *loadedFont) face(size, dpi float64) (font.Face, error) {
 	key := fmt.Sprintf("%s|%g|%g", f.key, size, dpi)
 
 	fonts.mu.Lock()
 	defer fonts.mu.Unlock()
 
-	if cached, ok := fonts.faces[key]; ok {
+	cache := fonts.faces
+	if f.fromLoader {
+		cache = fonts.loaderFaces
+	}
+
+	if cached, ok := cache[key]; ok {
 		return cached, nil
 	}
 
@@ -742,10 +782,19 @@ func (f *loadedFont) face(size, dpi float64) (font.Face, error) {
 		return nil, fmt.Errorf("face for %s: %w", f.key, err)
 	}
 
-	fonts.faces[key] = face
+	if f.fromLoader && len(cache) >= maxLoaderFaces {
+		clear(cache)
+	}
+
+	cache[key] = face
 
 	return face, nil
 }
+
+// maxLoaderFaces bounds the faces kept of fonts a FontLoader supplied, each
+// of which holds its font: enough for the fonts and sizes of a graph, and a
+// loader that parses afresh on every call cannot grow it past that.
+const maxLoaderFaces = 16
 
 // fallbackFamilies are tried first for a character the chosen font lacks:
 // fonts with wide coverage, of Chinese, Japanese and Korean in particular.

@@ -17,6 +17,7 @@ import (
 	_ "golang.org/x/image/bmp" // node images: Graphviz recognizes BMP
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 	_ "golang.org/x/image/webp" // node images: Graphviz recognizes WebP
 
 	"github.com/forkcloser/go-graphviz/internal/wasm"
@@ -156,7 +157,7 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 	col := nrgba(job.Object().PenColor())
 	size, dpi := span.Font().Size()*job.Zoom(), resolution(job.DPI())
 
-	primary, err := r.spanFace(ctx, job, span.Font(), size, dpi)
+	primary, err := r.spanFace(ctx, span.Font(), size, dpi)
 	if err != nil {
 		return err
 	}
@@ -372,33 +373,10 @@ func withinImageBudget(width, height int) bool {
 	return width > 0 && height > 0 && width <= MaxImagePixels/height
 }
 
-// spanFace is the face a span is drawn with: the font loader's, when one
-// is set and answers, otherwise the installed or embedded font its name
-// resolves to, at size points and dpi dots per inch.
-func (*ImageRenderer) spanFace(
-	ctx context.Context,
-	job *Job,
-	textFont *TextFont,
-	size, dpi float64,
-) (font.Face, error) {
-	fontLoaderMu.RLock()
-
-	loader := fontLoader
-
-	fontLoaderMu.RUnlock()
-
-	if loader != nil {
-		face, err := loader(ctx, job, textFont)
-		if err != nil {
-			return nil, err
-		}
-
-		if face != nil {
-			return face, nil
-		}
-	}
-
-	loaded, err := fontFor(textFont)
+// spanFace is the face a span is drawn with: its font (fontForSpan) at
+// size points and dpi dots per inch.
+func (*ImageRenderer) spanFace(ctx context.Context, textFont *TextFont, size, dpi float64) (font.Face, error) {
+	loaded, err := fontForSpan(ctx, textFont)
 	if err != nil {
 		return nil, err
 	}
@@ -506,13 +484,23 @@ func (r *ImageRenderer) dashes(object *ObjectState) []float64 {
 	return nil
 }
 
-type FontLoader func(ctx context.Context, job *Job, textFont *TextFont) (font.Face, error)
+// FontLoader supplies the font a text is set in: the parsed font for
+// textFont (its name, PostScript alias and flags), or nil to resolve it from
+// the installed and embedded fonts. The same font measures the text while
+// Graphviz lays the graph out and draws it when the graph is rendered, sized
+// for each, so a node's box fits its label as drawn. It is called inside
+// those calls, on their goroutine, and may be called often for one font. A
+// loader should return the same *opentype.Font for the same font: the faces
+// made from it are kept by that pointer, a few at a time, so a font parsed
+// afresh on every call is sized afresh too.
+type FontLoader func(ctx context.Context, textFont *TextFont) (*opentype.Font, error)
 
 var (
 	fontLoaderMu sync.RWMutex
 	fontLoader   FontLoader
 )
 
+// SetFontLoader sets the font loader for every instance; nil removes it.
 func SetFontLoader(loader FontLoader) {
 	fontLoaderMu.Lock()
 	defer fontLoaderMu.Unlock()
