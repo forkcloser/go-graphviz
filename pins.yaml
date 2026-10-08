@@ -21,7 +21,7 @@ pins:
   - name: expat
     renovate: github-tags libexpat/libexpat
     versioning: regex:^R_(?<major>\d+)_(?<minor>\d+)_(?<patch>\d+)$
-    version: R_2_8_5
+    version: R_2_9_0
     url: https://github.com/libexpat/libexpat/archive/refs/tags/${version}.tar.gz
     verify: download
     digest:
