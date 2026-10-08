@@ -379,7 +379,7 @@ func (m *WasmModule) unavailable() error {
 	if m.initErr != nil {
 		return m.initErr
 	}
-	return errors.New("the Graphviz WebAssembly module is not loaded")
+	return ErrNotLoaded
 }
 
 // registerCallback runs a write to the callback maps under the module's
@@ -527,8 +527,8 @@ func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, err
 	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
 	if !ok {
 		return nil, fmt.Errorf(
-			`failed to read wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			addr, length, m.mod.Memory().Size(),
+			"%w: read (ptr, size) = (%d, %d), memory size %d",
+			ErrMemoryAccess, addr, length, m.mod.Memory().Size(),
 		)
 	}
 	// Read returns a view of the module's memory, which another call may
@@ -545,8 +545,8 @@ func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
 	if !ok {
 		return 0, fmt.Errorf(
-			`failed to read wasm memory: (ptr, size) = (%d, 4) and memory size is %d`,
-			addr, m.mod.Memory().Size(),
+			"%w: read (ptr, size) = (%d, 4), memory size %d",
+			ErrMemoryAccess, addr, m.mod.Memory().Size(),
 		)
 	}
 	return uint64(p), nil
@@ -563,8 +563,8 @@ func (m *WasmModule) readU64(ctx context.Context, addr uint64) (uint64, error) {
 	p, ok := m.mod.Memory().ReadUint64Le(uint32(addr))
 	if !ok {
 		return 0, fmt.Errorf(
-			`failed to read wasm memory: (ptr, size) = (%d, 8) and memory size is %d`,
-			addr, m.mod.Memory().Size(),
+			"%w: read (ptr, size) = (%d, 8), memory size %d",
+			ErrMemoryAccess, addr, m.mod.Memory().Size(),
 		)
 	}
 	return p, nil
@@ -578,8 +578,8 @@ func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
 	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
 		return fmt.Errorf(
-			`failed to write wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			p, len(b), m.mod.Memory().Size(),
+			"%w: write (ptr, size) = (%d, %d), memory size %d",
+			ErrMemoryAccess, p, len(b), m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -593,8 +593,8 @@ func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
 	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
 		return fmt.Errorf(
-			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			"%w: write ptr = %d, memory size %d",
+			ErrMemoryAccess, p, m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -608,8 +608,8 @@ func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
 	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
 		return fmt.Errorf(
-			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			"%w: write ptr = %d, memory size %d",
+			ErrMemoryAccess, p, m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -623,8 +623,8 @@ func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
 	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
 		return fmt.Errorf(
-			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			"%w: write ptr = %d, memory size %d",
+			ErrMemoryAccess, p, m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -1204,7 +1204,7 @@ func new{{ $msgName }}Slice(v []uint64) []*{{ $msgName }} {
 {{- if .Value.IsFunction }}
 func (v *{{ $msgName }}) Set{{ .GoName }}(ctx context.Context, arg {{ .Value.GoInterfaceType }}) error {
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
+		return fmt.Errorf("%w: call Register_{{ .Value.FuncName }} first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "{{ .WasmName }}", v.getPtr())
@@ -1276,7 +1276,7 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 	{{- range .Args }}
 	{{- if .Value.IsFunction }}
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
-		return zero, fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
+		return zero, fmt.Errorf("%w: call Register_{{ .Value.FuncName }} first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}
@@ -1315,7 +1315,7 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 	{{- range .Args }}
 	{{- if .Value.IsFunction }}
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
+		return fmt.Errorf("%w: call Register_{{ .Value.FuncName }} first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}
@@ -1345,7 +1345,7 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	{{- range .Args }}
 	{{- if .Value.IsFunction }}
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
-		return zero, fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
+		return zero, fmt.Errorf("%w: call Register_{{ .Value.FuncName }} first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}
@@ -1382,7 +1382,7 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 	{{- range .Args }}
 	{{- if .Value.IsFunction }}
 	if mod.lookupFuncMap.{{ .Value.FuncName }} == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
+		return fmt.Errorf("%w: call Register_{{ .Value.FuncName }} first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.{{ .Value.FuncName }}[_arg{{ .Index }}.funcID] = _arg{{ .Index }}.cb })
 	{{- end }}

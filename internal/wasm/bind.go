@@ -2650,7 +2650,7 @@ func (m *WasmModule) unavailable() error {
 	if m.initErr != nil {
 		return m.initErr
 	}
-	return errors.New("the Graphviz WebAssembly module is not loaded")
+	return ErrNotLoaded
 }
 
 // registerCallback runs a write to the callback maps under the module's
@@ -2798,8 +2798,8 @@ func (m *WasmModule) read(ctx context.Context, addr, length uint64) ([]byte, err
 	view, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
 	if !ok {
 		return nil, fmt.Errorf(
-			`failed to read wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			addr, length, m.mod.Memory().Size(),
+			"%w: read (ptr, size) = (%d, %d), memory size %d",
+			ErrMemoryAccess, addr, length, m.mod.Memory().Size(),
 		)
 	}
 	// Read returns a view of the module's memory, which another call may
@@ -2816,8 +2816,8 @@ func (m *WasmModule) readU32(ctx context.Context, addr uint64) (uint64, error) {
 	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
 	if !ok {
 		return 0, fmt.Errorf(
-			`failed to read wasm memory: (ptr, size) = (%d, 4) and memory size is %d`,
-			addr, m.mod.Memory().Size(),
+			"%w: read (ptr, size) = (%d, 4), memory size %d",
+			ErrMemoryAccess, addr, m.mod.Memory().Size(),
 		)
 	}
 	return uint64(p), nil
@@ -2834,8 +2834,8 @@ func (m *WasmModule) readU64(ctx context.Context, addr uint64) (uint64, error) {
 	p, ok := m.mod.Memory().ReadUint64Le(uint32(addr))
 	if !ok {
 		return 0, fmt.Errorf(
-			`failed to read wasm memory: (ptr, size) = (%d, 8) and memory size is %d`,
-			addr, m.mod.Memory().Size(),
+			"%w: read (ptr, size) = (%d, 8), memory size %d",
+			ErrMemoryAccess, addr, m.mod.Memory().Size(),
 		)
 	}
 	return p, nil
@@ -2849,8 +2849,8 @@ func (m *WasmModule) write(ctx context.Context, p uint64, b []byte) error {
 	defer leave()
 	if !m.mod.Memory().Write(uint32(p), b) {
 		return fmt.Errorf(
-			`failed to write wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			p, len(b), m.mod.Memory().Size(),
+			"%w: write (ptr, size) = (%d, %d), memory size %d",
+			ErrMemoryAccess, p, len(b), m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -2864,8 +2864,8 @@ func (m *WasmModule) writeU32(ctx context.Context, p uint64, v uint32) error {
 	defer leave()
 	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
 		return fmt.Errorf(
-			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			"%w: write ptr = %d, memory size %d",
+			ErrMemoryAccess, p, m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -2879,8 +2879,8 @@ func (m *WasmModule) writeU64(ctx context.Context, p uint64, v uint64) error {
 	defer leave()
 	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
 		return fmt.Errorf(
-			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			"%w: write ptr = %d, memory size %d",
+			ErrMemoryAccess, p, m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -2894,8 +2894,8 @@ func (m *WasmModule) writeF64(ctx context.Context, p uint64, v float64) error {
 	defer leave()
 	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
 		return fmt.Errorf(
-			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			"%w: write ptr = %d, memory size %d",
+			ErrMemoryAccess, p, m.mod.Memory().Size(),
 		)
 	}
 	return nil
@@ -8132,7 +8132,7 @@ func newRenderEngineSlice(v []uint64) []*RenderEngine {
 }
 func (v *RenderEngine) SetBeginJob(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginJob == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginJob before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginJob first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginJob[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_job", v.getPtr())
@@ -8140,7 +8140,7 @@ func (v *RenderEngine) SetBeginJob(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetEndJob(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndJob == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndJob before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndJob first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndJob[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_job", v.getPtr())
@@ -8148,7 +8148,7 @@ func (v *RenderEngine) SetEndJob(ctx context.Context, arg *CallbackFunc[func(con
 
 func (v *RenderEngine) SetBeginGraph(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginGraph == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginGraph before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginGraph first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginGraph[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_graph", v.getPtr())
@@ -8156,7 +8156,7 @@ func (v *RenderEngine) SetBeginGraph(ctx context.Context, arg *CallbackFunc[func
 
 func (v *RenderEngine) SetEndGraph(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndGraph == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndGraph before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndGraph first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndGraph[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_graph", v.getPtr())
@@ -8164,7 +8164,7 @@ func (v *RenderEngine) SetEndGraph(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetBeginLayer(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, int, int) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginLayer == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginLayer before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginLayer first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginLayer[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_layer", v.getPtr())
@@ -8172,7 +8172,7 @@ func (v *RenderEngine) SetBeginLayer(ctx context.Context, arg *CallbackFunc[func
 
 func (v *RenderEngine) SetEndLayer(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndLayer == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndLayer before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndLayer first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndLayer[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_layer", v.getPtr())
@@ -8180,7 +8180,7 @@ func (v *RenderEngine) SetEndLayer(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetBeginPage(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginPage == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginPage before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginPage first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginPage[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_page", v.getPtr())
@@ -8188,7 +8188,7 @@ func (v *RenderEngine) SetBeginPage(ctx context.Context, arg *CallbackFunc[func(
 
 func (v *RenderEngine) SetEndPage(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndPage == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndPage before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndPage first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndPage[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_page", v.getPtr())
@@ -8196,7 +8196,7 @@ func (v *RenderEngine) SetEndPage(ctx context.Context, arg *CallbackFunc[func(co
 
 func (v *RenderEngine) SetBeginCluster(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginCluster == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginCluster before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginCluster first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginCluster[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_cluster", v.getPtr())
@@ -8204,7 +8204,7 @@ func (v *RenderEngine) SetBeginCluster(ctx context.Context, arg *CallbackFunc[fu
 
 func (v *RenderEngine) SetEndCluster(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndCluster == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndCluster before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndCluster first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndCluster[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_cluster", v.getPtr())
@@ -8212,7 +8212,7 @@ func (v *RenderEngine) SetEndCluster(ctx context.Context, arg *CallbackFunc[func
 
 func (v *RenderEngine) SetBeginNodes(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginNodes == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginNodes before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginNodes first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginNodes[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_nodes", v.getPtr())
@@ -8220,7 +8220,7 @@ func (v *RenderEngine) SetBeginNodes(ctx context.Context, arg *CallbackFunc[func
 
 func (v *RenderEngine) SetEndNodes(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndNodes == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndNodes before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndNodes first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndNodes[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_nodes", v.getPtr())
@@ -8228,7 +8228,7 @@ func (v *RenderEngine) SetEndNodes(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetBeginEdges(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginEdges == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginEdges before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginEdges first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginEdges[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_edges", v.getPtr())
@@ -8236,7 +8236,7 @@ func (v *RenderEngine) SetBeginEdges(ctx context.Context, arg *CallbackFunc[func
 
 func (v *RenderEngine) SetEndEdges(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndEdges == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndEdges before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndEdges first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndEdges[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_edges", v.getPtr())
@@ -8244,7 +8244,7 @@ func (v *RenderEngine) SetEndEdges(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetBeginNode(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginNode == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginNode before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginNode first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginNode[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_node", v.getPtr())
@@ -8252,7 +8252,7 @@ func (v *RenderEngine) SetBeginNode(ctx context.Context, arg *CallbackFunc[func(
 
 func (v *RenderEngine) SetEndNode(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndNode == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndNode before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndNode first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndNode[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_node", v.getPtr())
@@ -8260,7 +8260,7 @@ func (v *RenderEngine) SetEndNode(ctx context.Context, arg *CallbackFunc[func(co
 
 func (v *RenderEngine) SetBeginEdge(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginEdge == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginEdge before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginEdge first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginEdge[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_edge", v.getPtr())
@@ -8268,7 +8268,7 @@ func (v *RenderEngine) SetBeginEdge(ctx context.Context, arg *CallbackFunc[func(
 
 func (v *RenderEngine) SetEndEdge(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndEdge == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndEdge before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndEdge first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndEdge[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_edge", v.getPtr())
@@ -8276,7 +8276,7 @@ func (v *RenderEngine) SetEndEdge(ctx context.Context, arg *CallbackFunc[func(co
 
 func (v *RenderEngine) SetBeginAnchor(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, string, string, string) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginAnchor == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginAnchor before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginAnchor first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginAnchor[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_anchor", v.getPtr())
@@ -8284,7 +8284,7 @@ func (v *RenderEngine) SetBeginAnchor(ctx context.Context, arg *CallbackFunc[fun
 
 func (v *RenderEngine) SetEndAnchor(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndAnchor == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndAnchor before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndAnchor first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndAnchor[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_anchor", v.getPtr())
@@ -8292,7 +8292,7 @@ func (v *RenderEngine) SetEndAnchor(ctx context.Context, arg *CallbackFunc[func(
 
 func (v *RenderEngine) SetBeginLabel(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, LabelType) error]) error {
 	if mod.lookupFuncMap.RenderEngine_BeginLabel == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginLabel before")
+		return fmt.Errorf("%w: call Register_RenderEngine_BeginLabel first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_BeginLabel[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_begin_label", v.getPtr())
@@ -8300,7 +8300,7 @@ func (v *RenderEngine) SetBeginLabel(ctx context.Context, arg *CallbackFunc[func
 
 func (v *RenderEngine) SetEndLabel(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
 	if mod.lookupFuncMap.RenderEngine_EndLabel == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndLabel before")
+		return fmt.Errorf("%w: call Register_RenderEngine_EndLabel first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_EndLabel[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_end_label", v.getPtr())
@@ -8308,7 +8308,7 @@ func (v *RenderEngine) SetEndLabel(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetTextspan(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, *PointFloat, *Textspan) error]) error {
 	if mod.lookupFuncMap.RenderEngine_Textspan == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Textspan before")
+		return fmt.Errorf("%w: call Register_RenderEngine_Textspan first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Textspan[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_textspan", v.getPtr())
@@ -8316,7 +8316,7 @@ func (v *RenderEngine) SetTextspan(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetResolveColor(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, *Color) error]) error {
 	if mod.lookupFuncMap.RenderEngine_ResolveColor == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_ResolveColor before")
+		return fmt.Errorf("%w: call Register_RenderEngine_ResolveColor first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_ResolveColor[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_resolve_color", v.getPtr())
@@ -8324,7 +8324,7 @@ func (v *RenderEngine) SetResolveColor(ctx context.Context, arg *CallbackFunc[fu
 
 func (v *RenderEngine) SetEllipse(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, int) error]) error {
 	if mod.lookupFuncMap.RenderEngine_Ellipse == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Ellipse before")
+		return fmt.Errorf("%w: call Register_RenderEngine_Ellipse first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Ellipse[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_ellipse", v.getPtr())
@@ -8332,7 +8332,7 @@ func (v *RenderEngine) SetEllipse(ctx context.Context, arg *CallbackFunc[func(co
 
 func (v *RenderEngine) SetPolygon(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, uint32, int) error]) error {
 	if mod.lookupFuncMap.RenderEngine_Polygon == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Polygon before")
+		return fmt.Errorf("%w: call Register_RenderEngine_Polygon first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Polygon[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_polygon", v.getPtr())
@@ -8340,7 +8340,7 @@ func (v *RenderEngine) SetPolygon(ctx context.Context, arg *CallbackFunc[func(co
 
 func (v *RenderEngine) SetBeziercurve(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, uint32, int) error]) error {
 	if mod.lookupFuncMap.RenderEngine_Beziercurve == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Beziercurve before")
+		return fmt.Errorf("%w: call Register_RenderEngine_Beziercurve first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Beziercurve[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_beziercurve", v.getPtr())
@@ -8348,7 +8348,7 @@ func (v *RenderEngine) SetBeziercurve(ctx context.Context, arg *CallbackFunc[fun
 
 func (v *RenderEngine) SetPolyline(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, uint32) error]) error {
 	if mod.lookupFuncMap.RenderEngine_Polyline == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Polyline before")
+		return fmt.Errorf("%w: call Register_RenderEngine_Polyline first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Polyline[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_polyline", v.getPtr())
@@ -8356,7 +8356,7 @@ func (v *RenderEngine) SetPolyline(ctx context.Context, arg *CallbackFunc[func(c
 
 func (v *RenderEngine) SetComment(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string) error]) error {
 	if mod.lookupFuncMap.RenderEngine_Comment == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Comment before")
+		return fmt.Errorf("%w: call Register_RenderEngine_Comment first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_Comment[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_comment", v.getPtr())
@@ -8364,7 +8364,7 @@ func (v *RenderEngine) SetComment(ctx context.Context, arg *CallbackFunc[func(co
 
 func (v *RenderEngine) SetLibraryShape(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, []*PointFloat, uint32, int) error]) error {
 	if mod.lookupFuncMap.RenderEngine_LibraryShape == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_LibraryShape before")
+		return fmt.Errorf("%w: call Register_RenderEngine_LibraryShape first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.RenderEngine_LibraryShape[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "RenderEngine_library_shape", v.getPtr())
@@ -8424,7 +8424,7 @@ func newTextLayoutEngineSlice(v []uint64) []*TextLayoutEngine {
 }
 func (v *TextLayoutEngine) SetTextlayout(ctx context.Context, arg *CallbackFunc[func(context.Context, *Textspan, []string) (bool, error)]) error {
 	if mod.lookupFuncMap.TextLayoutEngine_TextLayout == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_TextLayoutEngine_TextLayout before")
+		return fmt.Errorf("%w: call Register_TextLayoutEngine_TextLayout first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.TextLayoutEngine_TextLayout[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "TextLayoutEngine_textlayout", v.getPtr())
@@ -8484,7 +8484,7 @@ func newLoadImageEngineSlice(v []uint64) []*LoadImageEngine {
 }
 func (v *LoadImageEngine) SetLoadImage(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, *UserShape, *BoxFloat, bool) error]) error {
 	if mod.lookupFuncMap.LoadImageEngine_LoadImage == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_LoadImageEngine_LoadImage before")
+		return fmt.Errorf("%w: call Register_LoadImageEngine_LoadImage first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.LoadImageEngine_LoadImage[arg.funcID] = arg.cb })
 	return mod.setFieldFunction(ctx, "LoadImageEngine_load_image", v.getPtr())
@@ -10328,7 +10328,7 @@ func (v *Dict) Walk(ctx context.Context, _arg0 *CallbackFunc[func(context.Contex
 	var zero int
 	ctx = v.callContext(ctx)
 	if mod.lookupFuncMap.DictWalk == nil {
-		return zero, fmt.Errorf("cannot find lookup function. you must call Register_DictWalk before")
+		return zero, fmt.Errorf("%w: call Register_DictWalk first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.DictWalk[_arg0.funcID] = _arg0.cb })
 	arg0, err := mod.toFuncWasmValue(ctx, _arg0)
@@ -10855,7 +10855,7 @@ func Errorf(ctx context.Context, _arg0 string) error {
 
 func SetErrorf(ctx context.Context, _arg0 *CallbackFunc[func(context.Context, string) (int, error)]) error {
 	if mod.lookupFuncMap.UserRef == nil {
-		return fmt.Errorf("cannot find lookup function. you must call Register_UserRef before")
+		return fmt.Errorf("%w: call Register_UserRef first", ErrNotRegistered)
 	}
 	mod.registerCallback(func() { mod.callbackFuncMap.UserRef[_arg0.funcID] = _arg0.cb })
 	arg0, err := mod.toFuncWasmValue(ctx, _arg0)

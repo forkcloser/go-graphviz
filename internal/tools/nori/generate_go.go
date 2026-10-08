@@ -3,7 +3,6 @@ package nori
 import (
 	"bytes"
 	_ "embed"
-	"errors"
 	"fmt"
 	"go/format"
 	"strings"
@@ -534,7 +533,7 @@ func toGoVariable(s string) string {
 
 func createMap(pairs ...any) (map[string]any, error) {
 	if len(pairs)%2 != 0 {
-		return nil, errors.New("the number of arguments must be divisible by two")
+		return nil, fmt.Errorf("%w: the number of arguments must be even", errSchema)
 	}
 
 	m := make(map[string]any, len(pairs)/2)
@@ -542,7 +541,7 @@ func createMap(pairs ...any) (map[string]any, error) {
 		key, ok := pairs[i].(string)
 
 		if !ok {
-			return nil, fmt.Errorf("cannot use type %T as map key", pairs[i])
+			return nil, fmt.Errorf("%w: cannot use type %T as a map key", errSchema, pairs[i])
 		}
 		m[key] = pairs[i+1]
 	}
