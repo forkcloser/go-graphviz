@@ -34,6 +34,28 @@ The embedded Graphviz is the version of the `graphviz` entry in [pins.yaml](./pi
 
 The above are the formats supported by default. You can also add custom formats.
 
+## Fonts
+
+Labels are measured for the layout and drawn with the fonts installed on the
+machine, as Graphviz's own tools do, so text fits its node in every format, and
+the same graph can lay out slightly differently on two machines with different
+fonts. A font name resolves the way Graphviz resolves it: a PostScript name such
+as `Times-Roman` or `Helvetica-Bold`, a family with style words (`DejaVu Sans
+Bold`, `Arial:italic`), or a list of them, looked up among the installed fonts by
+name, with the metric-compatible substitutes Graphviz knows (Arial for Helvetica,
+the Liberation and TeX Gyre faces). Where nothing installed answers, the embedded
+Go fonts stand in, in regular, bold, italic and monospace cuts. Those cover
+Latin, Greek and Cyrillic: a label in another script, CJK among them, draws as
+boxes on a machine with no font for it, unless a `FontLoader` (`SetFontLoader`)
+supplies one.
+
+Fonts are read from the platform's directories: on macOS `~/Library/Fonts`,
+`/Library/Fonts` and `/System/Library/Fonts`; on Windows the system and the
+user's `Fonts` folders; on Linux and the BSDs `~/.fonts`, then `fonts` under
+`XDG_DATA_HOME` (`~/.local/share/fonts` when it is unset) and under each
+`XDG_DATA_DIRS` entry (`/usr/local/share/fonts` and `/usr/share/fonts` when it
+is unset); on Android `/system/fonts`.
+
 # Installation
 
 ```bash
