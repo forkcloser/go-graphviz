@@ -24,7 +24,9 @@ func init() {
 
 // setGlobalVars builds the four graph descriptors in the module's memory.
 // It runs once, at package init, so the context is the background one; the
-// descriptor setters it calls are generated field writes and take none.
+// descriptor setters it calls are generated field writes and take none;
+// each can still fail to reach the module's memory, and the first failure
+// is the package's init error.
 func setGlobalVars() error {
 	ctx := context.Background()
 
@@ -39,32 +41,52 @@ func setGlobalVars() error {
 		return err
 	}
 
-	directed.SetDirected(1)
-	directed.SetMaingraph(1)
+	if err = directed.SetDirected(1); err != nil {
+		return err
+	}
+
+	if err = directed.SetMaingraph(1); err != nil {
+		return err
+	}
 
 	strictDirected, err := wasm.NewGraphDescriptor(ctx)
 	if err != nil {
 		return err
 	}
 
-	strictDirected.SetDirected(1)
-	strictDirected.SetStrict(1)
-	strictDirected.SetMaingraph(1)
+	if err = strictDirected.SetDirected(1); err != nil {
+		return err
+	}
+
+	if err = strictDirected.SetStrict(1); err != nil {
+		return err
+	}
+
+	if err = strictDirected.SetMaingraph(1); err != nil {
+		return err
+	}
 
 	undirected, err := wasm.NewGraphDescriptor(ctx)
 	if err != nil {
 		return err
 	}
 
-	undirected.SetMaingraph(1)
+	if err = undirected.SetMaingraph(1); err != nil {
+		return err
+	}
 
 	strictUndirected, err := wasm.NewGraphDescriptor(ctx)
 	if err != nil {
 		return err
 	}
 
-	strictUndirected.SetStrict(1)
-	strictUndirected.SetMaingraph(1)
+	if err = strictUndirected.SetStrict(1); err != nil {
+		return err
+	}
+
+	if err = strictUndirected.SetMaingraph(1); err != nil {
+		return err
+	}
 
 	Directed = toDesc(directed)
 	StrictDirected = toDesc(strictDirected)

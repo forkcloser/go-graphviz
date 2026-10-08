@@ -12,6 +12,12 @@ Graphviz's internals listed under Removed.
 
 ## [Unreleased]
 
+### Fixed
+
+- `cgraph`: a descriptor field write that fails at package init (eight
+  setter results were ignored) is now the init error `Open` and `ParseBytes`
+  return, instead of leaving a half-built descriptor behind.
+
 ## [0.5.0] - 2026-10-08
 
 ### Added

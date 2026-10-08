@@ -108,11 +108,9 @@ golangci:
             - gochecknoglobals # 2
         - path: ^cgraph/cgraph\.go$
           linters: # 280 findings
-            - errcheck # 49
             - gochecknoglobals # 5
         - path: ^cgraph/init\.go$
           linters: # 23 findings
-            - errcheck # 9
             - gochecknoglobals # 4
             - gochecknoinits # 1
         - path: ^compatible_test\.go$
