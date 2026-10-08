@@ -21,12 +21,12 @@ pins:
   - name: expat
     renovate: github-tags libexpat/libexpat
     versioning: regex:^R_(?<major>\d+)_(?<minor>\d+)_(?<patch>\d+)$
-    version: R_2_8_5
+    version: R_2_9_0
     url: https://github.com/libexpat/libexpat/archive/refs/tags/${version}.tar.gz
     verify: download
     digest:
-      version: R_2_8_5
-      sha256: fd022c541a189bd5bee042a22188351b31e39b9389c2525fa98c28bd05c9ef21
+      version: R_2_9_0
+      sha256: 6e8ce7b52ebbaa423c59becc7cf1e6875c42e49228c062ac8123c10e700cec27
   - name: wasi-sdk-linux-amd64
     renovate: github-releases WebAssembly/wasi-sdk
     extract-version: ^wasi-sdk-(?<version>\d+)$
