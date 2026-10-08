@@ -12,6 +12,8 @@ Graphviz's internals listed under Removed.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-08
+
 ### Added
 
 - `cgraph.Graph.Err`: the first error a typed setter (`SetLabel`,
@@ -64,6 +66,15 @@ Graphviz's internals listed under Removed.
   layout: with a loader set, every label used to be left to Graphviz's
   estimate, so boxes did not fit text drawn in the loader's font. The root
   package re-exports `FontLoader`.
+- Breaking: `XDOT` is Graphviz's xdot, the layout with its drawing
+  operations. It was `"dot"`, plain DOT, which is now `GV`. As in Graphviz,
+  both write their attributes onto the graph they render, so a `GV` render
+  after an `XDOT` render of the same graph carries the drawing operations.
+- Breaking: the root package's plugin options carry the `With` prefix
+  like its graph options and `gvc`'s own: `WithDeviceQuality`,
+  `WithDeviceFeatures`, `WithDeviceDPI`, `WithRenderQuality`,
+  `WithRenderFeatures`, `WithRenderColorType` and `WithRenderPAD`, for
+  `DeviceQuality` and the rest.
 - The embedded WebAssembly module is 30% smaller, 1.12 MB from 1.59 MB: it
   exports only the functions the bindings call, so the Graphviz code none
   of them reaches is no longer built in, and the bridge no longer carries
@@ -82,17 +93,6 @@ Graphviz's internals listed under Removed.
   as the struct is, which for what a callback receives is the callback.
 - `graphviz.version` is gone: the Graphviz version is the `graphviz` entry
   in `pins.yaml`, which the build already read and checked the file against.
-
-- Breaking: `XDOT` is Graphviz's xdot, the layout with its drawing
-  operations. It was `"dot"`, plain DOT, which is now `GV`. As in Graphviz,
-  both write their attributes onto the graph they render, so a `GV` render
-  after an `XDOT` render of the same graph carries the drawing operations.
-- Breaking: the root package's plugin options carry the `With` prefix
-  like its graph options and `gvc`'s own: `WithDeviceQuality`,
-  `WithDeviceFeatures`, `WithDeviceDPI`, `WithRenderQuality`,
-  `WithRenderFeatures`, `WithRenderColorType` and `WithRenderPAD`, for
-  `DeviceQuality` and the rest.
-
 - PNG and JPEG output is drawn by the module's own canvas over
   `golang.org/x/image` instead of `fogleman/gg`, the way Graphviz's Cairo
   renderer draws: lines meet in mitred corners (bevelled past Cairo's miter
