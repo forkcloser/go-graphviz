@@ -12,6 +12,13 @@ Graphviz's internals listed under Removed.
 
 ## [Unreleased]
 
+### Changed
+
+- Errors from the WebAssembly binding wrap sentinels instead of being
+  one-off messages: a call before the module is loaded, a memory access
+  outside it, and a callback setter whose `Register_` function was not
+  called first. Messages change wording accordingly.
+
 ### Fixed
 
 - `cgraph`: a descriptor field write that fails at package init (eight

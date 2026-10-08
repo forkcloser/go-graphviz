@@ -533,6 +533,20 @@ var ErrCallbackPanic = errors.New("callback panicked")
 // than the module can hold.
 var ErrOutOfMemory = errors.New("out of WebAssembly memory")
 
+// ErrNotLoaded is returned by a call made before the Graphviz WebAssembly
+// module was loaded, or after loading failed without an error of its own.
+var ErrNotLoaded = errors.New("the Graphviz WebAssembly module is not loaded")
+
+// ErrMemoryAccess is returned by a read or write of the module's memory at
+// an address outside it: a pointer no call handed out, or one the module
+// has since released. The address and the memory size follow it.
+var ErrMemoryAccess = errors.New("WebAssembly memory access out of bounds")
+
+// ErrNotRegistered is returned by a setter of a callback field whose
+// lookup function was never registered: the Register_ call the message
+// names has to come first.
+var ErrNotRegistered = errors.New("callback lookup function not registered")
+
 // maxAllocation is the largest size malloc can be asked for: the module's
 // addresses are 32 bits.
 const maxAllocation = 1<<32 - 1
