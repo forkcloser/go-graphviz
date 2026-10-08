@@ -63,7 +63,10 @@ func DefaultPlugins(ctx context.Context) ([]Plugin, error) {
 // nothing freed. Any other set gets its own list: its plugins can be
 // collected once their contexts close, and a list kept for them could be
 // handed to new plugins at the same addresses.
-func pluginLists(ctx context.Context, plugins []Plugin) ([]*wasm.SymList, error) {
+//
+// The second result is the entry for the context's own plugins when the
+// context is to free it with itself, and nil for the shared list.
+func pluginLists(ctx context.Context, plugins []Plugin) ([]*wasm.SymList, *wasm.SymList, error) {
 	defaults.mu.Lock()
 	defer defaults.mu.Unlock()
 
@@ -72,15 +75,15 @@ func pluginLists(ctx context.Context, plugins []Plugin) ([]*wasm.SymList, error)
 	}
 
 	if defaults.lists == nil {
-		lists, err := newPlugins(ctx, plugins...)
+		lists, _, err := newPlugins(ctx, plugins...)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		defaults.lists = lists
 	}
 
-	return defaults.lists, nil
+	return defaults.lists, nil, nil
 }
 
 func newDefaultPlugins(ctx context.Context) ([]Plugin, error) {

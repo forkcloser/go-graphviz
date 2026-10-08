@@ -22,6 +22,10 @@ import (
 type Context struct {
 	gvc     *wasm.Context
 	plugins []Plugin
+	// list is the entry the context's own plugins are listed under, freed
+	// with the context; nil for a context on the shared default list, and
+	// for a clone.
+	list *wasm.SymList
 }
 
 func New(ctx context.Context) (*Context, error) {
@@ -34,7 +38,7 @@ func New(ctx context.Context) (*Context, error) {
 }
 
 func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
-	plgs, err := pluginLists(ctx, plugins)
+	plgs, list, err := pluginLists(ctx, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -52,14 +56,23 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 		plugin.acquire()
 	}
 
-	return &Context{gvc: gvc, plugins: plugins}, nil
+	return &Context{gvc: gvc, plugins: plugins, list: list}, nil
 }
 
-// Close frees the context. gvFreeContext returns the number of errors
-// Graphviz has reported since the process started, not a status for this
-// call, so that number is not an error here.
+// Close frees the context, with the plugin list it was made from, which
+// Graphviz keeps for the context's life and leaves. gvFreeContext returns
+// the number of errors Graphviz has reported since the process started, not
+// a status for this call, so that number is not an error here.
 func (c *Context) Close() error {
 	_, err := c.gvc.FreeContext(context.Background())
+
+	if c.list != nil {
+		if freeErr := wasm.FreePluginList(context.Background(), c.list); err == nil {
+			err = freeErr
+		}
+
+		c.list = nil
+	}
 
 	for _, plugin := range c.plugins {
 		plugin.release()
@@ -149,14 +162,17 @@ func (c *Context) FreeLayout(ctx context.Context, g *cgraph.Graph) error {
 	return toError(res)
 }
 
+// Clone returns a context sharing c's plugins and plugin tables, as
+// gvCloneGVC does. Free it with FreeClonedContext before closing c: closing
+// c frees what they share.
 func (c *Context) Clone(ctx context.Context) (*Context, error) {
 	gvc, err := c.gvc.Clone(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// The plugins stay the original's; a clone does not release them.
-	return &Context{gvc: gvc, plugins: nil}, nil
+	// The plugins and the list stay the original's; a clone frees neither.
+	return &Context{gvc: gvc, plugins: nil, list: nil}, nil
 }
 
 func (c *Context) FreeClonedContext(ctx context.Context) error {
@@ -223,40 +239,44 @@ func (c *Context) imageRenderer(format string) *ImageRenderer {
 	return nil
 }
 
-func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error) {
+// newPlugins builds the symbol list Graphviz loads plugins from: the
+// context's own plugins, when it has any, under one entry, then the
+// built-in libraries. The second result is that entry, for the context to
+// free with itself; nil when there is none.
+func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, *wasm.SymList, error) {
 	defaults, err := wasm.DefaultSymList(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	symTerm, err := wasm.SymListZero(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Graphviz reads the list up to an entry with no name; without the
 	// terminator, a context with no plugins of its own read past the end
 	// of the built-in list.
 	if len(plugins) == 0 {
-		return append(defaults, symTerm), nil
+		return append(defaults, symTerm), nil, nil
 	}
 
 	sym, err := wasm.NewSymList(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err = sym.SetName("gvplugin_go_LTX_library"); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	lib, err := wasm.NewPluginLibrary(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err = lib.SetPackageName("go"); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var apis []*wasm.PluginAPI
@@ -266,20 +286,20 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, error)
 
 	term, err := wasm.PluginAPIZero(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	apis = append(apis, term)
 
 	if err = lib.SetApis(apis); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err = sym.SetAddress(lib); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return append(append([]*wasm.SymList{sym}, defaults...), symTerm), nil
+	return append(append([]*wasm.SymList{sym}, defaults...), symTerm), sym, nil
 }
 
 // toError maps a Graphviz result code: zero is success, anything else is a

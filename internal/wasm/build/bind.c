@@ -14,6 +14,7 @@ extern "C" {
 void *wasm_bridge_get_go_funcptr(void *funcbaseptr);
 
 
+#include "bridge.h"
 #include "cdt.h"
 #include "cgraph.h"
 #include "gvc.h"
@@ -3706,6 +3707,15 @@ void wasm_bridge_getContextWithPlugins(GoSlice * _arg0, int _arg1, void ** _arg2
   *_arg2 = v;
 }
 
+WASM_EXPORT(wasm_bridge_freePluginList)
+void wasm_bridge_freePluginList(void * _arg0) {
+  lt_symlist_t * arg0;
+  arg0 = (lt_symlist_t *)_arg0;
+  bridge_free_plugin_list(
+    arg0
+  );
+}
+
 WASM_EXPORT(wasm_bridge_Context_layout)
 void wasm_bridge_Context_layout(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   GVC_t * arg0;
@@ -3791,7 +3801,7 @@ WASM_EXPORT(wasm_bridge_Context_freeContext)
 void wasm_bridge_Context_freeContext(void * _arg0, int* _arg1) {
   GVC_t * arg0;
   arg0 = (GVC_t *)_arg0;
-  int ret = gvFreeContext(
+  int ret = bridge_free_context(
     arg0
   );
   int v = (int)ret;

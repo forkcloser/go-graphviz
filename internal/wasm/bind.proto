@@ -1768,6 +1768,7 @@ message PluginLibrary {
 
 option (nori.file).export = {
   header: [
+    "bridge.h",
     "cgraph.h",
     "gvc.h",
     "gvcjob.h",
@@ -1792,6 +1793,17 @@ option (nori.file).export = {
     return {
       kind: STRUCT
       ref: "Context"
+      pointer: 1
+    }
+  }
+  // freePluginList frees the symbol a context's own plugins were listed
+  // under, with its library, name and API array (patch.c).
+  func {
+    name: "freePluginList"
+    alias: "bridge_free_plugin_list"
+    args {
+      kind: STRUCT
+      ref: "SymList"
       pointer: 1
     }
   }
@@ -1873,10 +1885,12 @@ option (nori.file).export = {
     }
     return { kind: INT }
   }
+  // freeContext is gvFreeContext and then frees the plugin list the
+  // context was made from, the bridge's copy that Graphviz keeps (patch.c).
   method {
     recv: "Context"
     name: "freeContext"
-    alias: "gvFreeContext"
+    alias: "bridge_free_context"
     return { kind: INT }
   }
   method {
