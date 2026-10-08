@@ -1218,6 +1218,7 @@ func (v *{{ $msgName }}) Set{{ .GoName }}(_arg {{ .Value.GoType }}) error {
 	}
 	return mod.setField(ctx, "{{ .WasmName }}", v.getPtr(), arg)
 }
+{{- if .HasGetter }}
 
 func (v *{{ $msgName }}) Get{{ .GoName }}() {{ .Value.GoType }} {
 	ret, err := v.get{{ .GoName }}(v.callContext(context.Background()))
@@ -1237,6 +1238,7 @@ func (v *{{ $msgName }}) get{{ .GoName }}(ctx context.Context) ({{ .Value.GoType
 	{{- template "inheritToken" (map "Dst" .Dst "Value" .Value "Token" "v.token") }}
 	return {{ .Dst }}, nil
 }
+{{- end }}
 {{- end }}
 {{ end }}
 {{- end }}

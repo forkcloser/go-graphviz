@@ -60,6 +60,17 @@ type Type struct {
 	Ref             any
 }
 
+// IsUnsizedValueArray reports whether t is an array of values whose length
+// nothing gives: no fixed size, no argument carrying it, and no NULL
+// terminator, which only an array of pointers or strings has. The bridge
+// cannot read one back.
+func (t *Type) IsUnsizedValueArray() bool {
+	if t == nil {
+		return false
+	}
+	return t.IsRepeated && t.ArrayNum == 0 && t.ArgArrayNum == 0 && t.Pointer == 0 && !t.IsStringKind()
+}
+
 type Message struct {
 	Name           string
 	Fields         []*Field
@@ -86,6 +97,9 @@ type Field struct {
 type FieldRule struct {
 	Type  *Type
 	Alias string
+	// HasGetter is false for a field Go only writes: the generator emits its
+	// setter and no getter.
+	HasGetter bool
 }
 
 type Enum struct {
@@ -893,9 +907,22 @@ func (r *Resolver) resolveFieldRule(pkgName string, field *Field, def *nori.Fiel
 	if field.Type.IsFunction() {
 		field.Type.Kind = nori.TypeKind_FUNCPTR
 	}
+	hasGetter := true
+	if def != nil && def.Getter != nil {
+		hasGetter = def.GetGetter()
+	}
+	// Only a message with a C alias gets a bridge, so only its fields are read.
+	bridged := field.Message != nil && field.Message.Rule != nil && field.Message.Rule.Alias != ""
+	if hasGetter && bridged && field.Type.IsUnsizedValueArray() {
+		return fmt.Errorf(
+			"field %s is an array of values with no length, which nothing can read back: give it array_num or array_num_arg, or getter = false",
+			field.FullName(),
+		)
+	}
 	field.Rule = &FieldRule{
-		Type:  typ,
-		Alias: def.GetAlias(),
+		Type:      typ,
+		Alias:     def.GetAlias(),
+		HasGetter: hasGetter,
 	}
 	return nil
 }

@@ -128,6 +128,10 @@ message MessageRule {
 message FieldRule {
   string alias = 1;
   Type type = 2;
+  // getter is false for a field Go only writes. An array of values with no
+  // length, such as a zero-terminated array of structs, cannot be read back:
+  // the generator refuses a getter for one.
+  optional bool getter = 3;
 }
 
 message Any {}

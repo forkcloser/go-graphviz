@@ -2788,21 +2788,6 @@ void wasm_bridge_set_PluginAPI_api(gvplugin_api_t *recv, int v) {
   recv->api = (api_t)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_PluginAPI_types)
-void wasm_bridge_get_PluginAPI_types(gvplugin_api_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  void *v = malloc(sizeof(recv->types[i]));
-  memcpy(v, &recv->types[i], sizeof(recv->types[i]));
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
 WASM_EXPORT(wasm_bridge_set_PluginAPI_types)
 void wasm_bridge_set_PluginAPI_types(gvplugin_api_t *recv, GoSlice * v) {
   recv->types = (gvplugin_installed_t *)malloc(sizeof(gvplugin_installed_t) * v->len);
@@ -2828,21 +2813,6 @@ void wasm_bridge_get_PluginLibrary_package_name(gvplugin_library_t *recv, GoStri
 WASM_EXPORT(wasm_bridge_set_PluginLibrary_package_name)
 void wasm_bridge_set_PluginLibrary_package_name(gvplugin_library_t *recv, void * v) {
   recv->packagename = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginLibrary_apis)
-void wasm_bridge_get_PluginLibrary_apis(gvplugin_library_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  void *v = malloc(sizeof(recv->apis[i]));
-  memcpy(v, &recv->apis[i], sizeof(recv->apis[i]));
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
 }
 
 WASM_EXPORT(wasm_bridge_set_PluginLibrary_apis)

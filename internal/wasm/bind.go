@@ -9077,31 +9077,6 @@ func (v *PluginAPI) SetTypes(_arg []*PluginInstalled) error {
 	return mod.setField(ctx, "PluginAPI_types", v.getPtr(), arg)
 }
 
-func (v *PluginAPI) GetTypes() []*PluginInstalled {
-	ret, err := v.getTypes(v.callContext(context.Background()))
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (v *PluginAPI) getTypes(ctx context.Context) ([]*PluginInstalled, error) {
-	var zero []*PluginInstalled
-	p, err := mod.getField(ctx, "PluginAPI_types", v.getPtr())
-	if err != nil {
-		return zero, err
-	}
-	slice, err := mod.toSlice(ctx, p)
-	if err != nil {
-		return zero, err
-	}
-	ret := newPluginInstalledSlice(slice)
-	for _, e := range ret {
-		e.withToken(v.token)
-	}
-	return ret, nil
-}
-
 type PluginLibrary struct {
 	ptr uint64
 	// token is the module lock's token of the call this handle was handed
@@ -9191,31 +9166,6 @@ func (v *PluginLibrary) SetApis(_arg []*PluginAPI) error {
 		return err
 	}
 	return mod.setField(ctx, "PluginLibrary_apis", v.getPtr(), arg)
-}
-
-func (v *PluginLibrary) GetApis() []*PluginAPI {
-	ret, err := v.getApis(v.callContext(context.Background()))
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (v *PluginLibrary) getApis(ctx context.Context) ([]*PluginAPI, error) {
-	var zero []*PluginAPI
-	p, err := mod.getField(ctx, "PluginLibrary_apis", v.getPtr())
-	if err != nil {
-		return zero, err
-	}
-	slice, err := mod.toSlice(ctx, p)
-	if err != nil {
-		return zero, err
-	}
-	ret := newPluginAPISlice(slice)
-	for _, e := range ret {
-		e.withToken(v.token)
-	}
-	return ret, nil
 }
 
 type ObjectTag int

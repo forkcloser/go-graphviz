@@ -1750,17 +1750,20 @@ enum API {
 message PluginAPI {
   option (nori.message).alias = "gvplugin_api_t";
   API api = 1;
+  // types is written, zero-terminated, when a plugin is built; its length
+  // is nowhere to read it back by.
   PluginInstalled types = 2 [(nori.field).type = {
     array: true
-  }];
+  }, (nori.field).getter = false];
 }
 
 message PluginLibrary {
   option (nori.message).alias = "gvplugin_library_t";
   string package_name = 1 [(nori.field).alias = "packagename"];
+  // apis is written, zero-terminated, when a context's plugins are listed.
   PluginAPI apis = 2 [(nori.field).type = {
     array: true
-  }];
+  }, (nori.field).getter = false];
 }
 
 option (nori.file).export = {
