@@ -12,6 +12,8 @@ Graphviz's internals listed under Removed.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-08
+
 ### Changed
 
 - expat 2.9.0 (from 2.8.5) in the embedded WebAssembly module, which parses
@@ -22,12 +24,6 @@ Graphviz's internals listed under Removed.
   one-off messages: a call before the module is loaded, a memory access
   outside it, and a callback setter whose `Register_` function was not
   called first. Messages change wording accordingly.
-
-### Fixed
-
-- `cgraph`: a descriptor field write that fails at package init (eight
-  setter results were ignored) is now the init error `Open` and `ParseBytes`
-  return, instead of leaving a half-built descriptor behind.
 
 ## [0.5.0] - 2026-10-08
 
@@ -78,6 +74,9 @@ Graphviz's internals listed under Removed.
   keeps the list for the context's life and leaves it, and the bridge made
   one for every context: 48 bytes left in the WebAssembly module per `New`,
   and a few hundred per context built with plugins of its own.
+- `cgraph`: a descriptor field write that fails at package init (eight
+  setter results were ignored) is now the init error `Open` and `ParseBytes`
+  return, instead of leaving a half-built descriptor behind.
 
 ### Changed
 
