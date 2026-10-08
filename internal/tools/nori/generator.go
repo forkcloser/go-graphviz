@@ -3,6 +3,7 @@ package nori
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -15,6 +16,14 @@ import (
 
 	"github.com/forkcloser/go-graphviz/internal/tools/nori/nori"
 )
+
+// errUnresolved is a reference in the schema to a message, enum, field or
+// enum value the generator cannot find.
+var errUnresolved = errors.New("unresolved reference")
+
+// errSchema is a schema the generator cannot turn into bindings: a rule or
+// an option used in a way the templates have no shape for.
+var errSchema = errors.New("invalid schema")
 
 type File struct {
 	Name     string
@@ -574,7 +583,7 @@ func (r *Resolver) resolveMethodDef(pkgName string, def *nori.MethodDef) (*Metho
 	}
 	msg, exists := r.messageMap[recv]
 	if !exists {
-		return nil, fmt.Errorf("failed to find message from %s at resolving method receiver", recv)
+		return nil, fmt.Errorf("%w: message %s, resolving a method receiver", errUnresolved, recv)
 	}
 	return &MethodDef{
 		Receiver: &Type{
@@ -618,22 +627,22 @@ func (r *Resolver) resolveType(pkgName string, def *nori.Type) (*Type, error) {
 	case nori.TypeKind_STRUCT:
 		msg, exists := r.messageMap[refName]
 		if !exists {
-			return nil, fmt.Errorf("failed to find message from %s at resolving type", refName)
+			return nil, fmt.Errorf("%w: message %s, resolving a type", errUnresolved, refName)
 		}
 		ref = msg
 	case nori.TypeKind_FUNCPTR:
 		msg, exists := r.messageMap[refName]
 		if !exists {
-			return nil, fmt.Errorf("failed to find message from %s at resolving type", refName)
+			return nil, fmt.Errorf("%w: message %s, resolving a type", errUnresolved, refName)
 		}
 		if msg.Rule == nil || msg.Rule.Funcptr == nil {
-			return nil, fmt.Errorf("%s message doesn't specify funcptr but used as a funcptr", refName)
+			return nil, fmt.Errorf("%w: message %s is used as a funcptr but does not declare one", errSchema, refName)
 		}
 		ref = msg
 	case nori.TypeKind_ENUM:
 		enum, exists := r.enumMap[refName]
 		if !exists {
-			return nil, fmt.Errorf("failed to find enum from %s at resolving type", refName)
+			return nil, fmt.Errorf("%w: enum %s, resolving a type", errUnresolved, refName)
 		}
 		ref = enum
 	}
@@ -710,7 +719,7 @@ func (r *Resolver) resolveFieldType(
 		typeKind = nori.TypeKind_STRUCT
 		msg, exists := r.messageMap[typeName]
 		if !exists {
-			return nil, fmt.Errorf("failed to find message from %s at resolving type", typeName)
+			return nil, fmt.Errorf("%w: message %s, resolving a type", errUnresolved, typeName)
 		}
 		ref = msg
 	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
@@ -721,7 +730,7 @@ func (r *Resolver) resolveFieldType(
 		typeKind = nori.TypeKind_ENUM
 		enum, exists := r.enumMap[typeName]
 		if !exists {
-			return nil, fmt.Errorf("failed to find enum from %s at resolving type", typeName)
+			return nil, fmt.Errorf("%w: enum %s, resolving a type", errUnresolved, typeName)
 		}
 		ref = enum
 	case descriptorpb.FieldDescriptorProto_TYPE_SFIXED32:
@@ -733,7 +742,7 @@ func (r *Resolver) resolveFieldType(
 	case descriptorpb.FieldDescriptorProto_TYPE_SINT64:
 		typeKind = nori.TypeKind_INT64
 	default:
-		return nil, fmt.Errorf("found expected type kind %v", typeKind)
+		return nil, fmt.Errorf("%w: unexpected type kind %v", errSchema, typeKind)
 	}
 	return &Type{
 		Kind:       typeKind,
@@ -768,8 +777,8 @@ func (r *Resolver) resolveMessageRule(pkgName string, msg *Message, def *nori.Me
 		}
 		if funcBasePtrCount != 1 {
 			return fmt.Errorf(
-				"failed to resolve %s funcptr. funcbaseptr flag must be enabled for one of the arguments",
-				msg.Name,
+				"%w: funcptr %s needs the funcbaseptr flag on exactly one of its arguments",
+				errSchema, msg.Name,
 			)
 		}
 	}
@@ -802,7 +811,7 @@ func (r *Resolver) resolveMessage(
 	fqdn := fmt.Sprintf("%s.%s", pkgName, strings.Join(msgNames, "."))
 	msg, exists := r.messageMap[fqdn]
 	if !exists {
-		return nil, fmt.Errorf("failed to find message from %s", fqdn)
+		return nil, fmt.Errorf("%w: message %s", errUnresolved, fqdn)
 	}
 	ruleDef, err := getExtensionRule[*nori.MessageRule](def.GetOptions(), nori.E_Message)
 	if err != nil {
@@ -860,7 +869,7 @@ func (r *Resolver) resolveField(
 	fqdn := strings.Join(append(append([]string{pkgName}, msgNames...), fieldName), ".")
 	field, exists := r.fieldMap[fqdn]
 	if !exists {
-		return nil, fmt.Errorf("failed to find field from %s", fqdn)
+		return nil, fmt.Errorf("%w: field %s", errUnresolved, fqdn)
 	}
 	fieldType, err := r.resolveFieldType(
 		pkgName,
@@ -915,7 +924,8 @@ func (r *Resolver) resolveFieldRule(pkgName string, field *Field, def *nori.Fiel
 	bridged := field.Message != nil && field.Message.Rule != nil && field.Message.Rule.Alias != ""
 	if hasGetter && bridged && field.Type.IsUnsizedValueArray() {
 		return fmt.Errorf(
-			"field %s is an array of values with no length, which nothing can read back: give it array_num or array_num_arg, or getter = false",
+			"%w: field %s is an array of values with no length, which nothing can read back: give it array_num or array_num_arg, or getter = false",
+			errSchema,
 			field.FullName(),
 		)
 	}
@@ -944,7 +954,7 @@ func (r *Resolver) resolveEnum(pkgName string, def *descriptorpb.EnumDescriptorP
 	fqdn := fmt.Sprintf("%s.%s", pkgName, enumName)
 	enum, exists := r.enumMap[fqdn]
 	if !exists {
-		return nil, fmt.Errorf("failed to find enum from %s", fqdn)
+		return nil, fmt.Errorf("%w: enum %s", errUnresolved, fqdn)
 	}
 	ruleDef, err := getExtensionRule[*nori.EnumRule](def.GetOptions(), nori.E_Enum)
 	if err != nil {
@@ -993,7 +1003,7 @@ func (r *Resolver) resolveEnumValue(
 	fqdn := fmt.Sprintf("%s.%s.%s", pkgName, enumName, valueName)
 	value, exists := r.enumValueMap[fqdn]
 	if !exists {
-		return nil, fmt.Errorf("failed to find enum value from %s", fqdn)
+		return nil, fmt.Errorf("%w: enum value %s", errUnresolved, fqdn)
 	}
 	ruleDef, err := getExtensionRule[*nori.EnumValueRule](def.GetOptions(), nori.E_EnumValue)
 	if err != nil {
@@ -1019,7 +1029,7 @@ func getExtensionRule[T proto.Message](opts proto.Message, extType protoreflect.
 
 	typ := reflect.TypeOf(ret)
 	if typ.Kind() != reflect.Ptr {
-		return ret, fmt.Errorf("proto.Message value must be pointer type")
+		return ret, fmt.Errorf("%w: proto.Message value must be a pointer", errSchema)
 	}
 	v := reflect.New(typ.Elem()).Interface().(proto.Message)
 
@@ -1038,11 +1048,11 @@ func getExtensionRule[T proto.Message](opts proto.Message, extType protoreflect.
 
 	ext := proto.GetExtension(opts, extType)
 	if ext == nil {
-		return ret, fmt.Errorf("%s extension does not exist", extFullName)
+		return ret, fmt.Errorf("%w: extension %s does not exist", errSchema, extFullName)
 	}
 	rule, ok := ext.(T)
 	if !ok {
-		return ret, fmt.Errorf("%s extension cannot not be converted from %T", extFullName, ext)
+		return ret, fmt.Errorf("%w: extension %s cannot be converted from %T", errSchema, extFullName, ext)
 	}
 	return rule, nil
 }
