@@ -4218,6 +4218,9 @@ func (v *Attr) SetStr(_arg []string) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "Attr_str", v.getPtr(), arg)
 }
 
@@ -4833,6 +4836,9 @@ func (v *Context) SetApis(_arg []*PluginAvailable) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "Context_apis", v.getPtr(), arg)
 }
 
@@ -4867,6 +4873,9 @@ func (v *Context) SetApi(_arg []*PluginAvailable) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "Context_api", v.getPtr(), arg)
 }
 
@@ -5996,6 +6005,9 @@ func (v *ObjectState) SetRawstyle(_arg []string) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "ObjectState_rawstyle", v.getPtr(), arg)
 }
 
@@ -6966,6 +6978,9 @@ func (v *Color) SetRgbaDouble(_arg []float64) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "Color_rgba_double", v.getPtr(), arg)
 }
 
@@ -7000,6 +7015,9 @@ func (v *Color) SetHsva(_arg []float64) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "Color_hsva", v.getPtr(), arg)
 }
 
@@ -7034,6 +7052,9 @@ func (v *Color) SetRgbaUint(_arg []uint) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "Color_rgba_uint", v.getPtr(), arg)
 }
 
@@ -7065,6 +7086,9 @@ func (v *Color) SetRgbaInt(_arg []int) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "Color_rgba_int", v.getPtr(), arg)
 }
 
@@ -9074,32 +9098,10 @@ func (v *PluginAPI) SetTypes(_arg []*PluginInstalled) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "PluginAPI_types", v.getPtr(), arg)
-}
-
-func (v *PluginAPI) GetTypes() []*PluginInstalled {
-	ret, err := v.getTypes(v.callContext(context.Background()))
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (v *PluginAPI) getTypes(ctx context.Context) ([]*PluginInstalled, error) {
-	var zero []*PluginInstalled
-	p, err := mod.getField(ctx, "PluginAPI_types", v.getPtr())
-	if err != nil {
-		return zero, err
-	}
-	slice, err := mod.toSlice(ctx, p)
-	if err != nil {
-		return zero, err
-	}
-	ret := newPluginInstalledSlice(slice)
-	for _, e := range ret {
-		e.withToken(v.token)
-	}
-	return ret, nil
 }
 
 type PluginLibrary struct {
@@ -9190,32 +9192,10 @@ func (v *PluginLibrary) SetApis(_arg []*PluginAPI) error {
 	if err != nil {
 		return err
 	}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
 	return mod.setField(ctx, "PluginLibrary_apis", v.getPtr(), arg)
-}
-
-func (v *PluginLibrary) GetApis() []*PluginAPI {
-	ret, err := v.getApis(v.callContext(context.Background()))
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (v *PluginLibrary) getApis(ctx context.Context) ([]*PluginAPI, error) {
-	var zero []*PluginAPI
-	p, err := mod.getField(ctx, "PluginLibrary_apis", v.getPtr())
-	if err != nil {
-		return zero, err
-	}
-	slice, err := mod.toSlice(ctx, p)
-	if err != nil {
-		return zero, err
-	}
-	ret := newPluginAPISlice(slice)
-	for _, e := range ret {
-		e.withToken(v.token)
-	}
-	return ret, nil
 }
 
 type ObjectTag int
@@ -10905,4 +10885,15 @@ func GetContextWithPlugins(ctx context.Context, _arg0 []*SymList, _arg1 int) (*C
 	}
 	ret := newContext(p)
 	return ret, nil
+}
+
+func FreePluginList(ctx context.Context, _arg0 *SymList) error {
+	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
+	if err != nil {
+		return err
+	}
+	if err := mod.call(ctx, "freePluginList", arg0); err != nil {
+		return err
+	}
+	return nil
 }

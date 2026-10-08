@@ -90,6 +90,7 @@ void wasm_bridge_set_{{ .Name }}({{ .ReceiverType }} *recv) {
   {{ .Value.Src }} = {{ .Value.FuncName }};
 }
 {{- else }}
+{{- if .HasGetter }}
 WASM_EXPORT(wasm_bridge_get_{{ .Name }})
 void wasm_bridge_get_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.GoType }}* ret) {
   {{- if and .Value.IsStruct (not .Value.IsSlice) }}
@@ -101,7 +102,7 @@ void wasm_bridge_get_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.GoType }}*
   *ret = {{ .Value.Dst }};
   {{- end }}
 }
-
+{{ end }}
 WASM_EXPORT(wasm_bridge_set_{{ .Name }})
 void wasm_bridge_set_{{ .Name }}({{ .ReceiverType }} *recv, {{ .Value.WasmType }} v) {
   {{- template "toCValue" (map "Value" .Value "Dst" .Value.Src "Src" "v" ) }}

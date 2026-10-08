@@ -14,6 +14,7 @@ extern "C" {
 void *wasm_bridge_get_go_funcptr(void *funcbaseptr);
 
 
+#include "bridge.h"
 #include "cdt.h"
 #include "cgraph.h"
 #include "gvc.h"
@@ -2788,21 +2789,6 @@ void wasm_bridge_set_PluginAPI_api(gvplugin_api_t *recv, int v) {
   recv->api = (api_t)v;
 }
 
-WASM_EXPORT(wasm_bridge_get_PluginAPI_types)
-void wasm_bridge_get_PluginAPI_types(gvplugin_api_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  void *v = malloc(sizeof(recv->types[i]));
-  memcpy(v, &recv->types[i], sizeof(recv->types[i]));
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
-}
-
 WASM_EXPORT(wasm_bridge_set_PluginAPI_types)
 void wasm_bridge_set_PluginAPI_types(gvplugin_api_t *recv, GoSlice * v) {
   recv->types = (gvplugin_installed_t *)malloc(sizeof(gvplugin_installed_t) * v->len);
@@ -2828,21 +2814,6 @@ void wasm_bridge_get_PluginLibrary_package_name(gvplugin_library_t *recv, GoStri
 WASM_EXPORT(wasm_bridge_set_PluginLibrary_package_name)
 void wasm_bridge_set_PluginLibrary_package_name(gvplugin_library_t *recv, void * v) {
   recv->packagename = (char *)v;
-}
-
-WASM_EXPORT(wasm_bridge_get_PluginLibrary_apis)
-void wasm_bridge_get_PluginLibrary_apis(gvplugin_library_t *recv, GoSlice ** ret) {GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
-  int v_length = 0;
-  v->len = v_length;
-  void **v_data = (void **)malloc(8 * v_length);
-  v->data = v_data;
-  for (int i = 0; i < v_length; i++) {
-  void *v = malloc(sizeof(recv->apis[i]));
-  memcpy(v, &recv->apis[i], sizeof(recv->apis[i]));
-    *v_data = (void *)v;
-    v_data += 2; // move data header address by 2 word (8 bytes).
-  }
-  *ret = v;
 }
 
 WASM_EXPORT(wasm_bridge_set_PluginLibrary_apis)
@@ -3736,6 +3707,15 @@ void wasm_bridge_getContextWithPlugins(GoSlice * _arg0, int _arg1, void ** _arg2
   *_arg2 = v;
 }
 
+WASM_EXPORT(wasm_bridge_freePluginList)
+void wasm_bridge_freePluginList(void * _arg0) {
+  lt_symlist_t * arg0;
+  arg0 = (lt_symlist_t *)_arg0;
+  bridge_free_plugin_list(
+    arg0
+  );
+}
+
 WASM_EXPORT(wasm_bridge_Context_layout)
 void wasm_bridge_Context_layout(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   GVC_t * arg0;
@@ -3821,7 +3801,7 @@ WASM_EXPORT(wasm_bridge_Context_freeContext)
 void wasm_bridge_Context_freeContext(void * _arg0, int* _arg1) {
   GVC_t * arg0;
   arg0 = (GVC_t *)_arg0;
-  int ret = gvFreeContext(
+  int ret = bridge_free_context(
     arg0
   );
   int v = (int)ret;

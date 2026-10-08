@@ -17,9 +17,6 @@ import (
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
-// pageSize is the unit the module's memory grows by.
-const pageSize = 64 << 10
-
 // memoryGrowth runs op n times after a warm-up and returns how far the
 // module's memory grew. Memory grows in 64 KiB pages and never shrinks, so
 // a leak of a few dozen bytes a call shows after a few thousand calls.
@@ -70,25 +67,47 @@ func TestRenderLeavesNoMemory(t *testing.T) {
 	}
 }
 
-// Making and closing an instance leaves nothing in the module: the default
-// plugins and the list Graphviz loads them from are built once and shared.
-// Each instance used to leave about 4 KiB.
+// Making and closing an instance leaves nothing in the module, whatever
+// plugins it is made with: the default plugins and the list Graphviz loads
+// them from are built once and shared, and a context frees the list it was
+// made from with itself. Each instance used to leave about 4 KiB, then the
+// 48 bytes of its list; one made with no plugins about 130, and one with
+// plugins of its own a few hundred, the list's symbol, library and names.
 func TestNewLeavesNoMemory(t *testing.T) {
 	ctx := t.Context()
 
-	growth := memoryGrowth(2000, func() {
-		g, err := graphviz.New(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+	render, err := graphviz.NewRenderPlugin(ctx, "count", new(graphviz.DefaultRenderEngine))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		closeOrError(t, g.Close)
-	})
+	device, err := graphviz.NewDevicePlugin(ctx, "count:count")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// One page of slack for the allocator's own layout: the leak this
-	// guards against grew the memory by over 7 MiB here.
-	if growth > pageSize {
-		t.Errorf("memory grew %d KiB over 2000 instances", growth/1024)
+	for _, tc := range []struct {
+		name string
+		make func() (*graphviz.Graphviz, error)
+	}{
+		{"default plugins", func() (*graphviz.Graphviz, error) { return graphviz.New(ctx) }},
+		{"no plugins", func() (*graphviz.Graphviz, error) { return graphviz.NewWithPlugins(ctx) }},
+		{"own plugins", func() (*graphviz.Graphviz, error) { return graphviz.NewWithPlugins(ctx, render, device) }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			growth := memoryGrowth(4000, func() {
+				g, err := tc.make()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				closeOrError(t, g.Close)
+			})
+
+			if growth != 0 {
+				t.Errorf("memory grew %d KiB over 4000 instances", growth/1024)
+			}
+		})
 	}
 }
 

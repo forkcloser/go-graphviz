@@ -1216,8 +1216,14 @@ func (v *{{ $msgName }}) Set{{ .GoName }}(_arg {{ .Value.GoType }}) error {
 	if err != nil {
 		return err
 	}
+	{{- if .Value.IsSlice }}
+	// The bridge copies the elements into the struct's own array; the slice
+	// handed to it is this call's, freed with it.
+	defer mod.freeSlice(ctx, arg)
+	{{- end }}
 	return mod.setField(ctx, "{{ .WasmName }}", v.getPtr(), arg)
 }
+{{- if .HasGetter }}
 
 func (v *{{ $msgName }}) Get{{ .GoName }}() {{ .Value.GoType }} {
 	ret, err := v.get{{ .GoName }}(v.callContext(context.Background()))
@@ -1237,6 +1243,7 @@ func (v *{{ $msgName }}) get{{ .GoName }}(ctx context.Context) ({{ .Value.GoType
 	{{- template "inheritToken" (map "Dst" .Dst "Value" .Value "Token" "v.token") }}
 	return {{ .Dst }}, nil
 }
+{{- end }}
 {{- end }}
 {{ end }}
 {{- end }}

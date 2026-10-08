@@ -254,11 +254,15 @@ func SetWarningWriter(w io.Writer) {
 	warningWriter = w
 }
 
+// DefaultSymList lists the built-in plugin libraries: the static entries,
+// which nothing frees.
 func DefaultSymList(ctx context.Context) ([]*SymList, error) {
 	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() { _ = mod.free(ctx, slot) }()
 
 	if _, err = mod.invoke(ctx, "wasm_bridge_SymList_default", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_SymList_default: %w", err)
@@ -277,11 +281,14 @@ func DefaultSymList(ctx context.Context) ([]*SymList, error) {
 	return newSymListSlice(slice), nil
 }
 
+// PluginAPIZero is the static terminator of an API list.
 func PluginAPIZero(ctx context.Context) (*PluginAPI, error) {
 	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() { _ = mod.free(ctx, slot) }()
 
 	if _, err = mod.invoke(ctx, "wasm_bridge_PluginAPI_zero", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_PluginAPI_zero: %w", err)
@@ -295,11 +302,14 @@ func PluginAPIZero(ctx context.Context) (*PluginAPI, error) {
 	return newPluginAPI(ptr), nil
 }
 
+// PluginInstalledZero is the static terminator of a plugin's type list.
 func PluginInstalledZero(ctx context.Context) (*PluginInstalled, error) {
 	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() { _ = mod.free(ctx, slot) }()
 
 	if _, err = mod.invoke(ctx, "wasm_bridge_PluginInstalled_zero", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_PluginInstalled_zero: %w", err)
@@ -313,11 +323,14 @@ func PluginInstalledZero(ctx context.Context) (*PluginInstalled, error) {
 	return newPluginInstalled(ptr), nil
 }
 
+// SymListZero is the static terminator of a symbol list.
 func SymListZero(ctx context.Context) (*SymList, error) {
 	slot, err := mod.NewPtr(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() { _ = mod.free(ctx, slot) }()
 
 	if _, err = mod.invoke(ctx, "wasm_bridge_SymList_zero", slot); err != nil {
 		return nil, fmt.Errorf("wasm_bridge_SymList_zero: %w", err)

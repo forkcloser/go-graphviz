@@ -291,11 +291,12 @@ type GoExportType struct {
 }
 
 type GoExportField struct {
-	GoName   string
-	WasmName string
-	Src      string
-	Dst      string
-	Value    *GoValue
+	GoName    string
+	WasmName  string
+	Src       string
+	Dst       string
+	Value     *GoValue
+	HasGetter bool
 }
 
 type GoExportEnumValue struct {
@@ -376,11 +377,12 @@ func (f *GoFile) toExportTypes(m *Message) []*GoExportType {
 	}
 	for _, field := range m.Fields {
 		exportType.Fields = append(exportType.Fields, &GoExportField{
-			Src:      "p",
-			Dst:      "ret",
-			Value:    &GoValue{typ: field.Type},
-			WasmName: field.FullName(),
-			GoName:   toPublicGoVariable(field.Name),
+			Src:       "p",
+			Dst:       "ret",
+			Value:     &GoValue{typ: field.Type},
+			WasmName:  field.FullName(),
+			GoName:    toPublicGoVariable(field.Name),
+			HasGetter: field.Rule == nil || field.Rule.HasGetter,
 		})
 	}
 	return append(ret, exportType)

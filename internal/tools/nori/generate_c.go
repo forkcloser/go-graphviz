@@ -426,6 +426,7 @@ type CExportField struct {
 	Type         string
 	Value        *CValue
 	ArrayNum     uint64
+	HasGetter    bool
 }
 
 type CExportEnum struct {
@@ -496,8 +497,9 @@ func (f *CFile) toExportTypes(msg *Message) []*CExportType {
 				Dst: "v",
 				typ: field.Type,
 			},
-			Type:     typeText,
-			ArrayNum: field.Type.ArrayNum,
+			Type:      typeText,
+			ArrayNum:  field.Type.ArrayNum,
+			HasGetter: field.Rule == nil || field.Rule.HasGetter,
 		})
 	}
 	ret = append(ret, exportType)

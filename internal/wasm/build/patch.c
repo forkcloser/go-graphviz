@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "gvc.h"
 #include "gvplugin.h"
+// After gvc.h and gvplugin.h, whose types it uses: GVC_t's definition, for
+// the plugin list a context keeps.
+#include "gvcint.h"
 #include "gvplugin_render.h"
 #include "gvio.h"
 #include "textspan.h"
@@ -47,6 +51,10 @@ void wasm_bridge_SymList_zero(void **ret) {
   *ret = &symlist_zero;
 }
 
+// wasm_bridge_SymList_default lists the built-in plugin libraries: the
+// entries themselves, which are static, not copies. A copy was allocated per
+// entry on every call and never freed; a context built with plugins of its
+// own, which lists them before the built-in ones, made one such call.
 WASM_EXPORT(wasm_bridge_SymList_default)
 void wasm_bridge_SymList_default(GoSlice **ret) {
   GoSlice *v = (GoSlice *)malloc(sizeof(GoSlice));
@@ -55,12 +63,40 @@ void wasm_bridge_SymList_default(GoSlice **ret) {
   void **data = malloc(8 * len);
   v->data = data;
   for (int i = 0; i < len; i++) {
-    lt_symlist_t *elem = (lt_symlist_t *)malloc(sizeof(lt_symlist_t));
-    memcpy(elem, &lt_preloaded_symbols[i], sizeof(lt_symlist_t));
-    *data = elem;
+    *data = &lt_preloaded_symbols[i];
     data += 2;
   }
   *ret = v;
+}
+
+// bridge_free_context frees gvc and then the plugin list it was made from.
+// The bridge allocates that list for the gvContextPlugins call, Graphviz
+// keeps it for the life of the context, and gvFreeContext leaves it, as it
+// would a program's static list; the built-in list, static here too, is
+// left. A clone shares the list with its original, as it shares the plugin
+// tables gvFreeContext frees, so it is freed before the original is.
+int bridge_free_context(GVC_t *gvc) {
+  const lt_symlist_t *builtins = gvc->common.builtins;
+  int ret = gvFreeContext(gvc);
+  if (builtins != lt_preloaded_symbols) {
+    free((void *)builtins);
+  }
+  return ret;
+}
+
+// bridge_free_plugin_list frees the symbol a context's own plugins were
+// listed under, with the library it names: the name, the package name and
+// the API array the bindings set, which only this side allocated. The
+// plugins the API array copied from are not the list's.
+void bridge_free_plugin_list(lt_symlist_t *sym) {
+  gvplugin_library_t *lib = (gvplugin_library_t *)sym->address;
+  if (lib != NULL) {
+    free((void *)lib->packagename);
+    free(lib->apis);
+    free(lib);
+  }
+  free((void *)sym->name);
+  free(sym);
 }
 
 // A device that encodes the page itself hands the bytes to Graphviz through

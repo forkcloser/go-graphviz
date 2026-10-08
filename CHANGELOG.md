@@ -57,6 +57,10 @@ Graphviz's internals listed under Removed.
   name with a leading slash now opens, from a named file system, the name
   without it, and on the host the path from the root when the working
   directory has no such file. `SetFileSystem` documents both.
+- A context frees the plugin list it was made from when it closes. Graphviz
+  keeps the list for the context's life and leaves it, and the bridge made
+  one for every context: 48 bytes left in the WebAssembly module per `New`,
+  and a few hundred per context built with plugins of its own.
 
 ### Changed
 
