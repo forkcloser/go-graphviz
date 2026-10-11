@@ -215,7 +215,7 @@ jobs:
       - name: Build once
         run: just wasm
       - name: Digests, for the log
-        run: shasum -a 256 build/wasm/out/graphviz.raw.wasm internal/wasm/graphviz.wasm
+        run: sha256sum build/wasm/out/graphviz.raw.wasm internal/wasm/graphviz.wasm
       - name: The build matches the committed blob
         run: git diff --exit-code --stat -- internal/wasm/graphviz.wasm
       - name: Build again, elsewhere
