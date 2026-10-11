@@ -45,16 +45,6 @@ expat_version="${expat_version//_/.}" # 2.8.5
 wasi_sdk_version="$(pin "wasi-sdk-${host}" version)"
 binaryen_version="$(pin "binaryen-${host}" version)"
 
-# sha256 [-c -]: the host's checksum tool under one name; coreutils calls it
-# sha256sum, macOS ships it as shasum -a 256.
-sha256() {
-  if command -v sha256sum > /dev/null 2>&1; then
-    sha256sum "$@"
-  else
-    shasum -a 256 "$@"
-  fi
-}
-
 # fetch <pin> <file>: download the pin's url once into the work dir, verify
 # against the pin's sha256 always.
 fetch() {
@@ -68,7 +58,7 @@ fetch() {
     curl --proto '=https' --tlsv1.2 -fsSL --retry 5 --retry-delay 3 -o "${file}.part" "${url}"
     mv "${file}.part" "${file}"
   fi
-  echo "${sum}  ${file}" | sha256 -c - > /dev/null || {
+  echo "${sum}  ${file}" | sha256sum -c - > /dev/null || {
     echo "${name}: sha256 mismatch against pins.yaml" >&2
     rm -f "${file}"
     exit 1
@@ -157,7 +147,7 @@ grep -q '^  if (us->f) {$' "${usershape}" || {
 # this digest together.
 webp_size_base=75ea4df566d9627b88748d1f684c6edddeb50aafee074e969a12b7dad796b048
 if ! grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${usershape}"; then
-  echo "${webp_size_base}  ${usershape}" | sha256 -c - > /dev/null || {
+  echo "${webp_size_base}  ${usershape}" | sha256sum -c - > /dev/null || {
     echo "gvusershape.c: not the file webp-size.patch was written against; recheck the patch for this Graphviz" >&2
     exit 1
   }
@@ -297,4 +287,4 @@ echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm
 
 echo "optimizing with binaryen ${binaryen_version}"
 "${wasm_opt}" -g --strip --strip-producers -c -Os "${raw}" -o "${out}"
-sha256 "${out}"
+sha256sum "${out}"
