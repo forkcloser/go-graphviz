@@ -46,12 +46,14 @@ examples:
 
 # Compares this library's PNG output with a Graphviz installed on this
 # machine, over the test corpus: unhermetic, so never part of lint or test.
-# Pass the dot binary when it is not the dot on PATH. Side-by-side images
-# (ours, dot's, their difference) land in build/smoke.
-[doc('Compare PNG output with a local Graphviz dot (needs Graphviz installed)')]
-smoke dot="dot":
+# Takes the path of Graphviz's own dot binary — never a bare name: the
+# hermetic PATH holds no Graphviz, and forkcloser/dot, a Go-built tool of
+# this repository, is a different program with the same name. Side-by-side
+# images (ours, Graphviz's, their difference) land in build/smoke.
+[doc('Compare PNG output with a Graphviz dot binary at the given path (needs Graphviz installed)')]
+smoke graphviz:
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p build/smoke
-    GO_GRAPHVIZ_SMOKE=1 GO_GRAPHVIZ_DOT="{{ dot }}" GO_GRAPHVIZ_SMOKE_DIR="${PWD}/build/smoke" \
+    GO_GRAPHVIZ_SMOKE=1 GO_GRAPHVIZ_DOT="{{ graphviz }}" GO_GRAPHVIZ_SMOKE_DIR="${PWD}/build/smoke" \
         go test -count=1 -run '^TestDotSmoke$' -v .
