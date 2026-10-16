@@ -10,6 +10,9 @@ WebAssembly, run on wazero, no C toolchain and no system Graphviz. The
 upstream `dot` command is not part of this module; forkcloser ships its own,
 [github.com/forkcloser/dot](https://github.com/forkcloser/dot), as a static
 binary with every layout and format of the library.
+What this fork fixes and changes that upstream does not have is the table in
+[`UPSTREAM.md`](./UPSTREAM.md), beside the fork point and what was taken from
+upstream since.
 
 <img src="https://user-images.githubusercontent.com/209884/90976476-64e84000-e578-11ea-9596-fb4a7d3b11a6.png" width="400px"></img>
 
