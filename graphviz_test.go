@@ -24,10 +24,10 @@ func TestGraphviz_Image(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 
-	defer func() {
-		graph.Close()
-		g.Close()
-	}()
+	t.Cleanup(func() {
+		closeOrError(t, graph.Close)
+		closeOrError(t, g.Close)
+	})
 
 	n, err := graph.CreateNodeByName("n")
 	if err != nil {
@@ -205,10 +205,10 @@ func TestImageRender(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 
-	defer func() {
-		graph.Close()
-		g.Close()
-	}()
+	t.Cleanup(func() {
+		closeOrError(t, graph.Close)
+		closeOrError(t, g.Close)
+	})
 
 	n, err := graph.CreateNodeByName("n")
 	if err != nil {

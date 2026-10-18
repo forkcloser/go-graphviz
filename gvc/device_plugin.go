@@ -134,16 +134,26 @@ func buildDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, e
 		flags |= int64(feature)
 	}
 
-	features.SetFlags(flags)
+	if err = features.SetFlags(flags); err != nil {
+		return nil, err
+	}
 
 	dpi, err := wasm.NewPointFloat(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	dpi.SetX(cfg.DPI.X)
-	dpi.SetY(cfg.DPI.Y)
-	features.SetDefaultDpi(dpi)
+	if err = dpi.SetX(cfg.DPI.X); err != nil {
+		return nil, err
+	}
+
+	if err = dpi.SetY(cfg.DPI.Y); err != nil {
+		return nil, err
+	}
+
+	if err = features.SetDefaultDpi(dpi); err != nil {
+		return nil, err
+	}
 
 	if err = types.SetFeatures(features); err != nil {
 		return nil, err

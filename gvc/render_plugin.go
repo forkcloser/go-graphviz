@@ -340,9 +340,17 @@ func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, e
 		flags |= int64(feature)
 	}
 
-	features.SetFlags(flags)
-	features.SetDefaultPad(cfg.PAD)
-	features.SetColorType(wasm.ColorType(cfg.ColorType))
+	if err = features.SetFlags(flags); err != nil {
+		return nil, err
+	}
+
+	if err = features.SetDefaultPad(cfg.PAD); err != nil {
+		return nil, err
+	}
+
+	if err = features.SetColorType(wasm.ColorType(cfg.ColorType)); err != nil {
+		return nil, err
+	}
 
 	if err = types.SetFeatures(features); err != nil {
 		return nil, err
@@ -882,6 +890,8 @@ var (
 	EdgeObjectType      ObjectType = ObjectType(wasm.EDGE_OBJTYPE)
 )
 
+// Color is a Graphviz color in the module's memory. Its setters panic when
+// the module fails, as its getters do.
 type Color struct {
 	wasm *wasm.Color
 }
@@ -900,7 +910,9 @@ func (c *Color) RGBADouble() [4]float64 {
 }
 
 func (c *Color) SetRGBADouble(v [4]float64) {
-	c.wasm.SetRgbaDouble(v[:])
+	if err := c.wasm.SetRgbaDouble(v[:]); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Color) RGBAUint() [4]uint {
@@ -909,7 +921,9 @@ func (c *Color) RGBAUint() [4]uint {
 }
 
 func (c *Color) SetRGBAUint(v [4]uint) {
-	c.wasm.SetRgbaUint(v[:])
+	if err := c.wasm.SetRgbaUint(v[:]); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Color) RGBAInt() [4]int {
@@ -918,7 +932,9 @@ func (c *Color) RGBAInt() [4]int {
 }
 
 func (c *Color) SetRGBAInt(v [4]int) {
-	c.wasm.SetRgbaInt(v[:])
+	if err := c.wasm.SetRgbaInt(v[:]); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Color) HSVA() [4]float64 {
@@ -927,7 +943,9 @@ func (c *Color) HSVA() [4]float64 {
 }
 
 func (c *Color) SetHSVA(v [4]float64) {
-	c.wasm.SetHsva(v[:])
+	if err := c.wasm.SetHsva(v[:]); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Color) String() string {
@@ -935,7 +953,9 @@ func (c *Color) String() string {
 }
 
 func (c *Color) SetString(v string) {
-	c.wasm.SetString(v)
+	if err := c.wasm.SetString(v); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Color) Index() int {
@@ -943,7 +963,9 @@ func (c *Color) Index() int {
 }
 
 func (c *Color) SetIndex(v int) {
-	c.wasm.SetIndex(int64(v))
+	if err := c.wasm.SetIndex(int64(v)); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Color) Type() ColorType {
@@ -951,7 +973,9 @@ func (c *Color) Type() ColorType {
 }
 
 func (c *Color) SetType(v ColorType) {
-	c.wasm.SetType(wasm.ColorType(v))
+	if err := c.wasm.SetType(wasm.ColorType(v)); err != nil {
+		panic(err)
+	}
 }
 
 type UserShape struct {

@@ -348,7 +348,7 @@ func dash(sub subpath, pattern []float64) []subpath {
 		total += length
 	}
 
-	if total <= 0 || len(sub.points) < 2 {
+	if len(pattern) == 0 || total <= 0 || len(sub.points) < 2 {
 		return []subpath{sub}
 	}
 

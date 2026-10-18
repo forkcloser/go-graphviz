@@ -1,6 +1,7 @@
 package graphviz_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -71,17 +72,12 @@ func generateTestData(ctx context.Context) error {
 				return nil
 			}
 
-			tmpfile, err := os.CreateTemp("", "graphviz")
+			png, err := exec.CommandContext(ctx, "dot", "-Tpng", p).Output()
 			if err != nil {
-				return err
-			}
-			defer os.Remove(tmpfile.Name())
-
-			if err = exec.CommandContext(ctx, "dot", "-Tpng", "-o"+tmpfile.Name(), p).Run(); err != nil {
-				return err
+				return fmt.Errorf("dot -Tpng %s: %w", p, err)
 			}
 
-			img, _, err := image.Decode(tmpfile)
+			img, _, err := image.Decode(bytes.NewReader(png))
 			if err != nil {
 				return err
 			}
