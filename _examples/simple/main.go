@@ -6,7 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/forkcloser/go-graphviz"
 )
@@ -53,6 +54,7 @@ func run(ctx context.Context) (err error) {
 
 func main() {
 	if err := run(context.Background()); err != nil {
-		log.Fatal(err)
+		slog.Error("simple", "err", err)
+		os.Exit(1)
 	}
 }
