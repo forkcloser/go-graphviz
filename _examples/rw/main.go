@@ -6,7 +6,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/forkcloser/go-graphviz"
 )
@@ -89,10 +90,12 @@ func main() {
 
 	dot, err := writeDOT(ctx)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("rw: write the graph", "err", err)
+		os.Exit(1)
 	}
 
 	if err := extendAndRender(ctx, dot); err != nil {
-		log.Fatal(err)
+		slog.Error("rw: extend and render", "err", err)
+		os.Exit(1)
 	}
 }

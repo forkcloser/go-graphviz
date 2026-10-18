@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 
 	"google.golang.org/protobuf/proto"
@@ -14,7 +14,9 @@ import (
 
 func main() {
 	if err := _main(); err != nil {
-		log.Fatal(err)
+		// protoc reads the response from stdout; the error goes to stderr.
+		slog.Error("protoc-gen-nori", "err", err)
+		os.Exit(1)
 	}
 }
 
