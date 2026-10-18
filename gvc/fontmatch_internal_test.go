@@ -81,8 +81,8 @@ func TestCandidates(t *testing.T) {
 	}
 
 	request.style.condensed = false
-	if got := request.candidates(); got[0] != "Helvetica" || got[1] != "Arial" {
-		t.Errorf("candidates start %v, want Helvetica then its substitute Arial", got[:2])
+	if got := request.candidates(); len(got) < 2 || got[0] != "Helvetica" || got[1] != "Arial" {
+		t.Errorf("candidates are %v, want Helvetica then its substitute Arial first", got)
 	}
 }
 

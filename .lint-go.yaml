@@ -219,6 +219,20 @@ golangci:
         - internal/wasm/bind.go
         - internal/tools/nori/nori/nori.pb.go
 nilaway:
-  # ONBOARDING BACKLOG, not a judgment: NilAway's findings print without
-  # failing the lane until alignment reaches them.
-  blocking: false
+  exclude-errors-in-files:
+    # Generated, as above.
+    - internal/wasm/bind.go
+    # NilAway reads RenderImage's image, assigned inside the laidOut closure,
+    # as possibly nil on success, and an error errors.Is matched as possibly
+    # nil; every finding in these tests is one of the two.
+    - callback_test.go
+    - compatible_test.go
+    - crosscheck_test.go
+    - dot_smoke_test.go
+    - message_test.go
+    - raster_page_test.go
+    - text_baseline_test.go
+    # ONBOARDING BACKLOG, not a judgment: the findings left, per file and
+    # target. Alignment empties this list as it does the linters' block.
+    - cgraph/cgraph.go # 20
+    - gvc/render_plugin.go # 18
