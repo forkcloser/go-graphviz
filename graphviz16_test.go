@@ -23,7 +23,8 @@ func TestSFDPRepeatedRender(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer g.Close()
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
 
 	g.SetLayout(graphviz.SFDP)
 
@@ -40,16 +41,16 @@ func TestSFDPRepeatedRender(t *testing.T) {
 
 		var buf bytes.Buffer
 		if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
-			graph.Close()
+			closeOrError(t, graph.Close)
 			t.Fatalf("iteration %d: %v", i, err)
 		}
 
 		if buf.Len() == 0 {
-			graph.Close()
+			closeOrError(t, graph.Close)
 			t.Fatalf("iteration %d: empty render", i)
 		}
 
-		graph.Close()
+		closeOrError(t, graph.Close)
 	}
 }
 
@@ -63,13 +64,15 @@ func TestHTMLLabel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer g.Close()
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
 
 	graph, err := g.Graph()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer graph.Close()
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
 
 	const markup = "<b>bold</b>"
 

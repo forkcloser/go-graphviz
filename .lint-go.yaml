@@ -114,32 +114,22 @@ golangci:
             - gochecknoglobals # 4
             - gochecknoinits # 1
         - path: ^compatible_test\.go$
-          linters: # 19 findings
-            - errcheck # 4
+          linters: # 15 findings
             - gochecknoglobals # 2
-        - path: ^graphviz16_test\.go$
-          linters: # 11 findings
-            - errcheck # 6
-        - path: ^graphviz_test\.go$
-          linters: # 28 findings
-            - errcheck # 5
         - path: ^gvc/device_plugin\.go$
-          linters: # 30 findings
+          linters: # 26 findings
             - gochecknoglobals # 7
-            - errcheck # 4
         - path: ^gvc/fontfind\.go$
           linters: # 4 findings
             - gochecknoglobals # 1
         - path: ^gvc/image_renderer\.go$
-          linters: # 124 findings
+          linters: # 122 findings
             - gochecknoglobals # 5
-            - errcheck # 2
         - path: ^gvc/init\.go$
           linters: # 6 findings
             - gochecknoinits # 1
         - path: ^gvc/render_plugin\.go$
-          linters: # 440 findings
-            - errcheck # 69
+          linters: # 371 findings
             - gochecknoglobals # 47
         - path: ^internal/wasm/ext\.go$
           linters: # 20 findings
