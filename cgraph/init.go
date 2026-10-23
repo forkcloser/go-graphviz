@@ -36,6 +36,18 @@ func setGlobalVars() error {
 		return err
 	}
 
+	// Graphviz's context constructor installs the node label default on the
+	// prototype graph (gvContext: agattr_text(NULL, AGNODE, "label", "\N")),
+	// so a graph read after a context exists carries `node [label="\N"];` in
+	// its DOT and one read before any context does not: the first render of a
+	// process differed from every later one. Native dot creates its context
+	// before it reads; a program parsing first had no way to. The default
+	// is installed here, at the engine's init, so a graph is the same graph
+	// whenever it is read; the constructor's later call sets the same value.
+	if err := wasm.SetDefaultAttr(ctx, int(wasm.NODE), "label", "\\N"); err != nil {
+		return err
+	}
+
 	directed, err := wasm.NewGraphDescriptor(ctx)
 	if err != nil {
 		return err
