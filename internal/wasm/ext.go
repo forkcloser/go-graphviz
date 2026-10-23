@@ -523,6 +523,16 @@ func (v *Context) RenderOutput(ctx context.Context, graph *Graph, format string)
 	return data, mod.toInt(ret), nil
 }
 
+// SetDefaultAttr installs a default on Graphviz's prototype graph: agattr
+// with a null graph, which every graph made afterwards inherits as its own
+// default of that kind (AGRAPH, AGNODE or AGEDGE). A kind Graphviz does not
+// know traps in the module, and the binding's own error carries that.
+func SetDefaultAttr(ctx context.Context, kind int, name, value string) error {
+	_, err := (&Graph{}).Attr(ctx, kind, name, value)
+
+	return err
+}
+
 // ErrCallbackPanic is the error a render, layout or other call returns when
 // a Go callback it made panicked; the panic's value follows it. The panic is
 // recovered where Graphviz called the callback and the call finishes like
