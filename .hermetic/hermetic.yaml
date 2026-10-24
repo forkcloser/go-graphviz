@@ -23,5 +23,5 @@ packages:
     registry: local
   # --- toolchain + binary-release tools (standard registry, aqua-verified) ---
   - name: bufbuild/buf@v1.74.0
-  - name: golang/go@go1.27.2
+  - name: golang/go@go1.27.3
   - import: ../.limen/hermetic.yaml
