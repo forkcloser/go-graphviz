@@ -166,6 +166,8 @@ from [limen](https://github.com/farcloser/limen) (see `AGENTS.md`).
 
 # License
 
-MIT
+MIT, see `LICENSE`.
 
-This library embeds and uses `graphviz.wasm`, which is generated based on the original source code of Graphviz. Therefore, the `graphviz.wasm` follows [the license adopted by Graphviz](https://graphviz.org/license) ( Eclipse Public License ).
+`internal/wasm/graphviz.wasm` is built from Graphviz and expat at the versions
+`pins.yaml` names: Graphviz is under the Eclipse Public License 2.0
+(`LICENSE-graphviz`), expat under the MIT license (`LICENSE-expat`).
