@@ -1,5 +1,9 @@
 version: v1
 plugins:
+  # The module's own protoc-gen-go, the `tool` directive in go.mod, so the
+  # generated file is reproducible: a plugin found on PATH is whatever
+  # version happens to be installed.
   - plugin: go
+    path: [go, tool, protoc-gen-go]
     out: .
     opt: module=github.com/forkcloser/go-graphviz/internal/tools/nori
