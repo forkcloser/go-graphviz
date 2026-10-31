@@ -3,6 +3,7 @@ package graphviz_test
 import (
 	"bytes"
 	"embed"
+	"image"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -82,6 +83,21 @@ func TestGraphviz_Image(t *testing.T) {
 
 			if len(buf.Bytes()) == 0 {
 				t.Fatal("failed to encode jpg")
+			}
+
+			// The JFIF segment Graphviz's own renderers write and Go's
+			// encoder leaves out: version 1.01, the density in dots per
+			// inch, the default 96.
+			jfif := []byte{
+				0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01, 0x01, 0x01,
+				0x00, 96, 0x00, 96, 0x00, 0x00,
+			}
+			if !bytes.HasPrefix(buf.Bytes(), jfif) {
+				t.Fatalf("jpg does not open with a JFIF segment: % x", buf.Bytes()[:min(20, buf.Len())])
+			}
+
+			if _, format, err := image.DecodeConfig(bytes.NewReader(buf.Bytes())); err != nil || format != "jpeg" {
+				t.Fatalf("jpg with the JFIF segment does not decode: %v (%s)", err, format)
 			}
 		})
 		t.Run("RenderImage", func(t *testing.T) {

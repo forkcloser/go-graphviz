@@ -42,7 +42,9 @@ The above are the formats supported by default. You can also add custom formats.
 Labels are measured for the layout and drawn with the fonts installed on the
 machine, as Graphviz's own tools do, so text fits its node in every format, and
 the same graph can lay out slightly differently on two machines with different
-fonts. A font name resolves the way Graphviz resolves it: a PostScript name such
+fonts, or against a native Graphviz on the same machine, whose pango plugin
+measures the same font through a different text engine (a node a point wider
+or narrower). A font name resolves the way Graphviz resolves it: a PostScript name such
 as `Times-Roman` or `Helvetica-Bold`, a family with style words (`DejaVu Sans
 Bold`, `Arial:italic`), or a list of them, looked up among the installed fonts by
 name, with the metric-compatible substitutes Graphviz knows (Arial for Helvetica,
