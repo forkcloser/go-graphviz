@@ -3,6 +3,7 @@ package gvc
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"image"
@@ -144,6 +145,8 @@ func (r *ImageRenderer) EndPage(ctx context.Context, job *Job) error {
 		if err := jpeg.Encode(&buf, page, &jpeg.Options{Quality: jpeg.DefaultQuality}); err != nil {
 			return fmt.Errorf("encoding the page as JPEG: %w", err)
 		}
+
+		jfif(&buf, resolution(job.DPI()))
 	}
 
 	if err := wasm.WriteJobOutput(ctx, job.wasm, buf.Bytes()); err != nil {
@@ -393,6 +396,31 @@ func resolution(dpi *PointFloat) float64 {
 	}
 
 	return dpi.X()
+}
+
+// jfif puts the JFIF segment Graphviz's own renderers write after the JPEG's
+// start-of-image marker, which Go's encoder leaves out: version 1.01 and the
+// density in dots per inch, the job's. Native Graphviz through cairo writes
+// units 0 and 72 by 72 whatever the job's resolution; ours says what the
+// pixels are, a decision, not a defect.
+func jfif(buf *bytes.Buffer, dpi float64) {
+	encoded := buf.Bytes()
+	if len(encoded) < 2 || encoded[0] != 0xFF || encoded[1] != 0xD8 {
+		return
+	}
+
+	density := uint16(math.Round(min(max(dpi, 1), math.MaxUint16)))
+	app0 := []byte{0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01, 0x01, 0x01, 0, 0, 0, 0, 0x00, 0x00}
+	binary.BigEndian.PutUint16(app0[12:], density)
+	binary.BigEndian.PutUint16(app0[14:], density)
+
+	out := make([]byte, 0, len(encoded)+len(app0))
+	out = append(out, encoded[:2]...)
+	out = append(out, app0...)
+	out = append(out, encoded[2:]...)
+
+	buf.Reset()
+	buf.Write(out)
 }
 
 // page is the finished page: the canvas, turned back for a landscape page.
