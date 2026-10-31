@@ -105,7 +105,7 @@ func main() {
   e.SetLabel("e")
 
   var buf bytes.Buffer
-  if err := g.Render(ctx, graph, "dot", &buf); err != nil {
+  if err := g.Render(ctx, graph, graphviz.GV, &buf); err != nil {
     log.Fatal(err)
   }
   fmt.Println(buf.String())
