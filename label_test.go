@@ -47,7 +47,7 @@ func layoutAndFree(t *testing.T, dot []byte, rounds int) {
 }
 
 // A label whose first line is empty is laid out and freed cleanly. Graphviz
-// 16.1.0's storeline never zeroes the first span of a label, and an empty
+// 16.1.1's storeline never zeroes the first span of a label, and an empty
 // line skips the sizing that would null its layout fields, so freeing the
 // label called through whatever the allocator left there; the wasm build
 // carries the one-line fix (internal/wasm/build/build.sh). The crazy.gv

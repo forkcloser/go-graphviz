@@ -12,12 +12,12 @@
 pins:
   - name: graphviz
     renovate: gitlab-releases graphviz/graphviz
-    version: 16.1.0
+    version: 16.1.1
     url: https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/${version}/graphviz-${version}.tar.gz
     verify: download
     digest:
-      version: 16.1.0
-      sha256: beea483ab130f456c1c3905f4f2e40778a9c493c3d73ae8012367d552d71ca84
+      version: 16.1.1
+      sha256: 42806c79271e286028b9422c7016b0368ad86beb381aa46d1d8c720f69ce3fc7
   - name: expat
     renovate: github-tags libexpat/libexpat
     versioning: regex:^R_(?<major>\d+)_(?<minor>\d+)_(?<patch>\d+)$

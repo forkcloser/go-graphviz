@@ -29,11 +29,12 @@ var (
 )
 
 // imageThreshold is how many of the 64 hash bits a render may differ from
-// the reference by. The references are dot 16.1.0's, the Graphviz this
-// module embeds; measured against them the renders differ by at most 10
-// bits, and a render with every label blank, the regression 0.3.0 shipped,
-// by more than 14 on six graphs of the corpus. The hash is coarse: this
-// catches gross differences, the raster text cross-check the finer ones.
+// the reference by. The references are dot 16.1.1's, the Graphviz this
+// module embeds; measured against them the renders differ by at most 12
+// bits (fig6.gv), and against 16.1.0's a render with every label blank,
+// the regression 0.3.0 shipped, by more than 14 on six graphs of the
+// corpus. The hash is coarse: this catches gross differences, the raster
+// text cross-check the finer ones.
 const imageThreshold = 14
 
 // TestGenerateHashes rewrites testdata/imagehash.json from the system `dot`,

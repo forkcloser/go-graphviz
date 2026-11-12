@@ -44,7 +44,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 
 ## Graphviz source edits
 
-`internal/wasm/graphviz.wasm` is Graphviz 16.1.0, built from its release tarball with these edits, which `internal/wasm/build/build.sh` applies and checks.
+`internal/wasm/graphviz.wasm` is Graphviz 16.1.1, built from its release tarball with these edits, which `internal/wasm/build/build.sh` applies and checks.
 
 | File | Edit | Why | Reported to Graphviz |
 | --- | --- | --- | --- |
