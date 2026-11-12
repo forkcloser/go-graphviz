@@ -11,7 +11,7 @@ import (
 // A WebP node image is sized as it is, whichever of the format's three
 // layouts it uses: Graphviz read every size from where only a plain lossy
 // WebP keeps it, and laid a lossless or extended one out tens of thousands
-// to hundreds of millions of points a side, as dot 16.1.0 does. The
+// to hundreds of millions of points a side, as dot 16.1.1 does. The
 // fixtures, written by libwebp's cwebp 1.6, are 40 by 40 pixels, all red
 // but the extended one, red on its left half and transparent on its right.
 func TestRasterWebPSizes(t *testing.T) {

@@ -1,6 +1,6 @@
 --- lib/gvc/gvusershape.c
 +++ lib/gvc/gvusershape.c
-@@ -372,23 +372,34 @@
+@@ -388,23 +388,34 @@
  }
  
  static void webp_size(usershape_t *us) {

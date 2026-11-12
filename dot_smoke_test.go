@@ -30,13 +30,13 @@ const (
 	// smokeSizeTolerance is how far, as a fraction, the two pages' sides
 	// may differ: this library measures text with its own fonts, so labels
 	// and the layout around them come out at slightly different widths.
-	// Against dot 16.1.0 the corpus differs by at most 8.5% (abstract.gv).
+	// Against dot 16.1.1 the corpus differs by at most 8.5% (abstract.gv).
 	smokeSizeTolerance = 0.10
 
 	// smokeMaxDifference is the mean per-pixel difference, out of 255, of
 	// the two pages scaled to a common thumbnail, above which a graph
 	// fails: a blank or misplaced label moves it a little, a missing node
-	// or a wrong fill a lot. Against dot 16.1.0 the corpus measures at
+	// or a wrong fill a lot. Against dot 16.1.1 the corpus measures at
 	// most 16.1 (psfonttest.gv, where the two pick different fonts).
 	smokeMaxDifference = 20.0
 

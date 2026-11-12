@@ -137,7 +137,7 @@ grep -q '^  if (us->f) {$' "${usershape}" || {
 # A third: webp_size reads a WebP's size from where only a plain lossy one
 # keeps it, so a lossless (VP8L) or extended (VP8X) WebP, any with alpha,
 # came out tens of thousands to hundreds of millions of points a side, as it
-# does in dot 16.1.0. webp-size.patch reads each layout's canvas size from
+# does in dot 16.1.1. webp-size.patch reads each layout's canvas size from
 # where the format keeps it.
 # The patch is applied only to the file it was written against, this
 # Graphviz's gvusershape.c after the edit above, by digest: patch applies a
@@ -145,7 +145,7 @@ grep -q '^  if (us->f) {$' "${usershape}" || {
 # after a Graphviz bump a fuzzed hunk could land on a changed webp_size and
 # bring its marker with it. A new Graphviz means rechecking the patch and
 # this digest together.
-webp_size_base=75ea4df566d9627b88748d1f684c6edddeb50aafee074e969a12b7dad796b048
+webp_size_base=1af7a25ce49beda3222bd12dac1adbf67ffa11301a6112588a755138b5400e67
 if ! grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${usershape}"; then
   echo "${webp_size_base}  ${usershape}" | sha256sum -c - > /dev/null || {
     echo "gvusershape.c: not the file webp-size.patch was written against; recheck the patch for this Graphviz" >&2
