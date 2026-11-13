@@ -2,9 +2,10 @@
 # (book/tooling.md, "Pinned artifacts beyond aqua"). internal/wasm/build/build.sh
 # reads each entry back with `limen pins get <name> url|sha256`, Renovate
 # proposes the bumps from the renovate: lines, and `limen pins refresh`
-# recomputes a digest a bump left behind. None of these projects signs its
-# assets in a form limen verifies, so the method is the download itself: TLS
-# at refresh time, the digest at every build after.
+# recomputes a digest a bump left behind. expat signs its release tarballs,
+# and that entry is held to the signature. The other projects sign nothing
+# limen verifies, so their method is the download itself: TLS at refresh
+# time, the digest at every build after.
 #
 # wasi-sdk and binaryen come as one archive per host; the four hosts the
 # build runs on (CI's Linux x86_64, the Linux arm64 and macOS arm64 of
@@ -18,15 +19,20 @@ pins:
     digest:
       version: 16.1.1
       sha256: 42806c79271e286028b9422c7016b0368ad86beb381aa46d1d8c720f69ce3fc7
+  # The release tarball, the one libexpat signs, not the tag's archive: the
+  # sources under lib/ are the same files. Sebastian Pipping, who publishes
+  # the releases, signs them with the signing subkey of his key
+  # 3176EF7DB2367F1FCA4F306B1F9B0E909AF37285, the key of his GitHub account;
+  # the fingerprint here is the subkey's, which is the key that signs.
   - name: expat
     renovate: github-tags libexpat/libexpat
     versioning: regex:^R_(?<major>\d+)_(?<minor>\d+)_(?<patch>\d+)$
     version: R_2_10_0
-    url: https://github.com/libexpat/libexpat/archive/refs/tags/${version}.tar.gz
-    verify: download
+    url: https://github.com/libexpat/libexpat/releases/download/${version}/expat-${major}.${minor}.${patch}.tar.gz
+    verify: pgp-detached https://github.com/libexpat/libexpat/releases/download/${version}/expat-${major}.${minor}.${patch}.tar.gz.asc https://github.com/hartwork.gpg CB8DE70A90CFBF6C3BF5CC5696262ACFFBD3AEC6
     digest:
       version: R_2_10_0
-      sha256: b3644a12f62d7762b62c444f69d169ba0234f13138d0240244bca64cbe35286f
+      sha256: 5466a341f9c692ef7a958a6881311be597f8e1ce345984cf78414f54793dea4c
   - name: wasi-sdk-linux-amd64
     renovate: github-releases WebAssembly/wasi-sdk
     extract-version: ^wasi-sdk-(?<version>\d+)$

@@ -76,7 +76,7 @@ unpack() {
 
 sdk_dir="wasi-sdk-${wasi_sdk_version}.0-${sdk_host}"
 binaryen_dir="binaryen-version_${binaryen_version}"
-expat_dir="libexpat-${expat_tag}"
+expat_dir="expat-${expat_version}"
 gv_dir="graphviz-${graphviz_version}"
 
 fetch "wasi-sdk-${host}" "${sdk_dir}.tar.gz"
@@ -91,7 +91,7 @@ unpack "${gv_dir}.tar.gz" "${gv_dir}"
 sdk="${work}/src/${sdk_dir}"
 wasm_opt="${work}/src/${binaryen_dir}/bin/wasm-opt"
 gv="${work}/src/${gv_dir}"
-expat="${work}/src/${expat_dir}/expat"
+expat="${work}/src/${expat_dir}"
 
 # The sources are built as they ship, with three exceptions, each applied to
 # the unpacked copy: configure's two outputs are replaced by the checked-in
