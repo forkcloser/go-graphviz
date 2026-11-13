@@ -27,7 +27,6 @@ out="${root}/internal/wasm/graphviz.wasm"
 # The pins name hosts the Go way; the archives name them their own way.
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64) host=macos-arm64; sdk_host=arm64-macos; binaryen_host=arm64-macos ;;
-  Darwin-x86_64) host=macos-amd64; sdk_host=x86_64-macos; binaryen_host=x86_64-macos ;;
   Linux-aarch64) host=linux-arm64; sdk_host=arm64-linux; binaryen_host=aarch64-linux ;;
   Linux-x86_64) host=linux-amd64; sdk_host=x86_64-linux; binaryen_host=x86_64-linux ;;
   *) echo "unsupported host $(uname -s)-$(uname -m)" >&2; exit 1 ;;
