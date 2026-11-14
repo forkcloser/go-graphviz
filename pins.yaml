@@ -7,9 +7,9 @@
 # limen verifies, so their method is the download itself: TLS at refresh
 # time, the digest at every build after.
 #
-# wasi-sdk and binaryen come as one archive per host; the four hosts the
+# wasi-sdk and binaryen come as one archive per host; the three hosts the
 # build runs on (CI's Linux x86_64, the Linux arm64 and macOS arm64 of
-# laptops and microVMs, macOS x86_64) are four entries each, moved together.
+# laptops and microVMs) are three entries each, moved together.
 pins:
   - name: graphviz
     renovate: gitlab-releases graphviz/graphviz
@@ -60,15 +60,6 @@ pins:
     digest:
       version: 34
       sha256: 9c59398106b417f8f14913380fdf0097a8cc0ff4af9eb3ce0065a859e88d49e9
-  - name: wasi-sdk-macos-amd64
-    renovate: github-releases WebAssembly/wasi-sdk
-    extract-version: ^wasi-sdk-(?<version>\d+)$
-    version: 34
-    url: https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${version}/wasi-sdk-${version}.0-x86_64-macos.tar.gz
-    verify: download
-    digest:
-      version: 34
-      sha256: 87d27fa8adc68dee59bfbf2e22a6d34ef717c34d6bf1d8af2a56fc929d9ce0eb
   - name: binaryen-linux-amd64
     renovate: github-releases WebAssembly/binaryen
     extract-version: ^version_(?<version>\d+)$
@@ -96,12 +87,3 @@ pins:
     digest:
       version: 133
       sha256: ad66da82ac13f163e424b1643f16c6dfcccc98b5966296b43e52d3cab04f84a8
-  - name: binaryen-macos-amd64
-    renovate: github-releases WebAssembly/binaryen
-    extract-version: ^version_(?<version>\d+)$
-    version: 133
-    url: https://github.com/WebAssembly/binaryen/releases/download/version_${version}/binaryen-version_${version}-x86_64-macos.tar.gz
-    verify: download
-    digest:
-      version: 133
-      sha256: 13a9b90be775c6389ce3d1f879cb8627bea56708ba8c122983941d53a8199b95
