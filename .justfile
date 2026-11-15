@@ -11,13 +11,21 @@ security: do::security::default
 
 # Graphviz, expat and the C bridge compiled to wasm32-wasip1 and shrunk, from
 # the inputs pinned in pins.yaml; the result is internal/wasm/graphviz.wasm,
-# byte-identical on every host (the ci workflow rebuilds and compares). Set
-# WORK to keep the downloads and the unpacked sources outside the tree.
+# byte-identical on every host (the ci workflow rebuilds and compares, with
+# `just do lint converge`, which `lint` leaves out: it fetches a toolchain,
+# pinned for three hosts). Set WORK to keep the downloads and the unpacked
+# sources outside the tree.
 [doc('Rebuild internal/wasm/graphviz.wasm from the pinned Graphviz, expat, wasi-sdk and binaryen')]
 wasm:
     #!/usr/bin/env bash
     set -euo pipefail
     ./internal/wasm/build/build.sh
+
+# Rewrite every file .converge declares, the wasm module, from the tree as it
+# stands: what the checksum workflow runs on a Renovate branch that moved one
+# of the module's pins, and commits.
+[doc('Rebuild the files derived from pins.yaml (.converge)')]
+converge: wasm
 
 # The Go and C halves of the bridge, from internal/wasm/bind.proto: buf runs
 # nori, this repository's own protoc plugin, built here from source so the

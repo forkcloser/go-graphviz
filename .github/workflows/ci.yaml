@@ -177,8 +177,12 @@ jobs:
   # produces from pins.yaml, byte for byte, on any host. Two builds from two
   # work directories, on Linux x86_64 and macOS arm64, each compared with the
   # committed file; a pin that moves without its blob, or a blob nobody can
-  # rebuild from the tree, fails here. The toolchain downloads (~200 MB per
-  # host) are cached on the pins.
+  # rebuild from the tree, fails here. The first is limen's converge lane,
+  # which also fails when the build touches a file .converge does not
+  # declare, as the checksum workflow would refuse a Renovate branch for. It
+  # runs here and not in `lint`: the lane runs where the recipe runs, and the
+  # build's toolchain is pinned for three hosts of the five lint runs on.
+  # The toolchain downloads (~200 MB per host) are cached on the pins.
   wasm:
     strategy:
       fail-fast: false
@@ -201,12 +205,13 @@ jobs:
           path: build/wasm/dl
           key: wasm-inputs-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pins.yaml') }}
 
-      - name: Build once
-        run: just wasm
+      - name: Build once, to the committed blob and no other file
+        run: just do lint converge
+      # Whatever the lane said: when it refuses the build, it has put the
+      # committed module back, and the raw one is what tells the two apart.
       - name: Digests, for the log
+        if: always()
         run: sha256sum build/wasm/out/graphviz.raw.wasm internal/wasm/graphviz.wasm
-      - name: The build matches the committed blob
-        run: git diff --exit-code --stat -- internal/wasm/graphviz.wasm
       - name: Build again, elsewhere
         # The downloads are reused; everything else is unpacked and built anew.
         run: |

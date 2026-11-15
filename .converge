@@ -1,0 +1,3 @@
+# The wasm module: it is built from the Graphviz, expat, wasi-sdk and binaryen
+# pins. `just converge` rebuilds it.
+internal/wasm/graphviz.wasm
