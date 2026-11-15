@@ -206,3 +206,47 @@ func TestContractCallInsideACallIgnoresItsContext(t *testing.T) {
 		t.Errorf("a render inside a call, under another done context: %v, %d bytes; want it rendered", err, out.Len())
 	}
 }
+
+// TestContractErrWhileACallHoldsTheEngine: Graph.Err asked by one goroutine
+// while another holds the engine waits for it, and does not stop the holder
+// asking Err itself, which every render does when it lays out. Both come
+// back.
+func TestContractErrWhileACallHoldsTheEngine(t *testing.T) {
+	t.Parallel()
+
+	_, graph := contextGraph(t)
+
+	holding, asking := make(chan struct{}), make(chan struct{})
+	held, asked := make(chan error, 1), make(chan error, 1)
+
+	go func() {
+		held <- wasm.Exclusive(t.Context(), func(context.Context) error {
+			close(holding)
+			<-asking
+			// Long enough for the other goroutine to be inside Err,
+			// waiting for the engine this one holds.
+			time.Sleep(200 * time.Millisecond)
+
+			return graph.Err() //nolint:contextcheck // Err takes no context
+		})
+	}()
+
+	<-holding
+
+	go func() {
+		close(asking)
+
+		asked <- graph.Err()
+	}()
+
+	for name, came := range map[string]chan error{"the call that holds the engine": held, "the goroutine that waited": asked} {
+		select {
+		case err := <-came:
+			if err != nil {
+				t.Errorf("%s: Err = %v, want nil", name, err)
+			}
+		case <-time.After(20 * time.Second):
+			t.Fatalf("%s never came back from Err", name)
+		}
+	}
+}
