@@ -77,6 +77,78 @@ func (l *reentrantLock) enter(ctx context.Context) (context.Context, func(), boo
 	return withToken(ctx, l.token.Load()), l.unlock, outermost
 }
 
+// enterWaiting is enter for a call that honours its context: a caller that
+// does not hold the lock gets ctx's error when ctx is done before the lock
+// is its, and takes nothing then. The holder is let in whatever ctx says:
+// what it runs inside its own call is the rest of that call, the frees
+// among it.
+func (l *reentrantLock) enterWaiting(ctx context.Context) (context.Context, entered, error) {
+	if tok := tokenOf(ctx); tok != nil && tok == l.token.Load() {
+		return ctx, entered{leave: func() {}}, nil
+	}
+
+	current := goroutineID()
+	if l.holder.Load() == current {
+		l.depth++
+
+		return withToken(ctx, l.token.Load()), entered{leave: l.unlock}, nil
+	}
+
+	if err := ctx.Err(); err != nil {
+		//nolint:wrapcheck // the bare ctx.Err() is the cancellation contract: callers match it with errors.Is
+		return ctx, entered{}, err
+	}
+
+	if err := l.wait(ctx); err != nil {
+		return ctx, entered{}, err
+	}
+
+	l.holder.Store(current)
+	l.depth = 1
+	l.token.Store(new(callToken))
+
+	return withToken(ctx, l.token.Load()), entered{leave: l.unlock, outermost: true}, nil
+}
+
+// entered is a call let into the module: what gives the lock back, and
+// whether the call is the outermost one, which a parked callback error
+// belongs to.
+type entered struct {
+	leave     func()
+	outermost bool
+}
+
+// wait takes the mutex, or gives up with ctx's error when ctx is done first.
+func (l *reentrantLock) wait(ctx context.Context) error {
+	if l.mu.TryLock() {
+		return nil
+	}
+
+	// A mutex cannot be waited on with a context: a goroutine waits on it
+	// and hands it over, or gives it back when nobody is waiting any more.
+	handed, abandoned := make(chan struct{}), make(chan struct{})
+
+	go func() {
+		l.mu.Lock()
+
+		select {
+		case handed <- struct{}{}:
+		case <-abandoned:
+			l.mu.Unlock()
+		}
+	}()
+
+	select {
+	case <-handed:
+		return nil
+	case <-ctx.Done():
+		close(abandoned)
+
+		//nolint:wrapcheck // the bare ctx.Err(), as above
+		return ctx.Err()
+	}
+}
+
 func (l *reentrantLock) lock() {
 	if l.mu.TryLock() {
 		l.holder.Store(goroutineID())
@@ -213,16 +285,25 @@ func TakeLastError() string {
 // that no other goroutine's call runs between the calls it makes; it makes
 // them through the context it is given, which carries the lock's token. An
 // error a callback parked meanwhile is returned with its own.
+//
+// It honours ctx until calls starts: when ctx is done before the module is
+// free, it returns ctx's error and calls does not run. Once calls runs,
+// nothing stops it: the module cannot be interrupted without being closed.
+// Called from inside another Exclusive, it runs calls whatever ctx says.
 func Exclusive(ctx context.Context, calls func(context.Context) error) error {
 	if mod.mod == nil {
 		return mod.unavailable()
 	}
 
-	ctx, leave, outermost := mod.lock.enter(ctx)
-	defer leave()
+	ctx, call, err := mod.lock.enterWaiting(ctx)
+	if err != nil {
+		return err
+	}
 
-	err := calls(ctx)
-	if !outermost {
+	defer call.leave()
+
+	err = calls(ctx)
+	if !call.outermost {
 		return err
 	}
 

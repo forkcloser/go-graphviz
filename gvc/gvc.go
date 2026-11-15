@@ -84,26 +84,44 @@ func (c *Context) Close() error {
 // Layout lays the graph out with the named engine. It first returns the
 // error a typed setter met on the graph (cgraph.Graph.Err), if one did: the
 // graph does not hold what the program set.
-func (c *Context) Layout(ctx context.Context, g *cgraph.Graph, engine string) error {
-	if err := g.Err(); err != nil {
+//
+// ctx is honoured until the layout starts: when it is done before the
+// module is free for this call, Layout returns its error and lays nothing
+// out. A layout that is running is not interrupted, whatever ctx does.
+func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string) error {
+	if err := graph.Err(); err != nil {
 		return fmt.Errorf("setting an attribute of the graph: %w", err)
 	}
 
-	res, err := c.gvc.Layout(ctx, toGraphWasm(g), engine)
-	if err != nil {
-		return err
-	}
+	return wasm.Exclusive(ctx, func(ctx context.Context) error {
+		res, err := c.gvc.Layout(ctx, toGraphWasm(graph), engine)
+		if err != nil {
+			return err
+		}
 
-	return toError(res)
+		return toError(res)
+	})
 }
 
+// RenderData renders graph, which a Layout has laid out, in format and
+// writes the result to w.
+//
+// ctx is honoured until the render starts, as Layout's is; a render that is
+// running is not interrupted.
 func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format string, w io.Writer) error {
-	rendered, res, err := c.gvc.RenderOutput(ctx, toGraphWasm(graph), format)
-	if err != nil {
-		return err
-	}
+	var rendered string
 
-	if err := toError(res); err != nil {
+	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
+		out, res, err := c.gvc.RenderOutput(ctx, toGraphWasm(graph), format)
+		if err != nil {
+			return err
+		}
+
+		rendered = out
+
+		return toError(res)
+	})
+	if err != nil {
 		return err
 	}
 
