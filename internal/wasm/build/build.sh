@@ -89,6 +89,7 @@ unpack "${gv_dir}.tar.gz" "${gv_dir}"
 
 sdk="${work}/src/${sdk_dir}"
 wasm_opt="${work}/src/${binaryen_dir}/bin/wasm-opt"
+wasm_dis="${work}/src/${binaryen_dir}/bin/wasm-dis"
 gv="${work}/src/${gv_dir}"
 expat="${work}/src/${expat_dir}"
 
@@ -179,6 +180,12 @@ raw="${work}/out/graphviz.raw.wasm"
 # wasm_bridge_ functions, which bind.c and patch.c mark with WASM_EXPORT.
 # Whatever Graphviz code none of them reaches is left out, which
 # --export-all kept.
+#
+# It imports what bind.c marks with WASM_IMPORT, the callbacks the Go host
+# provides, and the WASI calls listed after the link. The link takes no
+# --import-undefined, so a symbol no source defines (a file missing from the
+# list below) stops the build here, where with the flag it became an import
+# the host does not have and the module failed to load.
 
 echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm32-wasip1 with wasi-sdk ${wasi_sdk_version}"
 "${sdk}/bin/clang" \
@@ -206,7 +213,6 @@ echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm
   -Wl,--export=free \
   -Wl,--no-entry \
   -Wl,--error-limit=0 \
-  -Wl,--import-undefined \
   -funsigned-char \
   -fno-strict-aliasing \
   -D_WASI_EMULATED_SIGNAL \
@@ -283,6 +289,30 @@ echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm
   "${here}/patch.c" \
   "${here}/bind.c" \
   -o "${raw}"
+
+# What the link does not see: an import some source declares for itself, and a
+# WASI call a new wasi-libc starts to make. Every import of the module is a
+# callback bind.c declares or one of the WASI calls below, which are the ones
+# the module makes today and the host provides; anything else stops the build
+# with its name, where it would have failed the load. A new WASI call is added
+# here once the host is known to provide it.
+wasi=(
+  clock_time_get environ_get environ_sizes_get fd_close fd_fdstat_get
+  fd_fdstat_set_flags fd_filestat_get fd_pread fd_prestat_dir_name
+  fd_prestat_get fd_read fd_seek fd_write path_filestat_get path_open
+  proc_exit random_get
+)
+callbacks="$(sed -n 's/^WASM_IMPORT(\(.*\))$/env \1/p' "${here}/bind.c")"
+[ -n "${callbacks}" ] || { echo "bind.c declares no import: WASM_IMPORT is not where this check reads it" >&2; exit 1; }
+allowed="$({ echo "${callbacks}"; printf 'wasi_snapshot_preview1 %s\n' "${wasi[@]}"; } | sort)"
+imported="$("${wasm_dis}" "${raw}" | sed -n 's/^ *(import "\([^"]*\)" "\([^"]*\)".*/\1 \2/p' | sort)"
+[ -n "${imported}" ] || { echo "the module has no import: wasm-dis does not print them as this check reads them" >&2; exit 1; }
+unknown="$(comm -13 <(echo "${allowed}") <(echo "${imported}"))"
+if [ -n "${unknown}" ]; then
+  echo "the module imports what is neither a callback bind.c declares nor a WASI call build.sh lists:" >&2
+  echo "${unknown}" >&2
+  exit 1
+fi
 
 echo "optimizing with binaryen ${binaryen_version}"
 "${wasm_opt}" -g --strip --strip-producers -c -Os "${raw}" -o "${out}"
