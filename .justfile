@@ -10,7 +10,10 @@ test: oracle
     #!/usr/bin/env bash
     set -euo pipefail
     # With a native dot pinned for this platform, `oracle` has fetched it,
-    # and a test that cannot find it fails where it would skip.
+    # and a test that cannot find it fails where it would skip. limen fails
+    # the same way for a pin that is not there and for pins it cannot read,
+    # so the graphviz pin, which is always there, tells the two apart.
+    limen pins get graphviz version > /dev/null
     if limen pins get "dot-$(go env GOHOSTOS)-$(go env GOHOSTARCH)" url > /dev/null 2>&1; then
       export GO_GRAPHVIZ_ORACLE=required
     fi
@@ -47,6 +50,10 @@ oracle:
     #!/usr/bin/env bash
     set -euo pipefail
     host="$(go env GOHOSTOS)-$(go env GOHOSTARCH)"
+    # limen fails the same way for a pin that is not there and for pins it
+    # cannot read: the graphviz pin, which is always there, tells the two
+    # apart, and pins that cannot be read stop the recipe.
+    limen pins get graphviz version > /dev/null
     if ! url="$(limen pins get "dot-${host}" url 2> /dev/null)"; then
       echo "no native dot is pinned for ${host}" >&2
       exit 0
