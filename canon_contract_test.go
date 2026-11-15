@@ -136,10 +136,12 @@ func majorMinor(version string) string {
 }
 
 // TestContractCanonMatchesTheNativeDot: the canonical form go-graphviz
-// renders for a graph (-Tcanon: the parsed graph written back, every
-// attribute in place, nothing laid out) is the native dot's canonical
-// form of the same text, byte for byte after trailing whitespace: the two
-// parsers read the same graph.
+// renders for a graph laid out with dot (-Tcanon: the graph written back,
+// every attribute in place, no position) is the canonical form `dot -Tcanon`
+// writes for the same text, byte for byte once the bounding box and the
+// whitespace are set aside: the two parsers read the same graph. One graph
+// is held apart, for a difference between Graphviz's library and its
+// command, and the test fails when that difference is gone.
 func TestContractCanonMatchesTheNativeDot(t *testing.T) {
 	t.Parallel()
 
@@ -154,23 +156,21 @@ func TestContractCanonMatchesTheNativeDot(t *testing.T) {
 	// Cleanup, not defer: the parallel subtests outlive this function's body.
 	t.Cleanup(func() { _ = g.Close() })
 
-	// The nop layout lays nothing out: Render then writes the parsed
-	// graph as the system's -Tcanon does, no bounding box added.
-	g.SetLayout(graphviz.NOP)
+	// The layout `dot -Tcanon` runs: it is not a no-op on the graph (it moves
+	// an edge between two nodes of a cluster into the cluster), so another
+	// layout here writes another canonical form.
+	g.SetLayout(graphviz.DOT)
 
-	// Held apart, with the owner: for these two the wasm build and the
-	// system binary of the same graphviz version write subgraphs apart.
-	// "cluster" writes an edge declared at the root inside the cluster that
-	// holds both its ends in the system's form, at the root in ours; "group"
-	// keeps the anonymous subgraph of `a -> { b c d } -> e` in ours and
-	// drops it in the system's.
-	held := map[string]bool{"cluster": true, "group": true}
+	// Held apart: the library's entry point, gvLayout, stamps the root with
+	// its bounding box (lib/gvc/gvc.c:78, `agsafeset(g, "bb", buf, "")`),
+	// which the command's gvLayoutJobs does not. The canonical writer drops
+	// an anonymous subgraph only when none of its attributes differs from
+	// its parent's (lib/cgraph/write.c:409, irrelevant_subgraph), and bb now
+	// does: the `{ b c d }` of "group" is written by the library and dropped
+	// by the command. The graph read is the same.
+	held := map[string]bool{"group": true}
 
 	for name, src := range canonCorpus() {
-		if held[name] {
-			continue
-		}
-
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -194,9 +194,14 @@ func TestContractCanonMatchesTheNativeDot(t *testing.T) {
 				t.Fatalf("%s -Tcanon: %v", dot, err)
 			}
 
-			// Even the nop layout stamps a bounding box; the system's -Tcanon
-			// writes none. The box is not the graph.
-			if a, b := withoutBoundingBox(ours.String()), withoutBoundingBox(string(theirs)); a != b {
+			// The library stamps a bounding box; the command's -Tcanon writes
+			// none. The box is not the graph.
+			a, b := withoutBoundingBox(ours.String()), withoutBoundingBox(string(theirs))
+
+			switch {
+			case held[name] && a == b:
+				t.Errorf("held apart, and the canonical forms are the same: it is held for nothing\n%s", a)
+			case !held[name] && a != b:
 				t.Errorf("canonical forms differ\nours:\n%s\ntheirs:\n%s", a, b)
 			}
 		})
