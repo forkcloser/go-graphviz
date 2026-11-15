@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -35,33 +37,75 @@ func canonCorpus() map[string]string {
 	}
 }
 
-// systemDot is the system's dot of the graphviz release go-graphviz embeds:
-// the canonical writer changes between releases, so another version is not
-// an oracle and the test skips. The CI lanes carry no graphviz yet, so the
-// check runs locally only until they install this release.
-func systemDot(t *testing.T) string {
+// oracleRequired is what `just test` sets GO_GRAPHVIZ_ORACLE to once it has
+// fetched the native dot pinned for this platform: from then on a missing
+// oracle is a failure, not a skip.
+const oracleRequired = "required"
+
+// nativeDot is Graphviz's own dot of the release go-graphviz embeds: the
+// canonical writer changes between releases, so another version is not an
+// oracle.
+//
+// It is the one `just oracle` fetches into build/oracle, pinned in pins.yaml
+// beside the release it is built from: there, a dot that is not that release
+// fails the test, and so does a missing one when GO_GRAPHVIZ_ORACLE says it
+// was fetched, which is how the CI lanes run. Without it, a dot on PATH of
+// the same major.minor will do (a patch release keeps the writer), and the
+// test skips when there is none.
+func nativeDot(t *testing.T) string {
 	t.Helper()
+
+	want := embeddedGraphvizVersion(t)
+
+	exe := ""
+	if runtime.GOOS == "windows" {
+		exe = ".exe"
+	}
+
+	pinned := filepath.Join("build", "oracle", "graphviz-"+runtime.GOOS+"-"+runtime.GOARCH, "dot"+exe)
+	if _, err := os.Stat(pinned); err == nil {
+		if got := dotVersion(t, pinned); got != want {
+			t.Fatalf(
+				"%s is graphviz %q, pins.yaml builds %s: the dot pins move with the graphviz pin",
+				pinned,
+				got,
+				want,
+			)
+		}
+
+		return pinned
+	}
+
+	if os.Getenv("GO_GRAPHVIZ_ORACLE") == oracleRequired {
+		t.Fatalf("no native dot at %s: `just oracle` fetches it", pinned)
+	}
 
 	dot, err := exec.LookPath("dot")
 	if err != nil {
-		t.Skip("no system dot")
+		t.Skip("no native dot: `just oracle` fetches the pinned one")
 	}
 
-	version, err := exec.CommandContext(t.Context(), dot, "-V").CombinedOutput()
-	if err != nil {
-		t.Skipf("%s -V: %v", dot, err)
-	}
-
-	// The token after the banner, so 16.10 is not 16.1; a patch release
-	// keeps the writer, so major.minor is the match.
-	_, after, found := strings.Cut(string(version), "graphviz version ")
-	token, _, _ := strings.Cut(after, " ")
-
-	if want := embeddedGraphvizVersion(t); !found || majorMinor(token) != majorMinor(want) {
-		t.Skipf("system dot is not graphviz %s: %s", want, strings.TrimSpace(string(version)))
+	if got := dotVersion(t, dot); majorMinor(got) != majorMinor(want) {
+		t.Skipf("%s is graphviz %q, not %s: `just oracle` fetches the pinned one", dot, got, want)
 	}
 
 	return dot
+}
+
+// dotVersion is the version `dot -V` prints after its banner, empty when it
+// prints none: the whole token, so 16.10 is not 16.1.
+func dotVersion(t *testing.T, dot string) string {
+	t.Helper()
+
+	banner, err := exec.CommandContext(t.Context(), dot, "-V").CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s -V: %v", dot, err)
+	}
+
+	_, after, _ := strings.Cut(string(banner), "graphviz version ")
+	version, _, _ := strings.Cut(strings.TrimSpace(after), " ")
+
+	return version
 }
 
 // embeddedGraphvizVersion is the graphviz release pins.yaml names for the
@@ -91,15 +135,17 @@ func majorMinor(version string) string {
 	return strings.Join(parts[:min(2, len(parts))], ".")
 }
 
-// TestContractCanonMatchesTheSystemDot: the canonical form go-graphviz
-// renders for a graph (-Tcanon: the parsed graph written back, every
-// attribute in place, nothing laid out) is the system dot's canonical
-// form of the same text, byte for byte after trailing whitespace: the two
-// parsers read the same graph.
-func TestContractCanonMatchesTheSystemDot(t *testing.T) {
+// TestContractCanonMatchesTheNativeDot: the canonical form go-graphviz
+// renders for a graph laid out with dot (-Tcanon: the graph written back,
+// every attribute in place, no position) is the canonical form `dot -Tcanon`
+// writes for the same text, byte for byte once the bounding box and the
+// whitespace are set aside: the two parsers read the same graph. One graph
+// is held apart, for a difference between Graphviz's library and its
+// command, and the test fails when that difference is gone.
+func TestContractCanonMatchesTheNativeDot(t *testing.T) {
 	t.Parallel()
 
-	dot := systemDot(t)
+	dot := nativeDot(t)
 	ctx := t.Context()
 
 	g, err := graphviz.New(ctx)
@@ -110,23 +156,21 @@ func TestContractCanonMatchesTheSystemDot(t *testing.T) {
 	// Cleanup, not defer: the parallel subtests outlive this function's body.
 	t.Cleanup(func() { _ = g.Close() })
 
-	// The nop layout lays nothing out: Render then writes the parsed
-	// graph as the system's -Tcanon does, no bounding box added.
-	g.SetLayout(graphviz.NOP)
+	// The layout `dot -Tcanon` runs: it is not a no-op on the graph (it moves
+	// an edge between two nodes of a cluster into the cluster), so another
+	// layout here writes another canonical form.
+	g.SetLayout(graphviz.DOT)
 
-	// Held apart, with the owner: for these two the wasm build and the
-	// system binary of the same graphviz version write subgraphs apart.
-	// "cluster" writes an edge declared at the root inside the cluster that
-	// holds both its ends in the system's form, at the root in ours; "group"
-	// keeps the anonymous subgraph of `a -> { b c d } -> e` in ours and
-	// drops it in the system's.
-	held := map[string]bool{"cluster": true, "group": true}
+	// Held apart: the library's entry point, gvLayout, stamps the root with
+	// its bounding box (lib/gvc/gvc.c:78, `agsafeset(g, "bb", buf, "")`),
+	// which the command's gvLayoutJobs does not. The canonical writer drops
+	// an anonymous subgraph only when none of its attributes differs from
+	// its parent's (lib/cgraph/write.c:409, irrelevant_subgraph), and bb now
+	// does: the `{ b c d }` of "group" is written by the library and dropped
+	// by the command. The graph read is the same.
+	held := map[string]bool{"group": true}
 
 	for name, src := range canonCorpus() {
-		if held[name] {
-			continue
-		}
-
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -150,9 +194,14 @@ func TestContractCanonMatchesTheSystemDot(t *testing.T) {
 				t.Fatalf("%s -Tcanon: %v", dot, err)
 			}
 
-			// Even the nop layout stamps a bounding box; the system's -Tcanon
-			// writes none. The box is not the graph.
-			if a, b := withoutBoundingBox(ours.String()), withoutBoundingBox(string(theirs)); a != b {
+			// The library stamps a bounding box; the command's -Tcanon writes
+			// none. The box is not the graph.
+			a, b := withoutBoundingBox(ours.String()), withoutBoundingBox(string(theirs))
+
+			switch {
+			case held[name] && a == b:
+				t.Errorf("held apart, and the canonical forms are the same: it is held for nothing\n%s", a)
+			case !held[name] && a != b:
 				t.Errorf("canonical forms differ\nours:\n%s\ntheirs:\n%s", a, b)
 			}
 		})

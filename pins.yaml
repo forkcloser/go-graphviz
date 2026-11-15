@@ -12,6 +12,15 @@
 # wasi-sdk and binaryen come as one archive per host; the three hosts the
 # build runs on (CI's Linux x86_64, the Linux arm64 and macOS arm64 of
 # laptops and microVMs) are three entries each, moved together.
+#
+# The dot-<os>-<arch> entries are not inputs of the module: they are the
+# native dot the tests compare it with (`just oracle`), Graphviz's own, built
+# unpatched by forkcloser/testbin from the release the graphviz entry pins,
+# one archive per platform the tests run on, moved together. testbin attests
+# its archives, and the entries are held to the attestation. When the
+# graphviz entry moves, testbin releases that Graphviz first and these move
+# to that release in the same change: the oracle fails on a dot that is not
+# the pinned release.
 pins:
   - name: graphviz
     renovate: gitlab-releases graphviz/graphviz
@@ -97,3 +106,48 @@ pins:
       version: 133
       source: 8e5ef7b9ff1f0a8f82126e102a673fb26464d75496a1238cd88d1c3fed00dd8d
       sha256: ad66da82ac13f163e424b1643f16c6dfcccc98b5966296b43e52d3cab04f84a8
+  - name: dot-linux-amd64
+    renovate: github-releases forkcloser/testbin
+    version: 0.4.0
+    url: https://github.com/forkcloser/testbin/releases/download/v${version}/graphviz-linux-amd64.tar.gz
+    verify: github-attestation forkcloser/testbin forkcloser/testbin/.github/workflows/release.yaml
+    digest:
+      version: 0.4.0
+      source: 90115b13df6efa0be1bd75b5e4f2918b8b551d2bfda26d82f3e1ce3b195cd8c9
+      sha256: 1d390a2e9e8f6d1103065def43f6bd03bbe34a029ea9ad49a5fc234d8978c00e
+  - name: dot-linux-arm64
+    renovate: github-releases forkcloser/testbin
+    version: 0.4.0
+    url: https://github.com/forkcloser/testbin/releases/download/v${version}/graphviz-linux-arm64.tar.gz
+    verify: github-attestation forkcloser/testbin forkcloser/testbin/.github/workflows/release.yaml
+    digest:
+      version: 0.4.0
+      source: cbe0e599e1987b13a73b7586ddbf81de83f1babe29be96a9030581503caecdd4
+      sha256: 5fa83c24058ef7dcca1d978108f01d1e474f43396fbd1fb81f6dffac974a1093
+  - name: dot-darwin-arm64
+    renovate: github-releases forkcloser/testbin
+    version: 0.4.0
+    url: https://github.com/forkcloser/testbin/releases/download/v${version}/graphviz-darwin-arm64.tar.gz
+    verify: github-attestation forkcloser/testbin forkcloser/testbin/.github/workflows/release.yaml
+    digest:
+      version: 0.4.0
+      source: bf1c19e72dda574939b7761d4b0140b8a1e17189921764648b202fb9b12e5f67
+      sha256: cc7b3602e3fb57872cfa12b14661d86cf8a507246bc9ed7f3b76f0bc253c12c4
+  - name: dot-windows-amd64
+    renovate: github-releases forkcloser/testbin
+    version: 0.4.0
+    url: https://github.com/forkcloser/testbin/releases/download/v${version}/graphviz-windows-amd64.tar.gz
+    verify: github-attestation forkcloser/testbin forkcloser/testbin/.github/workflows/release.yaml
+    digest:
+      version: 0.4.0
+      source: 9b0c169912d107065008ce07b3334818433246e6fb85c336e97d445a9f311d69
+      sha256: 8cbb95dc25e99cefcdd2115838c83d2aec7a5d41b5f8ce58c20134bc26b308d7
+  - name: dot-windows-arm64
+    renovate: github-releases forkcloser/testbin
+    version: 0.4.0
+    url: https://github.com/forkcloser/testbin/releases/download/v${version}/graphviz-windows-arm64.tar.gz
+    verify: github-attestation forkcloser/testbin forkcloser/testbin/.github/workflows/release.yaml
+    digest:
+      version: 0.4.0
+      source: ce79bf77fc94137c57f401f5884de90446970dbb873fc53bdb15d4c1e3218aa2
+      sha256: def28ae27afeb0d4ca1af29a1aba26f02790fd4056b49d7229a5c6edbfbf2da9

@@ -6,7 +6,19 @@ import '.limen/just/main.just'
 # The FIRST recipe defined here becomes `just`'s default.
 lint: do::lint::default do::lint::go::default do::lint::go::deadcode examples
 fix: do::fix::go::default do::fix::default
-test: do::test::go::unit do::test::go::race
+test: oracle
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # With a native dot pinned for this platform, `oracle` has fetched it,
+    # and a test that cannot find it fails where it would skip. limen fails
+    # the same way for a pin that is not there and for pins it cannot read,
+    # so the graphviz pin, which is always there, tells the two apart.
+    limen pins get graphviz version > /dev/null
+    if limen pins get "dot-$(go env GOHOSTOS)-$(go env GOHOSTARCH)" url > /dev/null 2>&1; then
+      export GO_GRAPHVIZ_ORACLE=required
+    fi
+    just do test go unit
+    just do test go race
 security: do::security::default
 
 # Graphviz, expat and the C bridge compiled to wasm32-wasip1 and shrunk, from
@@ -26,6 +38,42 @@ wasm:
 # of the module's pins, and commits.
 [doc('Rebuild the files derived from pins.yaml (.converge)')]
 converge: wasm
+
+# The oracle of the tests that compare the module with Graphviz itself: the
+# native dot forkcloser/testbin builds, unpatched, from the Graphviz release
+# the module is built from, pinned per platform in pins.yaml (dot-<os>-<arch>)
+# and verified against its digest. It lands in build/oracle/graphviz-<os>-<arch>,
+# where the tests look for it. A platform with no pin gets nothing, and the
+# tests fall back to a dot on PATH or skip.
+[doc('Fetch the pinned native dot the tests compare the module with (build/oracle)')]
+oracle:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    host="$(go env GOHOSTOS)-$(go env GOHOSTARCH)"
+    # limen fails the same way for a pin that is not there and for pins it
+    # cannot read: the graphviz pin, which is always there, tells the two
+    # apart, and pins that cannot be read stop the recipe.
+    limen pins get graphviz version > /dev/null
+    if ! url="$(limen pins get "dot-${host}" url 2> /dev/null)"; then
+      echo "no native dot is pinned for ${host}" >&2
+      exit 0
+    fi
+    sum="$(limen pins get "dot-${host}" sha256)"
+    version="$(limen pins get "dot-${host}" version)"
+    dl="build/oracle/dl/graphviz-${host}-${version}.tar.gz"
+    mkdir -p build/oracle/dl
+    if [ ! -f "${dl}" ]; then
+      curl --proto '=https' --tlsv1.2 -fsSL --retry 5 --retry-delay 3 -o "${dl}.part" "${url}"
+      mv "${dl}.part" "${dl}"
+    fi
+    echo "${sum}  ${dl}" | sha256sum -c - > /dev/null || {
+      echo "dot-${host}: sha256 mismatch against pins.yaml" >&2
+      rm -f "${dl}"
+      exit 1
+    }
+    # Unpacked anew each time: the directory's name carries no version.
+    rm -rf "build/oracle/graphviz-${host}"
+    tar -xzf "${dl}" -C build/oracle
 
 # The Go and C halves of the bridge, from internal/wasm/bind.proto: buf runs
 # nori, this repository's own protoc plugin, built here from source so the
