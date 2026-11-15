@@ -116,6 +116,13 @@ func (g *Graphviz) SetLayout(layout Layout) *Graphviz {
 
 // Render lays graph out with the instance's layout engine, renders it in
 // format and writes the result to w.
+//
+// One render runs at a time in the process, and ctx is honoured until this
+// one starts: when ctx is done before its turn comes, Render returns ctx's
+// error and nothing is laid out or written. A layout or a render that is
+// running is not interrupted, whatever ctx does: the engine cannot be
+// stopped without ending it for the whole process. RenderImage and
+// RenderFilename take their context the same way.
 func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io.Writer) error {
 	var buf bytes.Buffer
 

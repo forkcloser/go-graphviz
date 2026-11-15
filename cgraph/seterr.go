@@ -23,10 +23,15 @@ var setterErrors = struct {
 // WebAssembly module, so what fails them is the module: memory it cannot
 // allocate, or a module that did not load.
 func (g *Graph) Err() error {
+	// The root is asked of the module before the lock is taken, never under
+	// it: a render holds the module and asks Err inside it, so a goroutine
+	// that waited for the module with the lock in hand would stop them both.
+	root := wasm.WasmPtr(g.wasm.GetRoot())
+
 	setterErrors.mu.Lock()
 	defer setterErrors.mu.Unlock()
 
-	return setterErrors.byRoot[wasm.WasmPtr(g.wasm.GetRoot())]
+	return setterErrors.byRoot[root]
 }
 
 // recordSetterError keeps err as the first setter error of the graph root,
