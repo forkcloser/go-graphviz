@@ -18,6 +18,7 @@ pins:
     verify: download
     digest:
       version: 16.1.1
+      source: 41754a6fbcef7c94418e7385c7e8b6cd6babf76486ff7e49b0d27c7b5680af2f
       sha256: 42806c79271e286028b9422c7016b0368ad86beb381aa46d1d8c720f69ce3fc7
   # The release tarball, the one libexpat signs, not the tag's archive: the
   # sources under lib/ are the same files. Sebastian Pipping, who publishes
@@ -32,6 +33,7 @@ pins:
     verify: pgp-detached https://github.com/libexpat/libexpat/releases/download/${version}/expat-${major}.${minor}.${patch}.tar.gz.asc https://github.com/hartwork.gpg CB8DE70A90CFBF6C3BF5CC5696262ACFFBD3AEC6
     digest:
       version: R_2_10_0
+      source: 6829130ac4fc17b95e20e1b74f3653ec572205e2cd357f51b8ddc16fd13a1695
       sha256: 5466a341f9c692ef7a958a6881311be597f8e1ce345984cf78414f54793dea4c
   - name: wasi-sdk-linux-amd64
     renovate: github-releases WebAssembly/wasi-sdk
@@ -41,6 +43,7 @@ pins:
     verify: download
     digest:
       version: 34
+      source: e21d73d04aece0e54c78b68e2d370de247e4bd52ab4c73d049099656e00fe59b
       sha256: b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4
   - name: wasi-sdk-linux-arm64
     renovate: github-releases WebAssembly/wasi-sdk
@@ -50,6 +53,7 @@ pins:
     verify: download
     digest:
       version: 34
+      source: 8cdcf556f9f3e3a1b88977d77d8fcc74ef5eec306c7dd1ddfdf9dd8402bd0310
       sha256: f7e243dff54d60bcc576e94d6166b69f410f2500ae4a9ceef34315be10e77971
   - name: wasi-sdk-macos-arm64
     renovate: github-releases WebAssembly/wasi-sdk
@@ -59,6 +63,7 @@ pins:
     verify: download
     digest:
       version: 34
+      source: 2247654785cc11f720aa4d898064ff9c4d40196e72bacac640677c71bc6e6664
       sha256: 9c59398106b417f8f14913380fdf0097a8cc0ff4af9eb3ce0065a859e88d49e9
   - name: binaryen-linux-amd64
     renovate: github-releases WebAssembly/binaryen
@@ -68,6 +73,7 @@ pins:
     verify: download
     digest:
       version: 133
+      source: 6bd191c1dc6f5de75706dbfd840ec2ba8a310d8ba907268a04f39570f94d3a8c
       sha256: 2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489
   - name: binaryen-linux-arm64
     renovate: github-releases WebAssembly/binaryen
@@ -77,6 +83,7 @@ pins:
     verify: download
     digest:
       version: 133
+      source: f9aff8b42cf1266c78f484ea928a7cb73bab0d064c9a478f029e89e3c83c0377
       sha256: 89c07ea56faf38d0fbecf36ca8ec0721756716185f265b568e133d427f299bf8
   - name: binaryen-macos-arm64
     renovate: github-releases WebAssembly/binaryen
@@ -86,4 +93,5 @@ pins:
     verify: download
     digest:
       version: 133
+      source: 8e5ef7b9ff1f0a8f82126e102a673fb26464d75496a1238cd88d1c3fed00dd8d
       sha256: ad66da82ac13f163e424b1643f16c6dfcccc98b5966296b43e52d3cab04f84a8
