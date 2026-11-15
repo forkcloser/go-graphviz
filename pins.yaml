@@ -2,7 +2,9 @@
 # (book/tooling.md, "Pinned artifacts beyond aqua"). internal/wasm/build/build.sh
 # reads each entry back with `limen pins get <name> url|sha256`, Renovate
 # proposes the bumps from the renovate: lines, and `limen pins refresh`
-# recomputes a digest a bump left behind. expat signs its release tarballs,
+# recomputes a digest a bump left behind. The module is declared in .converge:
+# on a bump's branch the checksum workflow rebuilds it (`just converge`) and
+# commits it beside the pin. expat signs its release tarballs,
 # and that entry is held to the signature. The other projects sign nothing
 # limen verifies, so their method is the download itself: TLS at refresh
 # time, the digest at every build after.
