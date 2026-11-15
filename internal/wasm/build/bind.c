@@ -10,8 +10,11 @@ extern "C" {
 // build.sh links with no other exports but malloc and free.
 #define WASM_EXPORT(name) __attribute__((export_name(#name)))
 
-// this is imported by host function in Go.
-void *wasm_bridge_get_go_funcptr(void *funcbaseptr);
+// WASM_IMPORT declares a callback the Go host provides, in its "env" module
+// under the callback's own name. These are the module's only imports beside
+// WASI's: build.sh links without --import-undefined, so a symbol nothing
+// defines fails the link and is not left for the host to supply.
+#define WASM_IMPORT(name) __attribute__((import_module("env"), import_name(#name)))
 
 
 #include "bridge.h"
@@ -57,6 +60,7 @@ static void to_string_ptr_with_length(void *arg, int length) {
   char **strptr = (char **)arg;
   *(void **)arg = newStringWithLength(*strptr, length);
 }
+WASM_IMPORT(wasm_bridge_UserRef)
 int wasm_bridge_UserRef(GoString * arg0);
 
 int UserRef(char * _arg0) {
@@ -66,6 +70,7 @@ int UserRef(char * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_DictWalk)
 int wasm_bridge_DictWalk(void * arg0, void * arg1);
 
 int DictWalk(void * _arg0, void * _arg1) {
@@ -77,6 +82,7 @@ int DictWalk(void * _arg0, void * _arg1) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginJob)
 void wasm_bridge_RenderEngine_BeginJob(GVJ_t * arg0);
 
 void RenderEngine_BeginJob(GVJ_t * _arg0) {
@@ -86,6 +92,7 @@ void RenderEngine_BeginJob(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndJob)
 void wasm_bridge_RenderEngine_EndJob(GVJ_t * arg0);
 
 void RenderEngine_EndJob(GVJ_t * _arg0) {
@@ -95,6 +102,7 @@ void RenderEngine_EndJob(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginGraph)
 void wasm_bridge_RenderEngine_BeginGraph(GVJ_t * arg0);
 
 void RenderEngine_BeginGraph(GVJ_t * _arg0) {
@@ -104,6 +112,7 @@ void RenderEngine_BeginGraph(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndGraph)
 void wasm_bridge_RenderEngine_EndGraph(GVJ_t * arg0);
 
 void RenderEngine_EndGraph(GVJ_t * _arg0) {
@@ -113,6 +122,7 @@ void RenderEngine_EndGraph(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginLayer)
 void wasm_bridge_RenderEngine_BeginLayer(GVJ_t * arg0, GoString * arg1, int arg2, int arg3);
 
 void RenderEngine_BeginLayer(GVJ_t * _arg0, char * _arg1, int _arg2, int _arg3) {
@@ -128,6 +138,7 @@ void RenderEngine_BeginLayer(GVJ_t * _arg0, char * _arg1, int _arg2, int _arg3) 
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndLayer)
 void wasm_bridge_RenderEngine_EndLayer(GVJ_t * arg0);
 
 void RenderEngine_EndLayer(GVJ_t * _arg0) {
@@ -137,6 +148,7 @@ void RenderEngine_EndLayer(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginPage)
 void wasm_bridge_RenderEngine_BeginPage(GVJ_t * arg0);
 
 void RenderEngine_BeginPage(GVJ_t * _arg0) {
@@ -146,6 +158,7 @@ void RenderEngine_BeginPage(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndPage)
 void wasm_bridge_RenderEngine_EndPage(GVJ_t * arg0);
 
 void RenderEngine_EndPage(GVJ_t * _arg0) {
@@ -155,6 +168,7 @@ void RenderEngine_EndPage(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginCluster)
 void wasm_bridge_RenderEngine_BeginCluster(GVJ_t * arg0);
 
 void RenderEngine_BeginCluster(GVJ_t * _arg0) {
@@ -164,6 +178,7 @@ void RenderEngine_BeginCluster(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndCluster)
 void wasm_bridge_RenderEngine_EndCluster(GVJ_t * arg0);
 
 void RenderEngine_EndCluster(GVJ_t * _arg0) {
@@ -173,6 +188,7 @@ void RenderEngine_EndCluster(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginNodes)
 void wasm_bridge_RenderEngine_BeginNodes(GVJ_t * arg0);
 
 void RenderEngine_BeginNodes(GVJ_t * _arg0) {
@@ -182,6 +198,7 @@ void RenderEngine_BeginNodes(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndNodes)
 void wasm_bridge_RenderEngine_EndNodes(GVJ_t * arg0);
 
 void RenderEngine_EndNodes(GVJ_t * _arg0) {
@@ -191,6 +208,7 @@ void RenderEngine_EndNodes(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginEdges)
 void wasm_bridge_RenderEngine_BeginEdges(GVJ_t * arg0);
 
 void RenderEngine_BeginEdges(GVJ_t * _arg0) {
@@ -200,6 +218,7 @@ void RenderEngine_BeginEdges(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndEdges)
 void wasm_bridge_RenderEngine_EndEdges(GVJ_t * arg0);
 
 void RenderEngine_EndEdges(GVJ_t * _arg0) {
@@ -209,6 +228,7 @@ void RenderEngine_EndEdges(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginNode)
 void wasm_bridge_RenderEngine_BeginNode(GVJ_t * arg0);
 
 void RenderEngine_BeginNode(GVJ_t * _arg0) {
@@ -218,6 +238,7 @@ void RenderEngine_BeginNode(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndNode)
 void wasm_bridge_RenderEngine_EndNode(GVJ_t * arg0);
 
 void RenderEngine_EndNode(GVJ_t * _arg0) {
@@ -227,6 +248,7 @@ void RenderEngine_EndNode(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginEdge)
 void wasm_bridge_RenderEngine_BeginEdge(GVJ_t * arg0);
 
 void RenderEngine_BeginEdge(GVJ_t * _arg0) {
@@ -236,6 +258,7 @@ void RenderEngine_BeginEdge(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndEdge)
 void wasm_bridge_RenderEngine_EndEdge(GVJ_t * arg0);
 
 void RenderEngine_EndEdge(GVJ_t * _arg0) {
@@ -245,6 +268,7 @@ void RenderEngine_EndEdge(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginAnchor)
 void wasm_bridge_RenderEngine_BeginAnchor(GVJ_t * arg0, GoString * arg1, GoString * arg2, GoString * arg3, GoString * arg4);
 
 void RenderEngine_BeginAnchor(GVJ_t * _arg0, char * _arg1, char * _arg2, char * _arg3, char * _arg4) {
@@ -262,6 +286,7 @@ void RenderEngine_BeginAnchor(GVJ_t * _arg0, char * _arg1, char * _arg2, char * 
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndAnchor)
 void wasm_bridge_RenderEngine_EndAnchor(GVJ_t * arg0);
 
 void RenderEngine_EndAnchor(GVJ_t * _arg0) {
@@ -271,6 +296,7 @@ void RenderEngine_EndAnchor(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_BeginLabel)
 void wasm_bridge_RenderEngine_BeginLabel(GVJ_t * arg0, int arg1);
 
 void RenderEngine_BeginLabel(GVJ_t * _arg0, label_type _arg1) {
@@ -282,6 +308,7 @@ void RenderEngine_BeginLabel(GVJ_t * _arg0, label_type _arg1) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_EndLabel)
 void wasm_bridge_RenderEngine_EndLabel(GVJ_t * arg0);
 
 void RenderEngine_EndLabel(GVJ_t * _arg0) {
@@ -291,6 +318,7 @@ void RenderEngine_EndLabel(GVJ_t * _arg0) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_Textspan)
 void wasm_bridge_RenderEngine_Textspan(GVJ_t * arg0, pointf * arg1, textspan_t * arg2);
 
 void RenderEngine_Textspan(GVJ_t * _arg0, pointf _arg1, textspan_t * _arg2) {
@@ -305,6 +333,7 @@ void RenderEngine_Textspan(GVJ_t * _arg0, pointf _arg1, textspan_t * _arg2) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_ResolveColor)
 void wasm_bridge_RenderEngine_ResolveColor(GVJ_t * arg0, gvcolor_t * arg1);
 
 void RenderEngine_ResolveColor(GVJ_t * _arg0, gvcolor_t * _arg1) {
@@ -316,6 +345,7 @@ void RenderEngine_ResolveColor(GVJ_t * _arg0, gvcolor_t * _arg1) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_Ellipse)
 void wasm_bridge_RenderEngine_Ellipse(GVJ_t * arg0, GoSlice * arg1, int arg2);
 
 void RenderEngine_Ellipse(GVJ_t * _arg0, pointf * _arg1, int _arg2) {
@@ -338,6 +368,7 @@ void RenderEngine_Ellipse(GVJ_t * _arg0, pointf * _arg1, int _arg2) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_Polygon)
 void wasm_bridge_RenderEngine_Polygon(GVJ_t * arg0, GoSlice * arg1, unsigned long int arg2, int arg3);
 
 void RenderEngine_Polygon(GVJ_t * _arg0, pointf * _arg1, unsigned long int _arg2, int _arg3) {
@@ -362,6 +393,7 @@ void RenderEngine_Polygon(GVJ_t * _arg0, pointf * _arg1, unsigned long int _arg2
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_Beziercurve)
 void wasm_bridge_RenderEngine_Beziercurve(GVJ_t * arg0, GoSlice * arg1, unsigned long int arg2, int arg3);
 
 void RenderEngine_Beziercurve(GVJ_t * _arg0, pointf * _arg1, unsigned long int _arg2, int _arg3) {
@@ -386,6 +418,7 @@ void RenderEngine_Beziercurve(GVJ_t * _arg0, pointf * _arg1, unsigned long int _
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_Polyline)
 void wasm_bridge_RenderEngine_Polyline(GVJ_t * arg0, GoSlice * arg1, unsigned long int arg2);
 
 void RenderEngine_Polyline(GVJ_t * _arg0, pointf * _arg1, unsigned long int _arg2) {
@@ -408,6 +441,7 @@ void RenderEngine_Polyline(GVJ_t * _arg0, pointf * _arg1, unsigned long int _arg
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_Comment)
 void wasm_bridge_RenderEngine_Comment(GVJ_t * arg0, GoString * arg1);
 
 void RenderEngine_Comment(GVJ_t * _arg0, char * _arg1) {
@@ -419,6 +453,7 @@ void RenderEngine_Comment(GVJ_t * _arg0, char * _arg1) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_RenderEngine_LibraryShape)
 void wasm_bridge_RenderEngine_LibraryShape(GVJ_t * arg0, GoString * arg1, GoSlice * arg2, unsigned long int arg3, int arg4);
 
 void RenderEngine_LibraryShape(GVJ_t * _arg0, char * _arg1, pointf * _arg2, unsigned long int _arg3, int _arg4) {
@@ -445,6 +480,7 @@ void RenderEngine_LibraryShape(GVJ_t * _arg0, char * _arg1, pointf * _arg2, unsi
   );
 }
 
+WASM_IMPORT(wasm_bridge_TextLayoutEngine_TextLayout)
 bool wasm_bridge_TextLayoutEngine_TextLayout(textspan_t * arg0, GoSlice * arg1);
 
 bool TextLayoutEngine_TextLayout(textspan_t * _arg0, char ** _arg1) {
@@ -469,6 +505,7 @@ bool TextLayoutEngine_TextLayout(textspan_t * _arg0, char ** _arg1) {
   );
 }
 
+WASM_IMPORT(wasm_bridge_LoadImageEngine_LoadImage)
 void wasm_bridge_LoadImageEngine_LoadImage(GVJ_t * arg0, usershape_t * arg1, boxf * arg2, bool arg3);
 
 void LoadImageEngine_LoadImage(GVJ_t * _arg0, usershape_t * _arg1, boxf _arg2, bool _arg3) {

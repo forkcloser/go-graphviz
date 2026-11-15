@@ -10,8 +10,11 @@ extern "C" {
 // build.sh links with no other exports but malloc and free.
 #define WASM_EXPORT(name) __attribute__((export_name(#name)))
 
-// this is imported by host function in Go.
-void *wasm_bridge_get_go_funcptr(void *funcbaseptr);
+// WASM_IMPORT declares a callback the Go host provides, in its "env" module
+// under the callback's own name. These are the module's only imports beside
+// WASI's: build.sh links without --import-undefined, so a symbol nothing
+// defines fails the link and is not left for the host to supply.
+#define WASM_IMPORT(name) __attribute__((import_module("env"), import_name(#name)))
 
 {{ range .Headers }}
 #include "{{ . }}"
@@ -51,6 +54,7 @@ static void to_string_ptr_with_length(void *arg, int length) {
 
 {{- range .ExportCallbackFunctions }}
 {{- $name := .Name }}
+WASM_IMPORT(wasm_bridge_{{ $name }})
 {{ .Return }} wasm_bridge_{{ $name }}({{- range .Args -}}{{ .Value.GoType }} arg{{- .Index -}}{{- if not .IsLastArg -}}, {{ end -}}{{- end -}});
 
 {{ .Return }} {{ $name }}({{- range .Args -}}{{- .Value.CType }} _arg{{- .Index -}}{{- if not .IsLastArg -}}, {{ end -}}{{- end -}}) {
