@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -35,33 +37,75 @@ func canonCorpus() map[string]string {
 	}
 }
 
-// systemDot is the system's dot of the graphviz release go-graphviz embeds:
-// the canonical writer changes between releases, so another version is not
-// an oracle and the test skips. The CI lanes carry no graphviz yet, so the
-// check runs locally only until they install this release.
-func systemDot(t *testing.T) string {
+// oracleRequired is what `just test` sets GO_GRAPHVIZ_ORACLE to once it has
+// fetched the native dot pinned for this platform: from then on a missing
+// oracle is a failure, not a skip.
+const oracleRequired = "required"
+
+// nativeDot is Graphviz's own dot of the release go-graphviz embeds: the
+// canonical writer changes between releases, so another version is not an
+// oracle.
+//
+// It is the one `just oracle` fetches into build/oracle, pinned in pins.yaml
+// beside the release it is built from: there, a dot that is not that release
+// fails the test, and so does a missing one when GO_GRAPHVIZ_ORACLE says it
+// was fetched, which is how the CI lanes run. Without it, a dot on PATH of
+// the same major.minor will do (a patch release keeps the writer), and the
+// test skips when there is none.
+func nativeDot(t *testing.T) string {
 	t.Helper()
+
+	want := embeddedGraphvizVersion(t)
+
+	exe := ""
+	if runtime.GOOS == "windows" {
+		exe = ".exe"
+	}
+
+	pinned := filepath.Join("build", "oracle", "graphviz-"+runtime.GOOS+"-"+runtime.GOARCH, "dot"+exe)
+	if _, err := os.Stat(pinned); err == nil {
+		if got := dotVersion(t, pinned); got != want {
+			t.Fatalf(
+				"%s is graphviz %q, pins.yaml builds %s: the dot pins move with the graphviz pin",
+				pinned,
+				got,
+				want,
+			)
+		}
+
+		return pinned
+	}
+
+	if os.Getenv("GO_GRAPHVIZ_ORACLE") == oracleRequired {
+		t.Fatalf("no native dot at %s: `just oracle` fetches it", pinned)
+	}
 
 	dot, err := exec.LookPath("dot")
 	if err != nil {
-		t.Skip("no system dot")
+		t.Skip("no native dot: `just oracle` fetches the pinned one")
 	}
 
-	version, err := exec.CommandContext(t.Context(), dot, "-V").CombinedOutput()
-	if err != nil {
-		t.Skipf("%s -V: %v", dot, err)
-	}
-
-	// The token after the banner, so 16.10 is not 16.1; a patch release
-	// keeps the writer, so major.minor is the match.
-	_, after, found := strings.Cut(string(version), "graphviz version ")
-	token, _, _ := strings.Cut(after, " ")
-
-	if want := embeddedGraphvizVersion(t); !found || majorMinor(token) != majorMinor(want) {
-		t.Skipf("system dot is not graphviz %s: %s", want, strings.TrimSpace(string(version)))
+	if got := dotVersion(t, dot); majorMinor(got) != majorMinor(want) {
+		t.Skipf("%s is graphviz %q, not %s: `just oracle` fetches the pinned one", dot, got, want)
 	}
 
 	return dot
+}
+
+// dotVersion is the version `dot -V` prints after its banner, empty when it
+// prints none: the whole token, so 16.10 is not 16.1.
+func dotVersion(t *testing.T, dot string) string {
+	t.Helper()
+
+	banner, err := exec.CommandContext(t.Context(), dot, "-V").CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s -V: %v", dot, err)
+	}
+
+	_, after, _ := strings.Cut(string(banner), "graphviz version ")
+	version, _, _ := strings.Cut(strings.TrimSpace(after), " ")
+
+	return version
 }
 
 // embeddedGraphvizVersion is the graphviz release pins.yaml names for the
@@ -91,15 +135,15 @@ func majorMinor(version string) string {
 	return strings.Join(parts[:min(2, len(parts))], ".")
 }
 
-// TestContractCanonMatchesTheSystemDot: the canonical form go-graphviz
+// TestContractCanonMatchesTheNativeDot: the canonical form go-graphviz
 // renders for a graph (-Tcanon: the parsed graph written back, every
-// attribute in place, nothing laid out) is the system dot's canonical
+// attribute in place, nothing laid out) is the native dot's canonical
 // form of the same text, byte for byte after trailing whitespace: the two
 // parsers read the same graph.
-func TestContractCanonMatchesTheSystemDot(t *testing.T) {
+func TestContractCanonMatchesTheNativeDot(t *testing.T) {
 	t.Parallel()
 
-	dot := systemDot(t)
+	dot := nativeDot(t)
 	ctx := t.Context()
 
 	g, err := graphviz.New(ctx)

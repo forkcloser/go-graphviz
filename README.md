@@ -152,6 +152,13 @@ Every task runs through [`just`](https://just.systems): `just lint`, `just test`
 pinned by [aqua](https://aquaproj.github.io/) and the shared conventions come
 from [limen](https://github.com/farcloser/limen) (see `AGENTS.md`).
 
+`just test` first fetches Graphviz's own `dot` of the release the module is
+built from (`just oracle`: a build by [testbin](https://github.com/forkcloser/testbin),
+pinned and verified per platform in [pins.yaml](./pins.yaml)), and the tests
+compare the module's output with it. Under `just test` a missing or mismatched
+`dot` fails; a bare `go test` uses a `dot` on `PATH` of the same release, or
+skips those tests.
+
 # How it works
 
 1. Generates bindings between Go and C from [Protocol Buffers file](./internal/wasm/bind.proto) with `just bindings`.
