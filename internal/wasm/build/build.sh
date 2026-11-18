@@ -187,6 +187,12 @@ raw="${work}/out/graphviz.raw.wasm"
 # list below) stops the build here, where with the flag it became an import
 # the host does not have and the module failed to load.
 
+# The module's C stack is what native dot runs on, the main thread's 8 MiB
+# (`ulimit -s`; Linux's _STK_LIM in include/uapi/linux/resource.h). wasm-ld
+# gives 64 KiB when it is not told, and Graphviz recurses with the graph:
+# clusters nested a thousand deep, which dot draws, overflowed it.
+stack_size=$((8 * 1024 * 1024))
+
 echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm32-wasip1 with wasi-sdk ${wasi_sdk_version}"
 "${sdk}/bin/clang" \
   -g0 -Os \
@@ -212,6 +218,7 @@ echo "compiling graphviz ${graphviz_version} and expat ${expat_version} for wasm
   -Wl,--export=malloc \
   -Wl,--export=free \
   -Wl,--no-entry \
+  -Wl,-z,stack-size="${stack_size}" \
   -Wl,--error-limit=0 \
   -funsigned-char \
   -fno-strict-aliasing \
