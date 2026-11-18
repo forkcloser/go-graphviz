@@ -1861,10 +1861,12 @@ option (nori.file).export = {
     }
     return { kind: INT }
   }
+  // renderData is gvRenderData, and deletes the job gvRenderData leaves on
+  // the context when it does not know the format (patch.c).
   method {
     recv: "Context"
     name: "renderData"
-    alias: "gvRenderData"
+    alias: "bridge_render_data"
     args {
       kind: STRUCT
       ref: "Graph"

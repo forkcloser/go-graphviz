@@ -5,6 +5,9 @@
 // After gvc.h and gvplugin.h, whose types it uses: GVC_t's definition, for
 // the plugin list a context keeps.
 #include "gvcint.h"
+// For gvjobs_delete: without its declaration the call is linked with
+// another signature, and traps.
+#include "gvcproc.h"
 #include "gvplugin_render.h"
 #include "gvio.h"
 #include "textspan.h"
@@ -97,6 +100,21 @@ void bridge_free_plugin_list(lt_symlist_t *sym) {
   }
   free((void *)sym->name);
   free(sym);
+}
+
+// bridge_render_data is gvRenderData, and deletes the jobs of a render that
+// failed. For a format it does not know, gvRenderData returns with its job
+// still on the context, named by the caller's format string, which the
+// caller frees: the next render on the context would run that job first,
+// and read the freed name. gvRenderData deletes the jobs on its other paths,
+// and deleting none is a no-op.
+int bridge_render_data(GVC_t *gvc, graph_t *g, const char *format,
+                       char **result, unsigned int *length) {
+  int ret = gvRenderData(gvc, g, format, result, length);
+  if (ret != 0) {
+    gvjobs_delete(gvc);
+  }
+  return ret;
 }
 
 // A device that encodes the page itself hands the bytes to Graphviz through
