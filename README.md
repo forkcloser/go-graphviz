@@ -171,6 +171,13 @@ skips those tests.
 3. Uses Graphviz functionality from the sub-packages `cgraph` and `gvc` via the `internal/wasm` package.
 4. `graphviz` package provides facade interface for all sub packages.
 
+Graphviz runs as one WebAssembly module for the process. If a graph makes it
+trap (a stack it overflows, an access outside its memory), that call and every
+call after it return `gvc.ErrTrapped` (a getter, which has no error to return,
+its zero value), and the process has to be restarted to render again: a trap leaves Graphviz's state half-updated, so no call is let in
+to draw from it, and no fresh module takes its place, since every graph and
+context a caller holds lives in the one that trapped.
+
 # License
 
 MIT, see `LICENSE`.

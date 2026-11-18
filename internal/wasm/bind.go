@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"sync/atomic"
 	"unsafe"
 
 	"github.com/tetratelabs/wazero"
@@ -35,6 +36,10 @@ type WasmModule struct {
 	// failed load leaves mod without an instance; every call and memory
 	// access returns this error instead of panicking at import.
 	initErr error
+	// trapped is the trap that ended the module, nil while it has not
+	// trapped. Every call after it returns this error without entering
+	// the module (see ErrTrapped). Read without the lock, by Trapped.
+	trapped atomic.Pointer[error]
 	// callbackErr is the first error a Go callback returned during the
 	// exported call in progress. A host function must not panic: the panic
 	// unwinds through Graphviz's C frames and leaves its state half-updated,
@@ -2672,18 +2677,29 @@ func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([
 	}
 	ctx, leave, outermost := m.lock.enter(ctx)
 	defer leave()
+	if trap := m.trapped.Load(); trap != nil {
+		return nil, *trap
+	}
 	fn, done := m.function(name)
 	ret, err := fn.Call(ctx, args...)
 	done()
+	if err != nil {
+		// Whatever stopped the call left Graphviz's heap and globals where
+		// it happened: nothing enters the module again.
+		err = fmt.Errorf("%w: %w", ErrTrapped, err)
+		m.trapped.Store(&err)
+	}
 	if !outermost {
 		// A nested call (a host function reaching back in, a free after a
 		// callback failed) leaves the parked error to the call that owns it.
 		return ret, err
 	}
-	if err != nil {
-		// A trap can follow from a callback's failure (its out-parameters
-		// were never written), so a parked error is returned with it.
-		return nil, errors.Join(err, m.takeCallbackError())
+	if trap := m.trapped.Load(); trap != nil {
+		// This call's own trap, or one in a call a callback made, which
+		// Graphviz went on after. A trap can follow from a callback's
+		// failure (its out-parameters were never written), so a parked
+		// error is returned with it.
+		return nil, errors.Join(*trap, m.takeCallbackError())
 	}
 	if err := m.takeCallbackError(); err != nil {
 		return nil, err
@@ -3475,7 +3491,7 @@ func (v *Record) SetName(_arg string) error {
 func (v *Record) GetName() string {
 	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -3557,7 +3573,7 @@ func (v *Tag) SetId(_arg uint64) error {
 func (v *Tag) GetId() uint64 {
 	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -3689,7 +3705,7 @@ func (v *Node) SetRoot(_arg *Graph) error {
 func (v *Node) GetRoot() *Graph {
 	ret, err := v.getRoot(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -3822,7 +3838,7 @@ func (v *GraphDescriptor) SetDirected(_arg uint32) error {
 func (v *GraphDescriptor) GetDirected() uint32 {
 	ret, err := v.getDirected(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -3849,7 +3865,7 @@ func (v *GraphDescriptor) SetStrict(_arg uint32) error {
 func (v *GraphDescriptor) GetStrict() uint32 {
 	ret, err := v.getStrict(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -3876,7 +3892,7 @@ func (v *GraphDescriptor) SetMaingraph(_arg uint32) error {
 func (v *GraphDescriptor) GetMaingraph() uint32 {
 	ret, err := v.getMaingraph(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4008,7 +4024,7 @@ func (v *ClientDiscipline) SetId(_arg *IDAllocator) error {
 func (v *ClientDiscipline) GetId() *IDAllocator {
 	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4088,7 +4104,7 @@ func (v *Graph) SetParent(_arg *Graph) error {
 func (v *Graph) GetParent() *Graph {
 	ret, err := v.getParent(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4116,7 +4132,7 @@ func (v *Graph) SetRoot(_arg *Graph) error {
 func (v *Graph) GetRoot() *Graph {
 	ret, err := v.getRoot(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4196,7 +4212,7 @@ func (v *Attr) SetH(_arg *Record) error {
 func (v *Attr) GetH() *Record {
 	ret, err := v.getH(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4227,7 +4243,7 @@ func (v *Attr) SetStr(_arg []string) error {
 func (v *Attr) GetStr() []string {
 	ret, err := v.getStr(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4313,7 +4329,7 @@ func (v *Sym) SetName(_arg string) error {
 func (v *Sym) GetName() string {
 	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4343,7 +4359,7 @@ func (v *Sym) SetDefval(_arg string) error {
 func (v *Sym) GetDefval() string {
 	ret, err := v.getDefval(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4373,7 +4389,7 @@ func (v *Sym) SetId(_arg int32) error {
 func (v *Sym) GetId() int32 {
 	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4400,7 +4416,7 @@ func (v *Sym) SetKind(_arg uint32) error {
 func (v *Sym) GetKind() uint32 {
 	ret, err := v.getKind(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4479,7 +4495,7 @@ func (v *DictMethod) SetType(_arg int64) error {
 func (v *DictMethod) GetType() int64 {
 	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4558,7 +4574,7 @@ func (v *DictData) SetType(_arg int64) error {
 func (v *DictData) GetType() int64 {
 	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4585,7 +4601,7 @@ func (v *DictData) SetSize(_arg int64) error {
 func (v *DictData) GetSize() int64 {
 	ret, err := v.getSize(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4664,7 +4680,7 @@ func (v *Dict) SetData(_arg *DictData) error {
 func (v *Dict) GetData() *DictData {
 	ret, err := v.getData(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4845,7 +4861,7 @@ func (v *Context) SetApis(_arg []*PluginAvailable) error {
 func (v *Context) GetApis() []*PluginAvailable {
 	ret, err := v.getApis(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4882,7 +4898,7 @@ func (v *Context) SetApi(_arg []*PluginAvailable) error {
 func (v *Context) GetApi() []*PluginAvailable {
 	ret, err := v.getApi(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4968,7 +4984,7 @@ func (v *PluginAvailable) SetQuality(_arg int64) error {
 func (v *PluginAvailable) GetQuality() int64 {
 	ret, err := v.getQuality(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -4995,7 +5011,7 @@ func (v *PluginAvailable) SetPackage(_arg *PluginPackage) error {
 func (v *PluginAvailable) GetPackage() *PluginPackage {
 	ret, err := v.getPackage(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5023,7 +5039,7 @@ func (v *PluginAvailable) SetTypeptr(_arg *PluginInstalled) error {
 func (v *PluginAvailable) GetTypeptr() *PluginInstalled {
 	ret, err := v.getTypeptr(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5103,7 +5119,7 @@ func (v *PluginPackage) SetName(_arg string) error {
 func (v *PluginPackage) GetName() string {
 	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5185,7 +5201,7 @@ func (v *SymList) SetName(_arg string) error {
 func (v *SymList) GetName() string {
 	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5215,7 +5231,7 @@ func (v *SymList) SetAddress(_arg *PluginLibrary) error {
 func (v *SymList) GetAddress() *PluginLibrary {
 	ret, err := v.getAddress(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5295,7 +5311,7 @@ func (v *UserShape) SetName(_arg string) error {
 func (v *UserShape) GetName() string {
 	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5325,7 +5341,7 @@ func (v *UserShape) SetMacroId(_arg int64) error {
 func (v *UserShape) GetMacroId() int64 {
 	ret, err := v.getMacroId(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5352,7 +5368,7 @@ func (v *UserShape) SetMustInline(_arg bool) error {
 func (v *UserShape) GetMustInline() bool {
 	ret, err := v.getMustInline(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5379,7 +5395,7 @@ func (v *UserShape) SetNocache(_arg bool) error {
 func (v *UserShape) GetNocache() bool {
 	ret, err := v.getNocache(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5406,7 +5422,7 @@ func (v *UserShape) SetType(_arg ImageType) error {
 func (v *UserShape) GetType() ImageType {
 	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5433,7 +5449,7 @@ func (v *UserShape) SetStringtype(_arg string) error {
 func (v *UserShape) GetStringtype() string {
 	ret, err := v.getStringtype(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5463,7 +5479,7 @@ func (v *UserShape) SetX(_arg int64) error {
 func (v *UserShape) GetX() int64 {
 	ret, err := v.getX(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5490,7 +5506,7 @@ func (v *UserShape) SetY(_arg int64) error {
 func (v *UserShape) GetY() int64 {
 	ret, err := v.getY(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5517,7 +5533,7 @@ func (v *UserShape) SetW(_arg int64) error {
 func (v *UserShape) GetW() int64 {
 	ret, err := v.getW(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5544,7 +5560,7 @@ func (v *UserShape) SetH(_arg int64) error {
 func (v *UserShape) GetH() int64 {
 	ret, err := v.getH(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5571,7 +5587,7 @@ func (v *UserShape) SetDpi(_arg int64) error {
 func (v *UserShape) GetDpi() int64 {
 	ret, err := v.getDpi(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5598,7 +5614,7 @@ func (v *UserShape) SetData(_arg any) error {
 func (v *UserShape) GetData() any {
 	ret, err := v.getData(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5625,7 +5641,7 @@ func (v *UserShape) SetDatasize(_arg uint64) error {
 func (v *UserShape) GetDatasize() uint64 {
 	ret, err := v.getDatasize(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5704,7 +5720,7 @@ func (v *ObjectState) SetParent(_arg *ObjectState) error {
 func (v *ObjectState) GetParent() *ObjectState {
 	ret, err := v.getParent(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5732,7 +5748,7 @@ func (v *ObjectState) SetType(_arg ObjectType) error {
 func (v *ObjectState) GetType() ObjectType {
 	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5759,7 +5775,7 @@ func (v *ObjectState) SetG(_arg *Graph) error {
 func (v *ObjectState) GetG() *Graph {
 	ret, err := v.getG(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5787,7 +5803,7 @@ func (v *ObjectState) SetN(_arg *Node) error {
 func (v *ObjectState) GetN() *Node {
 	ret, err := v.getN(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5815,7 +5831,7 @@ func (v *ObjectState) SetE(_arg *Edge) error {
 func (v *ObjectState) GetE() *Edge {
 	ret, err := v.getE(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5843,7 +5859,7 @@ func (v *ObjectState) SetPencolor(_arg *Color) error {
 func (v *ObjectState) GetPencolor() *Color {
 	ret, err := v.getPencolor(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5871,7 +5887,7 @@ func (v *ObjectState) SetFillcolor(_arg *Color) error {
 func (v *ObjectState) GetFillcolor() *Color {
 	ret, err := v.getFillcolor(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5899,7 +5915,7 @@ func (v *ObjectState) SetStopcolor(_arg *Color) error {
 func (v *ObjectState) GetStopcolor() *Color {
 	ret, err := v.getStopcolor(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5927,7 +5943,7 @@ func (v *ObjectState) SetPen(_arg PenType) error {
 func (v *ObjectState) GetPen() PenType {
 	ret, err := v.getPen(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5954,7 +5970,7 @@ func (v *ObjectState) SetFill(_arg FillType) error {
 func (v *ObjectState) GetFill() FillType {
 	ret, err := v.getFill(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -5981,7 +5997,7 @@ func (v *ObjectState) SetPenwidth(_arg float64) error {
 func (v *ObjectState) GetPenwidth() float64 {
 	ret, err := v.getPenwidth(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6014,7 +6030,7 @@ func (v *ObjectState) SetRawstyle(_arg []string) error {
 func (v *ObjectState) GetRawstyle() []string {
 	ret, err := v.getRawstyle(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6048,7 +6064,7 @@ func (v *ObjectState) SetLabel(_arg string) error {
 func (v *ObjectState) GetLabel() string {
 	ret, err := v.getLabel(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6078,7 +6094,7 @@ func (v *ObjectState) SetId(_arg string) error {
 func (v *ObjectState) GetId() string {
 	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6160,7 +6176,7 @@ func (v *Job) SetGvc(_arg *Context) error {
 func (v *Job) GetGvc() *Context {
 	ret, err := v.getGvc(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6188,7 +6204,7 @@ func (v *Job) SetObj(_arg *ObjectState) error {
 func (v *Job) GetObj() *ObjectState {
 	ret, err := v.getObj(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6216,7 +6232,7 @@ func (v *Job) SetOutputFilename(_arg string) error {
 func (v *Job) GetOutputFilename() string {
 	ret, err := v.getOutputFilename(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6246,7 +6262,7 @@ func (v *Job) SetOutputData(_arg string) error {
 func (v *Job) GetOutputData() string {
 	ret, err := v.getOutputData(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6276,7 +6292,7 @@ func (v *Job) SetOutputDataPosition(_arg uint) error {
 func (v *Job) GetOutputDataPosition() uint {
 	ret, err := v.getOutputDataPosition(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6303,7 +6319,7 @@ func (v *Job) SetOutputLangname(_arg string) error {
 func (v *Job) GetOutputLangname() string {
 	ret, err := v.getOutputLangname(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6333,7 +6349,7 @@ func (v *Job) SetExternalContext(_arg bool) error {
 func (v *Job) GetExternalContext() bool {
 	ret, err := v.getExternalContext(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6360,7 +6376,7 @@ func (v *Job) SetFlags(_arg int64) error {
 func (v *Job) GetFlags() int64 {
 	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6387,7 +6403,7 @@ func (v *Job) SetZoom(_arg float64) error {
 func (v *Job) GetZoom() float64 {
 	ret, err := v.getZoom(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6417,7 +6433,7 @@ func (v *Job) SetRotation(_arg int64) error {
 func (v *Job) GetRotation() int64 {
 	ret, err := v.getRotation(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6444,7 +6460,7 @@ func (v *Job) SetDpi(_arg *PointFloat) error {
 func (v *Job) GetDpi() *PointFloat {
 	ret, err := v.getDpi(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6472,7 +6488,7 @@ func (v *Job) SetWidth(_arg uint64) error {
 func (v *Job) GetWidth() uint64 {
 	ret, err := v.getWidth(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6499,7 +6515,7 @@ func (v *Job) SetHeight(_arg uint64) error {
 func (v *Job) GetHeight() uint64 {
 	ret, err := v.getHeight(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6526,7 +6542,7 @@ func (v *Job) SetScale(_arg *PointFloat) error {
 func (v *Job) GetScale() *PointFloat {
 	ret, err := v.getScale(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6554,7 +6570,7 @@ func (v *Job) SetTranslation(_arg *PointFloat) error {
 func (v *Job) GetTranslation() *PointFloat {
 	ret, err := v.getTranslation(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6582,7 +6598,7 @@ func (v *Job) SetPointer(_arg *PointFloat) error {
 func (v *Job) GetPointer() *PointFloat {
 	ret, err := v.getPointer(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6662,7 +6678,7 @@ func (v *Point) SetX(_arg int64) error {
 func (v *Point) GetX() int64 {
 	ret, err := v.getX(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6689,7 +6705,7 @@ func (v *Point) SetY(_arg int64) error {
 func (v *Point) GetY() int64 {
 	ret, err := v.getY(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6768,7 +6784,7 @@ func (v *BoxFloat) SetLl(_arg *PointFloat) error {
 func (v *BoxFloat) GetLl() *PointFloat {
 	ret, err := v.getLl(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6796,7 +6812,7 @@ func (v *BoxFloat) SetUr(_arg *PointFloat) error {
 func (v *BoxFloat) GetUr() *PointFloat {
 	ret, err := v.getUr(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6876,7 +6892,7 @@ func (v *Box) SetLl(_arg *Point) error {
 func (v *Box) GetLl() *Point {
 	ret, err := v.getLl(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6904,7 +6920,7 @@ func (v *Box) SetUr(_arg *Point) error {
 func (v *Box) GetUr() *Point {
 	ret, err := v.getUr(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -6987,7 +7003,7 @@ func (v *Color) SetRgbaDouble(_arg []float64) error {
 func (v *Color) GetRgbaDouble() []float64 {
 	ret, err := v.getRgbaDouble(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7024,7 +7040,7 @@ func (v *Color) SetHsva(_arg []float64) error {
 func (v *Color) GetHsva() []float64 {
 	ret, err := v.getHsva(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7061,7 +7077,7 @@ func (v *Color) SetRgbaUint(_arg []uint) error {
 func (v *Color) GetRgbaUint() []uint {
 	ret, err := v.getRgbaUint(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7095,7 +7111,7 @@ func (v *Color) SetRgbaInt(_arg []int) error {
 func (v *Color) GetRgbaInt() []int {
 	ret, err := v.getRgbaInt(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7126,7 +7142,7 @@ func (v *Color) SetString(_arg string) error {
 func (v *Color) GetString() string {
 	ret, err := v.getString(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7156,7 +7172,7 @@ func (v *Color) SetIndex(_arg int64) error {
 func (v *Color) GetIndex() int64 {
 	ret, err := v.getIndex(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7183,7 +7199,7 @@ func (v *Color) SetType(_arg ColorType) error {
 func (v *Color) GetType() ColorType {
 	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7262,7 +7278,7 @@ func (v *PointFloat) SetX(_arg float64) error {
 func (v *PointFloat) GetX() float64 {
 	ret, err := v.getX(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7292,7 +7308,7 @@ func (v *PointFloat) SetY(_arg float64) error {
 func (v *PointFloat) GetY() float64 {
 	ret, err := v.getY(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7374,7 +7390,7 @@ func (v *PostscriptAlias) SetName(_arg string) error {
 func (v *PostscriptAlias) GetName() string {
 	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7404,7 +7420,7 @@ func (v *PostscriptAlias) SetFamily(_arg string) error {
 func (v *PostscriptAlias) GetFamily() string {
 	ret, err := v.getFamily(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7434,7 +7450,7 @@ func (v *PostscriptAlias) SetWeight(_arg string) error {
 func (v *PostscriptAlias) GetWeight() string {
 	ret, err := v.getWeight(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7464,7 +7480,7 @@ func (v *PostscriptAlias) SetStretch(_arg string) error {
 func (v *PostscriptAlias) GetStretch() string {
 	ret, err := v.getStretch(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7494,7 +7510,7 @@ func (v *PostscriptAlias) SetStyle(_arg string) error {
 func (v *PostscriptAlias) GetStyle() string {
 	ret, err := v.getStyle(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7524,7 +7540,7 @@ func (v *PostscriptAlias) SetXfigCode(_arg int64) error {
 func (v *PostscriptAlias) GetXfigCode() int64 {
 	ret, err := v.getXfigCode(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7551,7 +7567,7 @@ func (v *PostscriptAlias) SetSvgFontFamily(_arg string) error {
 func (v *PostscriptAlias) GetSvgFontFamily() string {
 	ret, err := v.getSvgFontFamily(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7581,7 +7597,7 @@ func (v *PostscriptAlias) SetSvgFontWeight(_arg string) error {
 func (v *PostscriptAlias) GetSvgFontWeight() string {
 	ret, err := v.getSvgFontWeight(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7611,7 +7627,7 @@ func (v *PostscriptAlias) SetSvgFontStyle(_arg string) error {
 func (v *PostscriptAlias) GetSvgFontStyle() string {
 	ret, err := v.getSvgFontStyle(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7693,7 +7709,7 @@ func (v *TextFont) SetName(_arg string) error {
 func (v *TextFont) GetName() string {
 	ret, err := v.getName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7723,7 +7739,7 @@ func (v *TextFont) SetColor(_arg string) error {
 func (v *TextFont) GetColor() string {
 	ret, err := v.getColor(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7753,7 +7769,7 @@ func (v *TextFont) SetPostscriptAlias(_arg *PostscriptAlias) error {
 func (v *TextFont) GetPostscriptAlias() *PostscriptAlias {
 	ret, err := v.getPostscriptAlias(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7781,7 +7797,7 @@ func (v *TextFont) SetSize(_arg float64) error {
 func (v *TextFont) GetSize() float64 {
 	ret, err := v.getSize(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7811,7 +7827,7 @@ func (v *TextFont) SetFlags(_arg uint64) error {
 func (v *TextFont) GetFlags() uint64 {
 	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7838,7 +7854,7 @@ func (v *TextFont) SetCount(_arg uint64) error {
 func (v *TextFont) GetCount() uint64 {
 	ret, err := v.getCount(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7917,7 +7933,7 @@ func (v *Textspan) SetStr(_arg string) error {
 func (v *Textspan) GetStr() string {
 	ret, err := v.getStr(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7947,7 +7963,7 @@ func (v *Textspan) SetFont(_arg *TextFont) error {
 func (v *Textspan) GetFont() *TextFont {
 	ret, err := v.getFont(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -7975,7 +7991,7 @@ func (v *Textspan) SetYOffsetLayout(_arg float64) error {
 func (v *Textspan) GetYOffsetLayout() float64 {
 	ret, err := v.getYOffsetLayout(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8005,7 +8021,7 @@ func (v *Textspan) SetYOffsetCenterLine(_arg float64) error {
 func (v *Textspan) GetYOffsetCenterLine() float64 {
 	ret, err := v.getYOffsetCenterLine(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8035,7 +8051,7 @@ func (v *Textspan) SetSize(_arg *PointFloat) error {
 func (v *Textspan) GetSize() *PointFloat {
 	ret, err := v.getSize(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8063,7 +8079,7 @@ func (v *Textspan) SetJust(_arg int64) error {
 func (v *Textspan) GetJust() int64 {
 	ret, err := v.getJust(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8599,7 +8615,7 @@ func (v *DeviceFeatures) SetFlags(_arg int64) error {
 func (v *DeviceFeatures) GetFlags() int64 {
 	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8626,7 +8642,7 @@ func (v *DeviceFeatures) SetDefaultDpi(_arg *PointFloat) error {
 func (v *DeviceFeatures) GetDefaultDpi() *PointFloat {
 	ret, err := v.getDefaultDpi(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8706,7 +8722,7 @@ func (v *RenderFeatures) SetFlags(_arg int64) error {
 func (v *RenderFeatures) GetFlags() int64 {
 	ret, err := v.getFlags(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8733,7 +8749,7 @@ func (v *RenderFeatures) SetDefaultPad(_arg float64) error {
 func (v *RenderFeatures) GetDefaultPad() float64 {
 	ret, err := v.getDefaultPad(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8763,7 +8779,7 @@ func (v *RenderFeatures) SetColorType(_arg ColorType) error {
 func (v *RenderFeatures) GetColorType() ColorType {
 	ret, err := v.getColorType(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8887,7 +8903,7 @@ func (v *PluginInstalled) SetId(_arg int64) error {
 func (v *PluginInstalled) GetId() int64 {
 	ret, err := v.getId(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8914,7 +8930,7 @@ func (v *PluginInstalled) SetType(_arg string) error {
 func (v *PluginInstalled) GetType() string {
 	ret, err := v.getType(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8944,7 +8960,7 @@ func (v *PluginInstalled) SetQuality(_arg int64) error {
 func (v *PluginInstalled) GetQuality() int64 {
 	ret, err := v.getQuality(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8971,7 +8987,7 @@ func (v *PluginInstalled) SetEngine(_arg any) error {
 func (v *PluginInstalled) GetEngine() any {
 	ret, err := v.getEngine(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -8998,7 +9014,7 @@ func (v *PluginInstalled) SetFeatures(_arg any) error {
 func (v *PluginInstalled) GetFeatures() any {
 	ret, err := v.getFeatures(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -9077,7 +9093,7 @@ func (v *PluginAPI) SetApi(_arg API) error {
 func (v *PluginAPI) GetApi() API {
 	ret, err := v.getApi(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
@@ -9168,7 +9184,7 @@ func (v *PluginLibrary) SetPackageName(_arg string) error {
 func (v *PluginLibrary) GetPackageName() string {
 	ret, err := v.getPackageName(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }
