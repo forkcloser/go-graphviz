@@ -14,4 +14,9 @@ int bridge_free_context(GVC_t *gvc);
 // listed under, with its library, name and API array.
 void bridge_free_plugin_list(lt_symlist_t *sym);
 
+// bridge_render_data is gvRenderData, and leaves no job on the context when
+// the render failed.
+int bridge_render_data(GVC_t *gvc, graph_t *g, const char *format,
+                       char **result, unsigned int *length);
+
 #endif

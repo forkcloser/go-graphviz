@@ -41,6 +41,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | A typed setter keeps its first error, which `Layout` returns; an allocation the module cannot make fails instead of writing to address 0 | https://github.com/forkcloser/go-graphviz/pull/82 |
 | A `FontLoader` supplies the font the layout measures with (breaking) | https://github.com/forkcloser/go-graphviz/pull/84 |
 | The binding's and the generator's errors wrap sentinels | https://github.com/forkcloser/go-graphviz/pull/89 |
+| A render that fails leaves no job on the context. Graphviz's `gvRenderData` returns from its early failures (a format it does not know, no layout, no memory) without deleting the job it made, named by the caller's format string; the next render on the context ran that job first, with a name since freed, and failed or trapped | `internal/wasm/build/patch.c` |
 
 ## Graphviz source edits
 

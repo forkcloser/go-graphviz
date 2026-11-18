@@ -41,6 +41,67 @@ func TestUnknownFormat(t *testing.T) {
 	}
 }
 
+// A render that failed on its format leaves the instance whole: the next
+// render is the one a fresh instance makes, after one unknown format and
+// after two in a row.
+func TestRenderAfterAnUnknownFormat(t *testing.T) {
+	ctx := t.Context()
+
+	const src = "digraph { a -> b }"
+
+	render := func(g *graphviz.Graphviz, format graphviz.Format) ([]byte, error) {
+		graph, err := graphviz.ParseBytes([]byte(src))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer closeOrError(t, graph.Close)
+
+		var buf bytes.Buffer
+
+		err = g.Render(ctx, graph, format, &buf)
+
+		return buf.Bytes(), err
+	}
+
+	fresh, err := graphviz.New(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, fresh.Close) })
+
+	want, err := render(fresh, graphviz.SVG)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, unknown := range [][]graphviz.Format{{"nosuchformat"}, {"jpeg", "jpe"}} {
+		g, err := graphviz.New(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Cleanup(func() { closeOrError(t, g.Close) })
+
+		for _, format := range unknown {
+			if _, err = render(g, format); !errors.Is(err, cgraph.ErrGraphviz) ||
+				!strings.Contains(err.Error(), `"`+string(format)+`" not recognized`) {
+				t.Fatalf("%s: Render returned %v, want Graphviz's refusal of the format", format, err)
+			}
+		}
+
+		got, err := render(g, graphviz.SVG)
+		if err != nil {
+			t.Fatalf("after %v: the next render failed: %v", unknown, err)
+		}
+
+		if !bytes.Equal(got, want) {
+			t.Errorf("after %v: the next render is not a fresh instance's:\n%s", unknown, got)
+		}
+	}
+}
+
 // Graphviz's warnings reach the writer named for them, as the lines Graphviz
 // prints, and an error is returned by its call rather than written there.
 func TestWarningWriter(t *testing.T) {
