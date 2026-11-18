@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -777,9 +778,16 @@ func (f *loadedFont) face(size, dpi float64) (font.Face, error) {
 		return cached, nil
 	}
 
-	face, err := opentype.NewFace(f.font, &opentype.FaceOptions{Size: size, DPI: dpi})
+	sized, err := opentype.NewFace(f.font, &opentype.FaceOptions{Size: size, DPI: dpi})
 	if err != nil {
 		return nil, fmt.Errorf("face for %s: %w", f.key, err)
+	}
+
+	// The pixels per em opentype makes the face at.
+	face := &outlinedFace{
+		Face: sized,
+		font: f.font,
+		ppem: fixed.Int26_6(math.Round(size * dpi * subpixel / pointsPerInch)),
 	}
 
 	if f.fromLoader && len(cache) >= maxLoaderFaces {
@@ -789,6 +797,27 @@ func (f *loadedFont) face(size, dpi float64) (font.Face, error) {
 	cache[key] = face
 
 	return face, nil
+}
+
+// outlinedFace is a face that also gives its glyphs' outlines, for the
+// canvas to fill a glyph too large for a mask.
+type outlinedFace struct {
+	font.Face
+
+	font *sfnt.Font
+	ppem fixed.Int26_6
+	buf  sfnt.Buffer
+}
+
+func (f *outlinedFace) outline(char rune) (sfnt.Segments, bool) {
+	index, err := f.font.GlyphIndex(&f.buf, char)
+	if err != nil || index == 0 {
+		return nil, false
+	}
+
+	segments, err := f.font.LoadGlyph(&f.buf, index, f.ppem, nil)
+
+	return segments, err == nil
 }
 
 // maxLoaderFaces bounds the faces kept of fonts a FontLoader supplied, each
