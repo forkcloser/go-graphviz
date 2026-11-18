@@ -20,7 +20,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | Change | Here |
 | --- | --- |
 | The fork ships no `dot` command; the command is [forkcloser/dot](https://github.com/forkcloser/dot) | https://github.com/forkcloser/go-graphviz/pull/2 |
-| Graphviz 16.1.0 embedded, built reproducibly from a pinned tarball; `disintegration/imaging` replaced by `x/image/draw` | https://github.com/forkcloser/go-graphviz/pull/3 |
+| Graphviz 16.1.1 embedded, built reproducibly from a pinned tarball; `disintegration/imaging` replaced by `x/image/draw` | https://github.com/forkcloser/go-graphviz/pull/3 |
 | Fonts are parsed by `x/image`'s opentype, not the archived freetype | https://github.com/forkcloser/go-graphviz/pull/22 |
 | A label's first span is zeroed before Graphviz fills it: an empty first line no longer frees a garbage pointer | https://github.com/forkcloser/go-graphviz/pull/30 |
 | A callback's error reaches the caller instead of a panic; Graphviz's own result codes and messages are reported | https://github.com/forkcloser/go-graphviz/pull/31, https://github.com/forkcloser/go-graphviz/pull/32 |
@@ -44,6 +44,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | `gvc.Color`'s `SetRGBADouble`, `SetRGBAUint`, `SetRGBAInt` and `SetHSVA` are gone (breaking): none ever set a colour. The two that take integers wrote zeros over it and, with a first element over four, over the state beside it; the two that take floating point did nothing, or trapped | `gvc/render_plugin.go` |
 | A render that fails leaves no job on the context. Graphviz's `gvRenderData` returns from its early failures (a format it does not know, no layout, no memory) without deleting the job it made, named by the caller's format string; the next render on the context ran that job first, with a name since freed, and failed or trapped | `internal/wasm/build/patch.c` |
 | Every typed setter declares its attribute with the empty default, as Graphviz's DOT parser does for an attribute written on one object (breaking): a graph built with setters is the same graph written in DOT. Upstream declares some 110 of them with a value, which every other object of the kind then takes: one edge's `SetLabel` labels every edge with its name. The GV, XDOT and canon text of a setter-built graph no longer carries those defaults | `cgraph/attribute.go` |
+| `gvc.Context.Clone` and `FreeClonedContext` are gone (breaking): a cloned context trapped the module at its first layout | `gvc/gvc.go` |
 
 ## Graphviz source edits
 

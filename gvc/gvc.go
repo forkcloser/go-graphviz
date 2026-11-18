@@ -23,8 +23,7 @@ type Context struct {
 	gvc     *wasm.Context
 	plugins []Plugin
 	// list is the entry the context's own plugins are listed under, freed
-	// with the context; nil for a context on the shared default list, and
-	// for a clone.
+	// with the context; nil for a context on the shared default list.
 	list *wasm.SymList
 }
 
@@ -67,8 +66,8 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 // Close frees once: a second Close does nothing, where it freed the
 // context again in the module every instance shares and released the
 // plugins a second time, the default ones the process's, and every PNG and
-// JPEG rendered after it was empty. Layout, RenderData and Clone on a
-// closed context return ErrClosed.
+// JPEG rendered after it was empty. Layout and RenderData on a closed
+// context return ErrClosed.
 func (c *Context) Close() error {
 	if c.gvc == nil {
 		return nil
@@ -203,27 +202,6 @@ func (c *Context) FreeLayout(ctx context.Context, g *cgraph.Graph) error {
 	}
 
 	return toError(res)
-}
-
-// Clone returns a context sharing c's plugins and plugin tables, as
-// gvCloneGVC does. Free it with FreeClonedContext before closing c: closing
-// c frees what they share.
-func (c *Context) Clone(ctx context.Context) (*Context, error) {
-	if c.gvc == nil {
-		return nil, ErrClosed
-	}
-
-	gvc, err := c.gvc.Clone(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// The plugins and the list stay the original's; a clone frees neither.
-	return &Context{gvc: gvc, plugins: nil, list: nil}, nil
-}
-
-func (c *Context) FreeClonedContext(ctx context.Context) error {
-	return c.gvc.FreeClonedContext(ctx)
 }
 
 // pngFormat is the format RenderImage takes the drawn page for directly;
