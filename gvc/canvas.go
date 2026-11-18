@@ -155,8 +155,10 @@ func (c *canvas) stroke(col color.Color, width float64, dashes []float64) {
 
 	var pieces [][]point
 
+	page := point{float64(c.img.Rect.Dx()), float64(c.img.Rect.Dy())}
+
 	for _, sub := range c.path {
-		for _, run := range dash(sub, dashes) {
+		for _, run := range dash(sub, dashes, page) {
 			pieces = strokePieces(pieces, run, width/2)
 		}
 	}
@@ -291,9 +293,12 @@ func flattenCubic(points []point, start, ctrl1, ctrl2, end point, depth int) []p
 	return flattenCubic(points, mid, right, third, end, depth+1)
 }
 
-// dasher walks a polyline through a dash pattern.
+// dasher walks a polyline through a dash pattern, total long, on a page
+// that reaches from the origin to page.
 type dasher struct {
 	pattern   []float64
+	total     float64
+	page      point
 	index     int
 	remaining float64
 	drawing   bool
@@ -317,14 +322,34 @@ func (d *dasher) cut(cut point) {
 	d.remaining = d.pattern[d.index]
 }
 
-// segment walks the segment from one point to the next.
+// segment walks the segment from one point to the next. Where the segment
+// runs off the page, the whole turns of the pattern that lie off it are
+// stepped over: they leave nothing to see, and a segment is cut into no
+// more dashes than the page shows of it, and a turn before, however long it
+// is. A dash begun before a step is drawn from there, longer than it is by
+// what is off the page.
 func (d *dasher) segment(from, next point) {
 	length := next.sub(from).length()
+	shownFrom, shownTo := d.shown(from, next, length)
 	done := 0.0
 
 	for length-done > d.remaining {
 		done += d.remaining
 		d.cut(from.lerp(next, done/length))
+
+		var off float64
+
+		// A step stays inside its segment: past its end the path turns,
+		// and a dash that is off the page along this segment may reach it
+		// from the next one, by as much as half the pen.
+		switch {
+		case done < shownFrom:
+			off = math.Min(shownFrom, length) - done
+		case done > shownTo:
+			off = length - done
+		}
+
+		done += math.Floor(off/d.total) * d.total
 	}
 
 	d.remaining -= length - done
@@ -334,22 +359,53 @@ func (d *dasher) segment(from, next point) {
 	}
 }
 
-// dash cuts a subpath into the runs a dash pattern leaves drawn, the way
-// Cairo does: lengths alternate on and off, an odd count repeats, and the
-// pattern starts afresh with each subpath. A closed subpath no dash breaks
-// stays closed. No pattern leaves the subpath whole.
-func dash(sub subpath, pattern []float64) []subpath {
+// shown is the stretch of a segment, as distances from its start, whose
+// dashes can reach the page: from the first of the page's corners along
+// the segment to the last. A dash ends flat, so one before or past every
+// corner covers nothing of the page, whatever the pen.
+func (d *dasher) shown(from, next point, length float64) (first, last float64) {
+	if length == 0 {
+		return 0, 0
+	}
+
+	along := next.sub(from).scale(1 / length)
+	first, last = math.Inf(1), math.Inf(-1)
+
+	for _, corner := range [...]point{{0, 0}, {d.page.x, 0}, {0, d.page.y}, d.page} {
+		at := corner.sub(from).dot(along)
+		first, last = math.Min(first, at), math.Max(last, at)
+	}
+
+	return first, last
+}
+
+// dash cuts a subpath into the runs a dash pattern leaves drawn on a page
+// that reaches from the origin to page, the way Cairo does: lengths
+// alternate on and off, an odd count repeats, and the pattern starts afresh
+// with each subpath. A closed subpath no dash breaks stays closed. No
+// pattern leaves the subpath whole. A pattern that turns over in less than
+// flatness is drawn as Cairo approximates it: as one dash and one gap that
+// length together, the same share of it drawn.
+func dash(sub subpath, pattern []float64, page point) []subpath {
 	if len(pattern)%2 == 1 {
 		pattern = slices.Concat(pattern, pattern)
 	}
 
-	var total float64
-	for _, length := range pattern {
+	var total, drawn float64
+	for i, length := range pattern {
 		total += length
+
+		if i%2 == 0 {
+			drawn += length
+		}
 	}
 
 	if len(pattern) == 0 || total <= 0 || len(sub.points) < 2 {
 		return []subpath{sub}
+	}
+
+	if total < flatness {
+		pattern, total = []float64{flatness * drawn / total, flatness * (1 - drawn/total)}, flatness
 	}
 
 	points := sub.points
@@ -357,7 +413,10 @@ func dash(sub subpath, pattern []float64) []subpath {
 		points = slices.Concat(points, points[:1])
 	}
 
-	walk := &dasher{pattern: pattern, remaining: pattern[0], drawing: true, current: []point{points[0]}}
+	walk := &dasher{
+		pattern: pattern, total: total, page: page,
+		remaining: pattern[0], drawing: true, current: []point{points[0]},
+	}
 
 	for i := 1; i < len(points); i++ {
 		walk.segment(points[i-1], points[i])
