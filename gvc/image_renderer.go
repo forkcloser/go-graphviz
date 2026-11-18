@@ -74,11 +74,12 @@ type ImageRenderer struct {
 	scaleX, scaleY float64
 	lineScale      float64
 	rotated        bool
-	// images holds the node images of the page being drawn, decoded and
-	// at each size drawn, by file name and by name and size, and held is
-	// what they take, within maxImagesKept.
-	images map[string]image.Image
-	held   int
+	// decoded and drawn hold the node images of the page being drawn: as
+	// their files decode, by file name, and at each size a node shows
+	// them, by name and size. heldDecoded and heldDrawn are what they
+	// take, together within maxImagesKept.
+	decoded, drawn         map[string]image.Image
+	heldDecoded, heldDrawn int
 	// imageOnly skips encoding a page that only its image is wanted for,
 	// and last keeps that image; Context.RenderImage sets the first and
 	// reads the second while it holds the module, so no other render runs
@@ -102,7 +103,8 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 		return fmt.Errorf("%w: %d by %d pixels", ErrPageTooLarge, width, height)
 	}
 
-	r.images, r.held = map[string]image.Image{}, 0
+	r.decoded, r.drawn = map[string]image.Image{}, map[string]image.Image{}
+	r.heldDecoded, r.heldDrawn = 0, 0
 
 	scale, translation := job.Scale(), job.Translation()
 	r.lineScale = math.Sqrt(math.Abs(scale.X() * scale.Y()))
@@ -127,7 +129,8 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 
 func (r *ImageRenderer) EndPage(ctx context.Context, job *Job) error {
 	page := r.page()
-	r.images, r.held = nil, 0
+	r.decoded, r.drawn = nil, nil
+	r.heldDecoded, r.heldDrawn = 0, 0
 
 	if r.imageOnly {
 		r.last = page
@@ -288,11 +291,11 @@ const maxImagesKept = 4 * MaxImagePixels
 // keeps it.
 func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, error) {
 	key := fmt.Sprintf("%s|%dx%d", name, width, height)
-	if scaled, ok := r.images[key]; ok {
+	if scaled, ok := r.drawn[key]; ok {
 		return scaled, nil
 	}
 
-	decoded, ok := r.images[name]
+	decoded, ok := r.decoded[name]
 	if !ok {
 		var err error
 
@@ -301,7 +304,9 @@ func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, 
 			return nil, err
 		}
 
-		r.keep(name, decoded)
+		r.makeRoom(imageBytes(decoded))
+		r.decoded[name] = decoded
+		r.heldDecoded += imageBytes(decoded)
 	}
 
 	if bounds := decoded.Bounds(); bounds.Dx() == width && bounds.Dy() == height {
@@ -309,25 +314,32 @@ func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, 
 	}
 
 	scaled := resizeLanczos(decoded, width, height)
-	r.keep(key, scaled)
+
+	r.makeRoom(imageBytes(scaled))
+	r.drawn[key] = scaled
+	r.heldDrawn += imageBytes(scaled)
 
 	return scaled, nil
 }
 
-// keep remembers img for the page under key. When it would take the page
-// past maxImagesKept, everything kept goes first: an image over the bound
-// is kept alone, and one that went is decoded again by the next node that
-// shows it.
-func (r *ImageRenderer) keep(key string, img image.Image) {
-	size := imageBytes(img)
-	if r.held+size > maxImagesKept {
-		clear(r.images)
+// makeRoom lets go of images until size more bytes fit within
+// maxImagesKept. The decoded ones go first: what a node shows is the copy
+// at its size, which is small and found before anything is decoded, so a
+// few large images shown by many nodes are decoded once each. The copies go
+// when they alone leave no room; an image over the bound is kept alone, and
+// one that went is decoded again by the next node that shows it.
+func (r *ImageRenderer) makeRoom(size int) {
+	if r.heldDecoded+r.heldDrawn+size > maxImagesKept {
+		clear(r.decoded)
 
-		r.held = 0
+		r.heldDecoded = 0
 	}
 
-	r.images[key] = img
-	r.held += size
+	if r.heldDrawn+size > maxImagesKept {
+		clear(r.drawn)
+
+		r.heldDrawn = 0
+	}
 }
 
 // imageBytes is what img is counted for among the images kept: four bytes
