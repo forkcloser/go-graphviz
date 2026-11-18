@@ -131,6 +131,8 @@ func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format st
 	var rendered string
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
+		defer c.releasePages()
+
 		out, res, err := c.gvc.RenderOutput(ctx, toGraphWasm(graph), format)
 		if err != nil {
 			return err
@@ -267,6 +269,24 @@ func (c *Context) renderImageDirect(
 	}
 
 	return img, nil
+}
+
+// releasePages drops what c's raster renderers hold of the page they last
+// drew, the canvas and the node images. A renderer is its plugin's for as
+// long as the plugin is installed, the default ones for the life of the
+// process, and a page that fails is left before its end.
+func (c *Context) releasePages() {
+	for _, plugin := range c.plugins {
+		render, ok := plugin.(*RenderPlugin)
+		if !ok {
+			continue
+		}
+
+		if renderer, ok := render.engine.(*ImageRenderer); ok {
+			renderer.ctx, renderer.decoded, renderer.drawn = nil, nil, nil
+			renderer.heldDecoded, renderer.heldDrawn = 0, 0
+		}
+	}
 }
 
 // imageRenderer is the module's raster renderer installed for format in c,
