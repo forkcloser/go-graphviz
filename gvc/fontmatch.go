@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -540,8 +541,8 @@ type loadedFont struct {
 
 // fontCaches is what font resolution keeps for the life of the process:
 // the index of the installed fonts, built on first use, the fonts parsed
-// from it, what each font name resolved to, the faces made at each size
-// and the fallback for each character.
+// from it, what each font name resolved to, the last faces made and the
+// fallback for each character.
 type fontCaches struct {
 	installed func() *fontIndex
 	fallback  func() *glyphFallback
@@ -549,7 +550,8 @@ type fontCaches struct {
 	mu       sync.Mutex
 	loaded   map[string]*loadedFont
 	resolved map[string]*loadedFont
-	faces    map[string]font.Face
+	// faces holds the last faces of the fonts resolved here.
+	faces map[string]font.Face
 	// loaderFaces holds the last faces of fonts a FontLoader supplied.
 	loaderFaces map[string]font.Face
 }
@@ -759,9 +761,9 @@ func fontFor(textFont *TextFont) (*loadedFont, error) {
 	return loaded, nil
 }
 
-// face is f at size points and dpi dots per inch, made once: for the life
-// of the process for a font resolved here, and among the last few for a
-// font a FontLoader supplied, which may be a new one on every call.
+// face is f at size points and dpi dots per inch, kept among the last
+// made: maxFaces of the fonts resolved here, and maxLoaderFaces of the
+// fonts a FontLoader supplied, which may be a new one on every call.
 func (f *loadedFont) face(size, dpi float64) (font.Face, error) {
 	key := fmt.Sprintf("%s|%g|%g", f.key, size, dpi)
 
@@ -777,12 +779,24 @@ func (f *loadedFont) face(size, dpi float64) (font.Face, error) {
 		return cached, nil
 	}
 
-	face, err := opentype.NewFace(f.font, &opentype.FaceOptions{Size: size, DPI: dpi})
+	sized, err := opentype.NewFace(f.font, &opentype.FaceOptions{Size: size, DPI: dpi})
 	if err != nil {
 		return nil, fmt.Errorf("face for %s: %w", f.key, err)
 	}
 
-	if f.fromLoader && len(cache) >= maxLoaderFaces {
+	// The pixels per em opentype makes the face at.
+	face := &outlinedFace{
+		Face: sized,
+		font: f.font,
+		ppem: fixed.Int26_6(math.Round(size * dpi * subpixel / pointsPerInch)),
+	}
+
+	limit := maxFaces
+	if f.fromLoader {
+		limit = maxLoaderFaces
+	}
+
+	if len(cache) >= limit {
 		clear(cache)
 	}
 
@@ -790,6 +804,33 @@ func (f *loadedFont) face(size, dpi float64) (font.Face, error) {
 
 	return face, nil
 }
+
+// outlinedFace is a face that also gives its glyphs' outlines, for the
+// canvas to fill a glyph too large for a mask.
+type outlinedFace struct {
+	font.Face
+
+	font *sfnt.Font
+	ppem fixed.Int26_6
+	buf  sfnt.Buffer
+}
+
+func (f *outlinedFace) outline(char rune) (sfnt.Segments, bool) {
+	index, err := f.font.GlyphIndex(&f.buf, char)
+	if err != nil || index == 0 {
+		return nil, false
+	}
+
+	segments, err := f.font.LoadGlyph(&f.buf, index, f.ppem, nil)
+
+	return segments, err == nil
+}
+
+// maxFaces bounds the faces kept of the fonts resolved here. A face keeps
+// the mask of the largest glyph it drew, and a graph asks for one at every
+// size it sets a font in, scaled by its zoom: without a bound, each size a
+// graph ever named stayed for the life of the process.
+const maxFaces = 64
 
 // maxLoaderFaces bounds the faces kept of fonts a FontLoader supplied, each
 // of which holds its font: enough for the fonts and sizes of a graph, and a
