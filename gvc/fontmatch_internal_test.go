@@ -275,6 +275,40 @@ func TestSymbolEncodedFont(t *testing.T) {
 	}
 }
 
+// Faces of the fonts resolved here are kept among the last made: a graph
+// that sets a font at every size does not grow the cache with each, and a
+// face asked for again while it is kept is the same face.
+func TestFacesBounded(t *testing.T) {
+	regular, err := embeddedFont("", fontStyle{weight: weightRegular})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for size := range 3 * maxFaces {
+		first, err := regular.face(float64(size+1), pointsPerInch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		again, err := regular.face(float64(size+1), pointsPerInch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if first != again {
+			t.Fatalf("size %d: asked for twice, two faces", size+1)
+		}
+
+		fonts.mu.Lock()
+		kept := len(fonts.faces)
+		fonts.mu.Unlock()
+
+		if kept > maxFaces {
+			t.Fatalf("%d faces kept after %d sizes, want at most %d", kept, size+1, maxFaces)
+		}
+	}
+}
+
 // Faces of fonts a FontLoader supplied are kept a few at a time: a loader
 // that parses its font afresh on every call, a new pointer each time, does
 // not grow the cache with every text drawn.
