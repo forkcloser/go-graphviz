@@ -63,8 +63,19 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 // Graphviz keeps for the context's life and leaves. gvFreeContext returns
 // the number of errors Graphviz has reported since the process started, not
 // a status for this call, so that number is not an error here.
+//
+// Close frees once: a second Close does nothing, where it freed the
+// context again in the module every instance shares and released the
+// plugins a second time, the default ones the process's, and every PNG and
+// JPEG rendered after it was empty. Layout, RenderData and Clone on a
+// closed context return ErrClosed.
 func (c *Context) Close() error {
+	if c.gvc == nil {
+		return nil
+	}
+
 	_, err := c.gvc.FreeContext(context.Background())
+	c.gvc = nil
 
 	if c.list != nil {
 		if freeErr := wasm.FreePluginList(context.Background(), c.list); err == nil {
@@ -89,6 +100,10 @@ func (c *Context) Close() error {
 // module is free for this call, Layout returns its error and lays nothing
 // out. A layout that is running is not interrupted, whatever ctx does.
 func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string) error {
+	if c.gvc == nil {
+		return ErrClosed
+	}
+
 	if err := graph.Err(); err != nil {
 		return fmt.Errorf("setting an attribute of the graph: %w", err)
 	}
@@ -109,6 +124,10 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 // ctx is honoured until the render starts, as Layout's is; a render that is
 // running is not interrupted.
 func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format string, w io.Writer) error {
+	if c.gvc == nil {
+		return ErrClosed
+	}
+
 	var rendered string
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
@@ -171,7 +190,13 @@ func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, forma
 	return nil
 }
 
+// FreeLayout frees the layout a Layout left on the graph. On a closed
+// context there is nothing it can free it with, and it does nothing.
 func (c *Context) FreeLayout(ctx context.Context, g *cgraph.Graph) error {
+	if c.gvc == nil {
+		return nil
+	}
+
 	res, err := c.gvc.FreeLayout(ctx, toGraphWasm(g))
 	if err != nil {
 		return err
@@ -184,6 +209,10 @@ func (c *Context) FreeLayout(ctx context.Context, g *cgraph.Graph) error {
 // gvCloneGVC does. Free it with FreeClonedContext before closing c: closing
 // c frees what they share.
 func (c *Context) Clone(ctx context.Context) (*Context, error) {
+	if c.gvc == nil {
+		return nil, ErrClosed
+	}
+
 	gvc, err := c.gvc.Clone(ctx)
 	if err != nil {
 		return nil, err
@@ -337,6 +366,9 @@ func toError(result int) error {
 // outputFileMode is the mode RenderFilename creates a file with: readable
 // by everyone, as the dot command's output is.
 const outputFileMode = 0o644
+
+// ErrClosed is returned by a call on a Context that has been closed.
+var ErrClosed = errors.New("graphviz context is closed")
 
 // ErrNoContext is returned when Graphviz cannot allocate a rendering context.
 var ErrNoContext = errors.New("graphviz context could not be created")
