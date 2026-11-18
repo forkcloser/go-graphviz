@@ -148,12 +148,27 @@ func newWasmModule() *WasmModule {
 	}
 }
 
-// load compiles and instantiates blob behind the host functions and binds
-// the enum values the bindings read. It returns an error where it used to
-// panic, and closes what it built when it fails.
-func (m *WasmModule) load(ctx context.Context, blob []byte) (err error) {
-	cfg := wazero.NewRuntimeConfig()
+// load loads blob with wazero's compiled-code cache, and without it when
+// that fails: a cache entry that cannot be read or written costs the start
+// a compilation, not the module. On Windows a process is refused the
+// rename onto an entry another process holds open.
+func (m *WasmModule) load(ctx context.Context, blob []byte) error {
 	if cache := getCompilationCache(); cache != nil {
+		if err := m.loadWith(ctx, blob, cache); err == nil {
+			return nil
+		}
+		_ = cache.Close(ctx)
+	}
+	return m.loadWith(ctx, blob, nil)
+}
+
+// loadWith compiles and instantiates blob behind the host functions and
+// binds the enum values the bindings read, with cache when it is not nil.
+// It returns an error where it used to panic, and closes what it built
+// when it fails.
+func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.CompilationCache) (err error) {
+	cfg := wazero.NewRuntimeConfig()
+	if cache != nil {
 		cfg = cfg.WithCompilationCache(cache)
 	}
 
