@@ -33,6 +33,7 @@ import (
 	"image"
 	"io"
 	"io/fs"
+	"os"
 
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/gvc"
@@ -164,10 +165,24 @@ func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (image.Image, 
 // RenderFilename lays graph out with the instance's layout engine and writes
 // it, rendered in format, to the file at path.
 func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Format, path string) error {
-	return g.laidOut(ctx, graph, func(ctx context.Context) error {
-		return g.ctx.RenderFilename(ctx, graph, string(format), path)
-	})
+	var buf bytes.Buffer
+	if err := g.Render(ctx, graph, format, &buf); err != nil {
+		return err
+	}
+
+	// Written once the render has returned: a renderer's error is known
+	// only then, and a render that failed leaves the file as it was.
+	// #nosec G306 -- the caller names its own output file, readable like the dot command's
+	if err := os.WriteFile(path, buf.Bytes(), outputFileMode); err != nil {
+		return fmt.Errorf("writing %s: %w", path, err)
+	}
+
+	return nil
 }
+
+// outputFileMode is the mode RenderFilename creates a file with: readable
+// by all, as the dot command's output is.
+const outputFileMode = 0o644
 
 // Graph opens a new root graph, named and typed by the options given; the
 // options apply to this graph only, and the next call starts again from the

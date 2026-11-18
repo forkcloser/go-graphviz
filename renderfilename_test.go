@@ -2,6 +2,7 @@ package graphviz_test
 
 import (
 	"bytes"
+	"errors"
 	"image"
 	"os"
 	"path/filepath"
@@ -124,5 +125,56 @@ func TestRenderWritesOntoGraph(t *testing.T) {
 
 	if out := render(graphviz.GV); !strings.Contains(out, "_draw_") {
 		t.Fatalf("a GV render after an XDOT render lost the drawing operations:\n%s", out)
+	}
+}
+
+// A render that fails leaves the file as it was: the file is written once
+// the render has returned, and a renderer's error is known only then. The
+// file was emptied, and the error returned after.
+func TestRenderFilenameKeepsTheFileOnFailure(t *testing.T) {
+	ctx := t.Context()
+
+	render, err := graphviz.NewRenderPlugin(ctx, "refused", &refusingEngine{new(graphviz.DefaultRenderEngine)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	device, err := graphviz.NewDevicePlugin(ctx, "refused:refused")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	g, err := graphviz.NewWithPlugins(ctx, render, device)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	graph, err := graphviz.ParseBytes([]byte("digraph { a -> b }"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	const there = "what was there"
+
+	path := filepath.Join(t.TempDir(), "kept.out")
+	if writeErr := os.WriteFile(path, []byte(there), 0o600); writeErr != nil {
+		t.Fatal(writeErr)
+	}
+
+	if renderErr := g.RenderFilename(ctx, graph, "refused", path); !errors.Is(renderErr, errPage) {
+		t.Fatalf("RenderFilename returned %v, want %v", renderErr, errPage)
+	}
+
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(after) != there {
+		t.Errorf("the file holds %q after a render that failed, want %q", after, there)
 	}
 }
