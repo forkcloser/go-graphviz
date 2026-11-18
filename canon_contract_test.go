@@ -97,7 +97,7 @@ func nativeDot(t *testing.T) string {
 func dotVersion(t *testing.T, dot string) string {
 	t.Helper()
 
-	banner, err := exec.CommandContext(t.Context(), dot, "-V").CombinedOutput()
+	banner, err := child(t, dot, "-V").CombinedOutput()
 	if err != nil {
 		t.Fatalf("%s -V: %v", dot, err)
 	}
@@ -186,7 +186,8 @@ func TestContractCanonMatchesTheNativeDot(t *testing.T) {
 				t.Fatalf("Render canon: %v", err)
 			}
 
-			cmd := exec.CommandContext(ctx, dot, "-Tcanon")
+			//nolint:contextcheck // the child runs on its subtest's context, under a deadline
+			cmd := child(t, dot, "-Tcanon")
 			cmd.Stdin = strings.NewReader(src)
 
 			theirs, err := cmd.Output()

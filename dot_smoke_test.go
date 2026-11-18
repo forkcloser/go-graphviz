@@ -8,7 +8,6 @@ import (
 	"image/png"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -53,7 +52,7 @@ func TestDotSmoke(t *testing.T) {
 		dot = "dot"
 	}
 
-	version, err := exec.CommandContext(t.Context(), dot, "-V").CombinedOutput()
+	version, err := child(t, dot, "-V").CombinedOutput()
 	if err != nil {
 		t.Fatalf("running %s -V: %v\n%s", dot, err, version)
 	}
@@ -101,7 +100,7 @@ func smokeOne(t *testing.T, dot, path, out string) string {
 
 	// Graphviz renders PNG at 96 DPI unless told otherwise, as this library
 	// does; no -G flag is passed, so a dot without one works too.
-	cmd := exec.CommandContext(t.Context(), dot, "-Tpng", path)
+	cmd := child(t, dot, "-Tpng", path)
 	cmd.Stdout = &theirs
 
 	if err := cmd.Run(); err != nil {
