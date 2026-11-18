@@ -173,6 +173,23 @@ neatogen=(
 neatogen_sources=()
 for f in "${neatogen[@]}"; do neatogen_sources+=("${gv}/lib/neatogen/${f}.c"); done
 
+# A fourth: Graphviz's parser frees what it holds in the grammar's error
+# rule, which a syntax error goes through. When bison runs out of its own
+# stack ("memory exhausted") it returns without that rule: the graph comes
+# back half built, and the grammar's stack of open subgraphs is never freed,
+# about 175 KiB for clusters nested 4000 deep. agconcat runs the rule's
+# clean-up, graph_error, for any parse bison reports failed; after a syntax
+# error it finds the graph already gone and does nothing.
+grammar="${gv}/lib/cgraph/grammar.c"
+if grep -q '^	aagparse(scanner);$' "${grammar}"; then
+  sed -i.orig 's/^	aagparse(scanner);$/	if (aagparse(scanner) != 0) graph_error(scanner);/' "${grammar}"
+  rm -f "${grammar}.orig"
+fi
+grep -q '^	if (aagparse(scanner) != 0) graph_error(scanner);$' "${grammar}" || {
+  echo "grammar.c: agconcat does not look like the one this fix is for" >&2
+  exit 1
+}
+
 mkdir -p "${work}/out"
 raw="${work}/out/graphviz.raw.wasm"
 
