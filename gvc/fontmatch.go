@@ -531,23 +531,31 @@ func best(faces []installedFace, style fontStyle) (installedFace, bool) {
 }
 
 // loadedFont is a parsed font, the source of faces at every size.
-// fromLoader marks a font a FontLoader supplied, whose faces are kept in
-// the bounded loaderFaces rather than for the life of the process.
+// fromLoader marks a font a FontLoader supplied, whose faces are kept
+// apart, in loaderFaces.
 type loadedFont struct {
 	key        string
 	font       *sfnt.Font
 	fromLoader bool
 }
 
-// fontCaches is what font resolution keeps for the life of the process:
-// the index of the installed fonts, built on first use, the fonts parsed
-// from it, what each font name resolved to, the last faces made and the
-// fallback for each character.
+// fontCaches is what font resolution keeps: for the life of the process,
+// the index of the installed fonts, built on first use; and within bounds,
+// the font files read, the fonts parsed from them, what each font name
+// resolved to, the last faces made and the fallback for each character.
 type fontCaches struct {
 	installed func() *fontIndex
 	fallback  func() *glyphFallback
 
-	mu       sync.Mutex
+	mu sync.Mutex
+	// files holds the font files read, whole and parsed, a collection once
+	// for all its members, and held is their size together: at most
+	// maxFiles of them and maxBytes are kept. Nothing else here keeps a
+	// font past its file: loaded, resolved and faces go when the files do.
+	files    map[string]fontFile
+	held     int64
+	maxFiles int
+	maxBytes int64
 	loaded   map[string]*loadedFont
 	resolved map[string]*loadedFont
 	// faces holds the last faces of the fonts resolved here.
@@ -559,6 +567,9 @@ type fontCaches struct {
 func newFontCaches() *fontCaches {
 	caches := &fontCaches{
 		installed: sync.OnceValue(func() *fontIndex { return buildFontIndex(fontDirectories()) }),
+		files:     map[string]fontFile{},
+		maxFiles:  maxFontFiles,
+		maxBytes:  maxFontBytes,
 		loaded:    map[string]*loadedFont{},
 		resolved:  map[string]*loadedFont{},
 		faces:     map[string]font.Face{},
@@ -595,36 +606,104 @@ func (c *fontCaches) parsed(key string, parse func() (*sfnt.Font, error)) (*load
 	return loaded, nil
 }
 
-// load reads an installed face once.
-func (face installedFace) load() (*loadedFont, error) {
-	return fonts.parsed(fmt.Sprintf("%s#%d", face.path, face.index), func() (*sfnt.Font, error) {
-		// #nosec G304 -- a file found in the platform's font directories or named by the graph
-		data, err := os.ReadFile(face.path)
-		if err != nil {
-			return nil, fmt.Errorf("reading font %s: %w", face.path, err)
-		}
+const (
+	// maxFontFiles and maxFontBytes bound the font files kept, read whole
+	// and parsed: 64 files, and 256 MiB together. A graph names its fonts,
+	// by family or by path, and a character no named font has is looked for
+	// in every installed one, so without a bound a process came to hold
+	// every font of the machine it had ever been asked for. A file over
+	// maxFontBytes by itself is kept alone.
+	maxFontFiles = 64
+	maxFontBytes = 256 << 20
+	// maxResolved bounds the font names whose resolution is remembered.
+	maxResolved = 1024
+	// maxFallbackRunes bounds the characters whose fallback is remembered.
+	maxFallbackRunes = 1 << 16
+)
 
-		if face.index < 0 {
-			parsedFont, parseErr := opentype.Parse(data)
-			if parseErr != nil {
-				return nil, fmt.Errorf("parsing font %s: %w", face.path, parseErr)
-			}
+// fontFile is a font file read whole and parsed: one font, or a collection
+// of them.
+type fontFile struct {
+	font       *sfnt.Font
+	collection *sfnt.Collection
+	size       int64
+}
 
-			return parsedFont, nil
-		}
+// load is face's font, from the file kept for it or read now.
+func (c *fontCaches) load(face installedFace) (*loadedFont, error) {
+	key := fmt.Sprintf("%s#%d", face.path, face.index)
 
-		collection, err := opentype.ParseCollection(data)
-		if err != nil {
-			return nil, fmt.Errorf("parsing font collection %s: %w", face.path, err)
-		}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-		member, err := collection.Font(face.index)
-		if err != nil {
+	if loaded, ok := c.loaded[key]; ok {
+		return loaded, nil
+	}
+
+	file, err := c.file(face.path, face.index >= 0)
+	if err != nil {
+		return nil, err
+	}
+
+	member := file.font
+
+	if file.collection != nil {
+		if member, err = file.collection.Font(face.index); err != nil {
 			return nil, fmt.Errorf("font %d of collection %s: %w", face.index, face.path, err)
 		}
+	}
 
-		return member, nil
-	})
+	loaded := &loadedFont{key: key, font: member}
+	c.loaded[key] = loaded
+
+	return loaded, nil
+}
+
+// file is the font file at path, kept or read now, as a collection or as
+// one font. Keeping one more than maxFiles, or more than maxBytes together,
+// first drops everything kept, so a file over maxBytes by itself is kept
+// alone. The caller holds c.mu.
+func (c *fontCaches) file(path string, collection bool) (fontFile, error) {
+	if kept, ok := c.files[path]; ok {
+		return kept, nil
+	}
+
+	// #nosec G304 -- a file found in the platform's font directories or named by the graph
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fontFile{}, fmt.Errorf("reading font %s: %w", path, err)
+	}
+
+	file := fontFile{size: int64(len(data))}
+
+	if collection {
+		if file.collection, err = opentype.ParseCollection(data); err != nil {
+			return fontFile{}, fmt.Errorf("parsing font collection %s: %w", path, err)
+		}
+	} else if file.font, err = opentype.Parse(data); err != nil {
+		return fontFile{}, fmt.Errorf("parsing font %s: %w", path, err)
+	}
+
+	if len(c.files) >= c.maxFiles || c.held+file.size > c.maxBytes {
+		c.drop()
+	}
+
+	c.files[path] = file
+	c.held += file.size
+
+	return file, nil
+}
+
+// drop forgets every font file kept and what was made from them: the
+// fonts, what names resolved to, and the faces. What a render is drawing
+// with stays its own until it is done. The caller holds c.mu.
+func (c *fontCaches) drop() {
+	clear(c.files)
+	clear(c.loaded)
+	clear(c.resolved)
+	clear(c.faces)
+
+	c.held = 0
 }
 
 // embeddedFont is the Go font standing in for a generic family and style,
@@ -670,15 +749,20 @@ func embeddedFont(generic string, style fontStyle) (*loadedFont, error) {
 // the name points to, then the candidate families, then a font file of
 // that name, then the embedded fonts.
 func resolveFont(index *fontIndex, name string, request fontRequest) (*loadedFont, error) {
+	return fonts.resolve(index, name, request)
+}
+
+// resolve is resolveFont with the fonts it loads kept in c.
+func (c *fontCaches) resolve(index *fontIndex, name string, request fontRequest) (*loadedFont, error) {
 	if info, err := os.Stat(name); err == nil && !info.IsDir() && isFontFile(name) {
 		if face, ok := fileFace(name, request.style); ok {
-			return face.load()
+			return c.load(face)
 		}
 	}
 
 	for _, family := range request.candidates() {
 		if face, ok := best(index.byFamily[strings.ToLower(family)], request.style); ok {
-			if loaded, err := face.load(); err == nil {
+			if loaded, err := c.load(face); err == nil {
 				return loaded, nil
 			}
 		}
@@ -686,12 +770,25 @@ func resolveFont(index *fontIndex, name string, request fontRequest) (*loadedFon
 
 	file := strings.ToLower(strings.TrimSuffix(filepath.Base(name), filepath.Ext(name)))
 	if face, ok := best(index.byFile[file], request.style); ok {
-		if loaded, err := face.load(); err == nil {
+		if loaded, err := c.load(face); err == nil {
 			return loaded, nil
 		}
 	}
 
 	return embeddedFont(request.generic, request.style)
+}
+
+// remember keeps loaded as what the name under key resolved to, forgetting
+// every name first when it would be one more than maxResolved.
+func (c *fontCaches) remember(key string, loaded *loadedFont) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if len(c.resolved) >= maxResolved {
+		clear(c.resolved)
+	}
+
+	c.resolved[key] = loaded
 }
 
 // fileFace is the face, closest to style, of a font file the graph names by
@@ -754,9 +851,7 @@ func fontFor(textFont *TextFont) (*loadedFont, error) {
 		return nil, err
 	}
 
-	fonts.mu.Lock()
-	fonts.resolved[key] = loaded
-	fonts.mu.Unlock()
+	fonts.remember(key, loaded)
 
 	return loaded, nil
 }
@@ -852,15 +947,18 @@ func fallbackFamilies() []string {
 // glyphFallback finds, for characters a font lacks, an installed font that
 // has them, and remembers the answer, including that there is none.
 type glyphFallback struct {
-	mu     sync.Mutex
-	index  *fontIndex
-	byRune map[rune]*loadedFont
-	// found is the fonts that answered before, tried first.
+	mu    sync.Mutex
+	index *fontIndex
+	// byRune is the face that has each character asked for, nil for none,
+	// for the last maxFallbackRunes characters: the face and not its font,
+	// which is loaded when it is asked for and kept as its file is.
+	byRune map[rune]*installedFace
+	// found is the faces that answered before, tried first.
 	found []installedFace
 }
 
 func newGlyphFallback(index *fontIndex) *glyphFallback {
-	return &glyphFallback{index: index, byRune: map[rune]*loadedFont{}}
+	return &glyphFallback{index: index, byRune: map[rune]*installedFace{}}
 }
 
 // fontsFor returns a font for each of chars that some installed font has a
@@ -874,13 +972,15 @@ func (g *glyphFallback) fontsFor(chars []rune) map[rune]*loadedFont {
 	var missing []rune
 
 	for _, char := range chars {
-		loaded, known := g.byRune[char]
+		face, known := g.byRune[char]
 
 		switch {
 		case !known:
 			missing = append(missing, char)
-		case loaded != nil:
-			result[char] = loaded
+		case face != nil:
+			if loaded, err := fonts.load(*face); err == nil {
+				result[char] = loaded
+			}
 		}
 	}
 
@@ -893,10 +993,20 @@ func (g *glyphFallback) fontsFor(chars []rune) map[rune]*loadedFont {
 	}
 
 	for _, char := range missing {
-		g.byRune[char] = nil
+		g.remember(char, nil)
 	}
 
 	return result
+}
+
+// remember keeps face as the answer for char, forgetting every answer first
+// when it would be one more than maxFallbackRunes.
+func (g *glyphFallback) remember(char rune, face *installedFace) {
+	if len(g.byRune) >= maxFallbackRunes {
+		clear(g.byRune)
+	}
+
+	g.byRune[char] = face
 }
 
 // candidates lists the faces to search, if any: the fonts that answered
@@ -925,18 +1035,20 @@ func (g *glyphFallback) take(candidate installedFace, missing []rune, result map
 		return missing
 	}
 
-	loaded, err := candidate.load()
+	loaded, err := fonts.load(candidate)
 	if err != nil {
 		return missing
 	}
 
-	g.found = append(g.found, candidate)
+	if !slices.Contains(g.found, candidate) {
+		g.found = append(g.found, candidate)
+	}
 
 	var still []rune
 
 	for _, char := range missing {
 		if covered[char] {
-			g.byRune[char] = loaded
+			g.remember(char, &candidate)
 			result[char] = loaded
 		} else {
 			still = append(still, char)
