@@ -589,7 +589,7 @@ func (g *Graph) SetDim(v int) *Graph {
 // plane.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:dimen
 func (g *Graph) SetDimen(v int) *Graph {
-	g.record(g.SafeSet(string(dimAttr), strconv.Itoa(v), "2"))
+	g.record(g.SafeSet(string(dimenAttr), strconv.Itoa(v), "2"))
 	return g
 }
 
