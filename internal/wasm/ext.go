@@ -624,6 +624,40 @@ var ErrCallbackPanic = errors.New("callback panicked")
 // than the module can hold.
 var ErrOutOfMemory = errors.New("out of WebAssembly memory")
 
+// ErrTrapped is returned by the call the Graphviz WebAssembly module
+// trapped in, and by every call after it: a stack it overflowed, an access
+// outside its memory, an abort. The trap follows in the error.
+//
+// A getter, which has no error to return, returns its zero value from then
+// on.
+//
+// The process has to be restarted to render again. A trap stops Graphviz
+// where it stands, with its heap and its globals half-updated, and a call
+// let in after that could draw from that state: so none is. No fresh module
+// is made in its place either: the module is one for the process, and every
+// graph, node, edge and context a caller holds lives in its memory.
+var ErrTrapped = errors.New("the Graphviz WebAssembly module trapped")
+
+// Trapped is the error every call returns once the module has trapped, and
+// nil until then. It does not wait for the module.
+func Trapped() error {
+	if trap := mod.trapped.Load(); trap != nil {
+		return *trap
+	}
+
+	return nil
+}
+
+// getterFailed is what a getter does with an error it has no way to
+// return: it panics, since reading a field does not fail. Once the module
+// has trapped every read fails; the getter then returns its zero value, and
+// the calls that return an error return ErrTrapped.
+func getterFailed(err error) {
+	if !errors.Is(err, ErrTrapped) {
+		panic(err)
+	}
+}
+
 // ErrNotLoaded is returned by a call made before the Graphviz WebAssembly
 // module was loaded, or after loading failed without an error of its own.
 var ErrNotLoaded = errors.New("the Graphviz WebAssembly module is not loaded")

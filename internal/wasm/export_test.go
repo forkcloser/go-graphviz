@@ -11,6 +11,15 @@ func LoadModule(ctx context.Context, blob []byte) (*WasmModule, error) {
 	return m, err
 }
 
+// Trap makes the package's module trap, for tests of what follows one: a
+// field is read through a pointer outside the module's memory. The module
+// is the process's, so the test runs it in a process of its own.
+func Trap(ctx context.Context) error {
+	_, err := mod.getField(ctx, "Color_rgba_double", uint64(mod.mod.Memory().Size())+1<<20)
+
+	return err
+}
+
 // FailedModule is a module whose load failed with err.
 func FailedModule(err error) *WasmModule {
 	m := newWasmModule()

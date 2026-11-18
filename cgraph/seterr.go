@@ -23,6 +23,12 @@ var setterErrors = struct {
 // WebAssembly module, so what fails them is the module: memory it cannot
 // allocate, or a module that did not load.
 func (g *Graph) Err() error {
+	// Once the module has trapped nothing is read from it, the root
+	// included: every setter since has failed with this.
+	if err := wasm.Trapped(); err != nil {
+		return err
+	}
+
 	// The root is asked of the module before the lock is taken, never under
 	// it: a render holds the module and asks Err inside it, so a goroutine
 	// that waited for the module with the lock in hand would stop them both.
