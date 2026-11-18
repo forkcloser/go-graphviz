@@ -2,14 +2,12 @@ package graphviz_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/png" // decodes the system dot's output when the hashes are regenerated
 	"math/bits"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -46,7 +44,7 @@ func TestGenerateHashes(t *testing.T) {
 		t.Skip("set GO_GRAPHVIZ_UPDATE_HASHES=1 to regenerate testdata/imagehash.json with the system dot")
 	}
 
-	if err := generateTestData(t.Context()); err != nil {
+	if err := generateTestData(t); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -55,8 +53,10 @@ func TestGenerateHashes(t *testing.T) {
 // the references were made with; every other key is a graph's path.
 const generatorKey = "generator"
 
-func generateTestData(ctx context.Context) error {
-	version, versionErr := exec.CommandContext(ctx, "dot", "-V").CombinedOutput()
+func generateTestData(t *testing.T) error {
+	t.Helper()
+
+	version, versionErr := child(t, "dot", "-V").CombinedOutput()
 	if versionErr != nil {
 		return fmt.Errorf("dot -V: %w: %s", versionErr, version)
 	}
@@ -73,7 +73,7 @@ func generateTestData(ctx context.Context) error {
 				return nil
 			}
 
-			png, err := exec.CommandContext(ctx, "dot", "-Tpng", p).Output()
+			png, err := child(t, "dot", "-Tpng", p).Output()
 			if err != nil {
 				return fmt.Errorf("dot -Tpng %s: %w", p, err)
 			}

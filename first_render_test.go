@@ -3,7 +3,6 @@ package graphviz_test
 import (
 	"bytes"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -31,7 +30,7 @@ func TestFirstRenderIsEveryRender(t *testing.T) {
 		return
 	}
 
-	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestFirstRenderIsEveryRender$", "-test.v")
+	cmd := child(t, os.Args[0], "-test.run=^TestFirstRenderIsEveryRender$", "-test.v")
 
 	cmd.Env = append(os.Environ(), freshProcessEnv+"=1")
 
