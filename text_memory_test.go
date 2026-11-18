@@ -2,7 +2,9 @@ package graphviz_test
 
 import (
 	"bytes"
+	"fmt"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/forkcloser/go-graphviz"
@@ -56,10 +58,22 @@ func TestTextKeepsNoMemory(t *testing.T) {
 	// The first text drawn reads the installed fonts, which are kept.
 	render(`digraph { a [label="W"] }`)
 
+	// A face was kept for every size a graph named, with the mask of the
+	// largest glyph it drew. The nodes are small and close, for a small page:
+	// the page is not what this measures.
+	var sizes strings.Builder
+
+	sizes.WriteString(`nodesep=0.02; node [fixedsize=true width=0.02 height=0.02 label="W"];`)
+
+	for i := range 400 {
+		fmt.Fprintf(&sizes, "n%d [fontsize=%d.%02d];", i, 75+i/100, i%100)
+	}
+
 	for name, src := range map[string]string{
 		// One glyph of some nine million pixels on a page of a few thousand:
 		// its mask, and the rasterizer that made it, were 58 MiB kept.
 		"a glyph larger than its page": `digraph { a [fixedsize=true label="W" fontsize=3000] }`,
+		"a font at four hundred sizes": "digraph { " + sizes.String() + " }",
 	} {
 		before := heapKept()
 
