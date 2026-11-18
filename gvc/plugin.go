@@ -2,6 +2,7 @@ package gvc
 
 import (
 	"context"
+	"runtime"
 	"slices"
 	"sync"
 
@@ -9,14 +10,27 @@ import (
 )
 
 // Plugin is a render, device or image-loading plugin a Context is built
-// with. One plugin value may serve several contexts; its callbacks stay
-// registered until the last context using it closes.
+// with. One plugin value may serve several contexts, at once or one after
+// the other; its callbacks stay registered for as long as the plugin can
+// be reached.
 type Plugin interface {
 	raw() *wasm.PluginAPI
-	// acquire counts a context the plugin is installed in; release counts
-	// it out and drops the plugin's callbacks once no context uses it.
+	// acquire counts a context the plugin is installed in, and release
+	// counts it out.
 	acquire()
 	release()
+}
+
+// dropCallbacksWith drops the callbacks registered under funcID, the
+// address of the engine plugin was built on, once plugin is collected. Not
+// when its last context closes: the plugin may be installed in another
+// after that, and with its callbacks gone it rendered nothing, in silence.
+//
+// A collection may find the plugin gone while its last render still runs.
+// The callbacks stay until that render has returned: dropping them takes
+// the module's lock, which a render or a layout holds from start to end.
+func dropCallbacksWith[P any](plugin *P, funcID uint64) {
+	runtime.AddCleanup(plugin, wasm.UnregisterCallbacks, funcID)
 }
 
 // sharedDefaults is the default plugin set, built once per process and
