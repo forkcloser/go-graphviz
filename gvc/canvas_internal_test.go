@@ -379,3 +379,37 @@ func furthestAlpha(one, other *canvas) int {
 
 	return worst
 }
+
+// A shape larger than the page covers the same pixels whichever of its
+// corners it is drawn from: the edge that closes it is clamped to the page
+// like the others, not drawn straight between its two ends as clamped.
+func TestCanvasFillFromAnyCorner(t *testing.T) {
+	corners := []point{{-3000, 4000}, {5000, 3000}, {70, -6000}, {40, 50}}
+
+	draw := func(first int) *canvas {
+		c := newCanvas(100, 100)
+		c.moveTo(corners[first].x, corners[first].y)
+
+		for n := 1; n < len(corners); n++ {
+			corner := corners[(first+n)%len(corners)]
+			c.lineTo(corner.x, corner.y)
+		}
+
+		c.closePath()
+		c.fill(opaqueBlack())
+
+		return c
+	}
+
+	want := draw(0)
+
+	if inked(want) == 0 || inked(want) == 100*100 {
+		t.Fatalf("the shape inks %d pixels of the page, not a part of it", inked(want))
+	}
+
+	for first := 1; first < len(corners); first++ {
+		if worst := furthestAlpha(draw(first), want); worst > 1 {
+			t.Errorf("drawn from corner %d: a pixel is %d levels from the shape drawn from corner 0", first, worst)
+		}
+	}
+}
