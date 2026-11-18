@@ -13,6 +13,7 @@ import (
 	"golang.org/x/image/font/gofont/goitalic"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -231,11 +232,33 @@ func TestGlyphFallbackRuns(t *testing.T) {
 
 // symbolEncodedFace finds an installed font that keeps its glyphs in the
 // private use area, as Symbol and Wingdings do on Windows: no glyph for 'A',
-// one at U+F041.
+// one at U+F041. Each font is asked where it is, read lazily and closed:
+// loading every installed font to ask keeps them all, two gigabytes of
+// them on a machine with many.
 func symbolEncodedFace(t *testing.T) font.Face {
 	t.Helper()
 
 	for _, installed := range fonts.installed().faces {
+		symbol := false
+
+		_ = withFonts(installed.path, func(index int, member *sfnt.Font) bool {
+			if index != installed.index {
+				return true
+			}
+
+			var buf sfnt.Buffer
+
+			latin, _ := member.GlyphIndex(&buf, 'A')
+			private, _ := member.GlyphIndex(&buf, symbolBase+'A')
+			symbol = latin == 0 && private != 0
+
+			return false
+		})
+
+		if !symbol {
+			continue
+		}
+
 		loaded, err := installed.load()
 		if err != nil {
 			continue
@@ -246,14 +269,9 @@ func symbolEncodedFace(t *testing.T) font.Face {
 			continue
 		}
 
-		_, latin := face.GlyphAdvance('A')
-		_, private := face.GlyphAdvance(symbolBase + 'A')
+		t.Logf("symbol-encoded font: %s", loaded.key)
 
-		if !latin && private {
-			t.Logf("symbol-encoded font: %s", loaded.key)
-
-			return face
-		}
+		return face
 	}
 
 	return nil
