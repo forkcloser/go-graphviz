@@ -76,8 +76,10 @@ type ImageRenderer struct {
 	lineScale      float64
 	rotated        bool
 	// images holds the node images of the page being drawn, decoded and
-	// at each size drawn, by file name and by name and size.
+	// at each size drawn, by file name and by name and size, and held is
+	// what they take, within maxImagesKept.
 	images map[string]image.Image
+	held   int
 	// imageOnly skips encoding a page that only its image is wanted for,
 	// and last keeps that image; Context.RenderImage sets the first and
 	// reads the second while it holds the module, so no other render runs
@@ -101,7 +103,7 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 		return fmt.Errorf("%w: %d by %d pixels", ErrPageTooLarge, width, height)
 	}
 
-	r.images = map[string]image.Image{}
+	r.images, r.held = map[string]image.Image{}, 0
 
 	scale, translation := job.Scale(), job.Translation()
 	r.lineScale = math.Sqrt(math.Abs(scale.X() * scale.Y()))
@@ -126,7 +128,7 @@ func (r *ImageRenderer) BeginPage(_ context.Context, job *Job) error {
 
 func (r *ImageRenderer) EndPage(ctx context.Context, job *Job) error {
 	page := r.page()
-	r.images = nil
+	r.images, r.held = nil, 0
 
 	if r.imageOnly {
 		r.last = page
@@ -276,8 +278,15 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 	return nil
 }
 
+// maxImagesKept is how many bytes of node images a page keeps between the
+// nodes that show them: what one image of MaxImagePixels takes as RGBA. A
+// graph names as many images as it likes, and kept without a bound they are
+// all in memory at once.
+const maxImagesKept = 4 * MaxImagePixels
+
 // nodeImage is the image file name at width by height pixels, decoded and
-// scaled once per page however many nodes show it.
+// scaled once per page however many nodes show it, as long as the page
+// keeps it.
 func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, error) {
 	key := fmt.Sprintf("%s|%dx%d", name, width, height)
 	if scaled, ok := r.images[key]; ok {
@@ -293,17 +302,47 @@ func (r *ImageRenderer) nodeImage(name string, width, height int) (image.Image, 
 			return nil, err
 		}
 
-		r.images[name] = decoded
+		r.keep(name, decoded)
 	}
 
-	scaled := decoded
-	if bounds := decoded.Bounds(); bounds.Dx() != width || bounds.Dy() != height {
-		scaled = resizeLanczos(decoded, width, height)
+	if bounds := decoded.Bounds(); bounds.Dx() == width && bounds.Dy() == height {
+		return decoded, nil
 	}
 
-	r.images[key] = scaled
+	scaled := resizeLanczos(decoded, width, height)
+	r.keep(key, scaled)
 
 	return scaled, nil
+}
+
+// keep remembers img for the page under key. When it would take the page
+// past maxImagesKept, everything kept goes first: an image over the bound
+// is kept alone, and one that went is decoded again by the next node that
+// shows it.
+func (r *ImageRenderer) keep(key string, img image.Image) {
+	size := imageBytes(img)
+	if r.held+size > maxImagesKept {
+		clear(r.images)
+
+		r.held = 0
+	}
+
+	r.images[key] = img
+	r.held += size
+}
+
+// imageBytes is what img is counted for among the images kept: four bytes
+// a pixel, eight when it holds sixteen bits a channel. An image with fewer
+// channels takes less than it is counted for.
+func imageBytes(img image.Image) int {
+	pixel := 4
+
+	switch img.(type) {
+	case *image.RGBA64, *image.NRGBA64:
+		pixel = 8
+	}
+
+	return pixel * img.Bounds().Dx() * img.Bounds().Dy()
 }
 
 // decodeImage reads and decodes an image file through the file system
