@@ -41,6 +41,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | A typed setter keeps its first error, which `Layout` returns; an allocation the module cannot make fails instead of writing to address 0 | https://github.com/forkcloser/go-graphviz/pull/82 |
 | A `FontLoader` supplies the font the layout measures with (breaking) | https://github.com/forkcloser/go-graphviz/pull/84 |
 | The binding's and the generator's errors wrap sentinels | https://github.com/forkcloser/go-graphviz/pull/89 |
+| `gvc.Color`'s `SetRGBADouble`, `SetRGBAUint`, `SetRGBAInt` and `SetHSVA` are gone (breaking): none ever set a colour. The two that take integers wrote zeros over it and, with a first element over four, over the state beside it; the two that take floating point did nothing, or trapped | `gvc/render_plugin.go` |
 
 ## Graphviz source edits
 
