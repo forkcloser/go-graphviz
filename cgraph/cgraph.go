@@ -775,13 +775,47 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 		return nil, errInit
 	}
 
-	graph, err := wasm.MemRead(context.Background(), string(bytes))
+	var (
+		graph    *wasm.Graph
+		reported error
+	)
+
+	// The parse and the read of what Graphviz reported during it are one
+	// stay in the module, so that the errors are this parse's: what an
+	// earlier call left unread is dropped first, and no other goroutine's
+	// call comes between.
+	err := wasm.Exclusive(context.Background(), func(ctx context.Context) error {
+		_ = wasm.TakeLastError()
+
+		var err error
+
+		graph, err = wasm.MemRead(ctx, string(bytes))
+		reported = lastError()
+
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	if graph == nil {
-		return nil, parseError()
+		if reported != nil {
+			return nil, reported
+		}
+
+		return nil, fmt.Errorf("%w: no graph was produced", ErrGraphviz)
+	}
+
+	// A parse that reported an error is a failed parse, graph or no graph.
+	// Graphviz's parser closes the graph on a syntax error and returns
+	// none; when it gives up for want of stack ("memory exhausted") it
+	// returns what it had built, and the caller drew that.
+	if reported != nil {
+		if closeErr := toGraph(graph).Close(); closeErr != nil {
+			return nil, errors.Join(reported, closeErr)
+		}
+
+		return nil, reported
 	}
 
 	return toGraph(graph), nil
