@@ -16,7 +16,6 @@ import (
 	"sync"
 
 	_ "golang.org/x/image/bmp" // node images: Graphviz recognizes BMP
-	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 	_ "golang.org/x/image/webp" // node images: Graphviz recognizes WebP
@@ -534,42 +533,4 @@ func SetFontLoader(loader FontLoader) {
 	defer fontLoaderMu.Unlock()
 
 	fontLoader = loader
-}
-
-// lanczos3 is the Lanczos kernel with a support of three pixels, the filter
-// the renderer has always used for node images; x/image/draw ships only the
-// box, bilinear and Catmull-Rom interpolators, so the kernel is spelled out.
-var lanczos3 = &draw.Kernel{
-	Support: lanczosLobes,
-	At: func(offset float64) float64 {
-		if offset < 0 {
-			offset = -offset
-		}
-
-		if offset >= lanczosLobes {
-			return 0
-		}
-
-		if offset == 0 {
-			return 1
-		}
-
-		x := math.Pi * offset
-
-		return lanczosLobes * math.Sin(x) * math.Sin(x/lanczosLobes) / (x * x)
-	},
-}
-
-// resizeLanczos scales img to width×height with Lanczos resampling and no
-// aspect-ratio preservation, as the previous imaging.Resize call did. A
-// non-positive dimension yields an empty image, as it did before.
-func resizeLanczos(img image.Image, width, height int) image.Image {
-	if width <= 0 || height <= 0 {
-		return image.NewNRGBA(image.Rect(0, 0, 0, 0))
-	}
-
-	dst := image.NewNRGBA(image.Rect(0, 0, width, height))
-	lanczos3.Scale(dst, dst.Bounds(), img, img.Bounds(), draw.Over, nil)
-
-	return dst
 }
