@@ -13,6 +13,7 @@ import (
 	"unsafe"
 	"reflect"
 	"strconv"
+	"sync/atomic"
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
@@ -35,6 +36,10 @@ type WasmModule struct {
 	// failed load leaves mod without an instance; every call and memory
 	// access returns this error instead of panicking at import.
 	initErr error
+	// trapped is the trap that ended the module, nil while it has not
+	// trapped. Every call after it returns this error without entering
+	// the module (see ErrTrapped). Read without the lock, by Trapped.
+	trapped atomic.Pointer[error]
 	// callbackErr is the first error a Go callback returned during the
 	// exported call in progress. A host function must not panic: the panic
 	// unwinds through Graphviz's C frames and leaves its state half-updated,
@@ -416,18 +421,29 @@ func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([
 	}
 	ctx, leave, outermost := m.lock.enter(ctx)
 	defer leave()
+	if trap := m.trapped.Load(); trap != nil {
+		return nil, *trap
+	}
 	fn, done := m.function(name)
 	ret, err := fn.Call(ctx, args...)
 	done()
+	if err != nil {
+		// Whatever stopped the call left Graphviz's heap and globals where
+		// it happened: nothing enters the module again.
+		err = fmt.Errorf("%w: %w", ErrTrapped, err)
+		m.trapped.Store(&err)
+	}
 	if !outermost {
 		// A nested call (a host function reaching back in, a free after a
 		// callback failed) leaves the parked error to the call that owns it.
 		return ret, err
 	}
-	if err != nil {
-		// A trap can follow from a callback's failure (its out-parameters
-		// were never written), so a parked error is returned with it.
-		return nil, errors.Join(err, m.takeCallbackError())
+	if trap := m.trapped.Load(); trap != nil {
+		// This call's own trap, or one in a call a callback made, which
+		// Graphviz went on after. A trap can follow from a callback's
+		// failure (its out-parameters were never written), so a parked
+		// error is returned with it.
+		return nil, errors.Join(*trap, m.takeCallbackError())
 	}
 	if err := m.takeCallbackError(); err != nil {
 		return nil, err
@@ -1243,7 +1259,7 @@ func (v *{{ $msgName }}) Set{{ .GoName }}(_arg {{ .Value.GoType }}) error {
 func (v *{{ $msgName }}) Get{{ .GoName }}() {{ .Value.GoType }} {
 	ret, err := v.get{{ .GoName }}(v.callContext(context.Background()))
 	if err != nil {
-		panic(err)
+		getterFailed(err)
 	}
 	return ret
 }

@@ -346,3 +346,12 @@ var ErrNoContext = errors.New("graphviz context could not be created")
 // it. The call finishes as when a callback returns an error, and the
 // Context stays usable.
 var ErrCallbackPanic = wasm.ErrCallbackPanic
+
+// ErrTrapped is returned by the call Graphviz trapped in, a stack it
+// overflowed or memory it reached outside its own, and by every call after
+// it, on any context or graph: the process has to be restarted to render
+// again. A getter, which has no error to return, returns its zero value. A trap leaves Graphviz's state half-updated,
+// so no call is let in
+// to draw from it; and the module is one for the process, holding every
+// graph and context of every caller, so none is made anew in its place.
+var ErrTrapped = wasm.ErrTrapped
