@@ -31,6 +31,28 @@ The embedded Graphviz is the version of the `graphviz` entry in [pins.yaml](./pi
 
 `circo` `dot` `fdp` `neato` `nop` `nop1` `nop2` `osage` `patchwork` `sfdp` `twopi`
 
+The embedded Graphviz is built without a triangulation library (no `HAVE_GTS`)
+and without the IPSEP solver (no `IPSEPCOLA`), as the hand-written
+[config.h](./internal/wasm/build/config.h) has it. A `dot` built with both, as
+Homebrew's is, lays these out differently:
+
+- `overlap=false` removes overlaps by the Voronoi method, where such a `dot`
+  uses prism, so the layout is another. This holds for `neato`, `fdp` and
+  `sfdp`.
+- `overlap=prism`, with or without its number, is ignored with the warning
+  `Overlap value "prism" unsupported - ignored`, and does what `overlap=false`
+  does.
+- `sfdp` removes no overlaps unless told to: its default is prism in such a
+  `dot` and nothing here, so its nodes can overlap. `overlap=false`,
+  `overlap=scale` and `overlap=voronoi` remove them.
+- `mode=ipsep` is ignored by `neato` with the warning `Illegal value ipsep for
+  attribute "mode"`, and the layout is the default mode's.
+
+`sfdp` also places its nodes elsewhere than a native `dot` does for the same
+graph, overlap removal aside: Graphviz's sfdp starts from positions drawn from
+the C library's `rand()`, and the module carries its own C library. The layout
+is the same from one run to the next.
+
 ## Supported Format
 
 `dot` `svg` `png` `jpg`

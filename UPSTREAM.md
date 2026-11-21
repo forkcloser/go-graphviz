@@ -46,6 +46,8 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 
 `internal/wasm/graphviz.wasm` is Graphviz 16.1.1, built from its release tarball with these edits, which `internal/wasm/build/build.sh` applies and checks.
 
+It is built without a triangulation library (no `HAVE_GTS`) and without the IPSEP solver (no `IPSEPCOLA`): prism overlap removal, sfdp's default overlap removal and neato's `mode=ipsep` are not in it. The README's [Supported Layout](./README.md#supported-layout) says what each does instead.
+
 | File | Edit | Why | Reported to Graphviz |
 | --- | --- | --- | --- |
 | `lib/common/labels.c` | `storeline` passes the old span count to `gv_recalloc` | the span about to be filled was never zeroed, and a label whose first line is empty freed a garbage layout pointer ([#30](https://github.com/forkcloser/go-graphviz/pull/30)) | no |
