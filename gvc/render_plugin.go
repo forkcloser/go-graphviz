@@ -909,21 +909,9 @@ func (c *Color) RGBADouble() [4]float64 {
 	return [4]float64{res[0], res[1], res[2], res[3]}
 }
 
-func (c *Color) SetRGBADouble(v [4]float64) {
-	if err := c.wasm.SetRgbaDouble(v[:]); err != nil {
-		panic(err)
-	}
-}
-
 func (c *Color) RGBAUint() [4]uint {
 	res := c.wasm.GetRgbaUint()
 	return [4]uint{res[0], res[1], res[2], res[3]}
-}
-
-func (c *Color) SetRGBAUint(v [4]uint) {
-	if err := c.wasm.SetRgbaUint(v[:]); err != nil {
-		panic(err)
-	}
 }
 
 func (c *Color) RGBAInt() [4]int {
@@ -931,21 +919,9 @@ func (c *Color) RGBAInt() [4]int {
 	return [4]int{res[0], res[1], res[2], res[3]}
 }
 
-func (c *Color) SetRGBAInt(v [4]int) {
-	if err := c.wasm.SetRgbaInt(v[:]); err != nil {
-		panic(err)
-	}
-}
-
 func (c *Color) HSVA() [4]float64 {
 	res := c.wasm.GetHsva()
 	return [4]float64{res[0], res[1], res[2], res[3]}
-}
-
-func (c *Color) SetHSVA(v [4]float64) {
-	if err := c.wasm.SetHsva(v[:]); err != nil {
-		panic(err)
-	}
 }
 
 func (c *Color) String() string {
