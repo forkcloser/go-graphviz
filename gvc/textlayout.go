@@ -79,7 +79,10 @@ func NewTextLayoutPlugin(ctx context.Context) (*TextLayoutPlugin, error) {
 		return nil, err
 	}
 
-	return &TextLayoutPlugin{plugin: plg, funcID: funcID}, nil
+	plugin := &TextLayoutPlugin{plugin: plg, funcID: funcID}
+	dropCallbacksWith(plugin, funcID)
+
+	return plugin, nil
 }
 
 func (p *TextLayoutPlugin) raw() *wasm.PluginAPI {
@@ -95,7 +98,6 @@ func (p *TextLayoutPlugin) acquire() {
 func (p *TextLayoutPlugin) release() {
 	if p.uses.Add(-1) == 0 {
 		textLayouts.remove(p.funcID)
-		wasm.UnregisterCallbacks(p.funcID)
 	}
 }
 

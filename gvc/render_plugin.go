@@ -2,7 +2,6 @@ package gvc
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
@@ -12,8 +11,6 @@ type RenderPlugin struct {
 	plugin *wasm.PluginAPI
 	typ    string // the format the plugin renders, as Graphviz names it
 	engine RenderEngine
-	funcID uint64       // the engine's address, the key its callbacks are registered under
-	uses   atomic.Int32 // the contexts the plugin is installed in
 }
 
 func NewRenderPlugin(
@@ -38,15 +35,9 @@ func (p *RenderPlugin) raw() *wasm.PluginAPI {
 	return p.plugin
 }
 
-func (p *RenderPlugin) acquire() {
-	p.uses.Add(1)
-}
+func (*RenderPlugin) acquire() {}
 
-func (p *RenderPlugin) release() {
-	if p.uses.Add(-1) == 0 {
-		wasm.UnregisterCallbacks(p.funcID)
-	}
-}
+func (*RenderPlugin) release() {}
 
 // RenderEngine is Graphviz's render plugin interface, one method per
 // callback gvrender_engine_t declares; a renderer that needs only some of
@@ -374,12 +365,14 @@ func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, e
 		return nil, err
 	}
 
-	return &RenderPlugin{
+	plugin := &RenderPlugin{
 		plugin: plg,
 		typ:    cfg.Type,
 		engine: cfg.RenderEngine,
-		funcID: wasm.WasmPtr(engine),
-	}, nil
+	}
+	dropCallbacksWith(plugin, wasm.WasmPtr(engine))
+
+	return plugin, nil
 }
 
 // jobCallback is the shape most render callbacks share: Graphviz hands the
