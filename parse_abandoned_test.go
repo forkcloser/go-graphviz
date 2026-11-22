@@ -9,6 +9,7 @@ import (
 
 	"github.com/forkcloser/go-graphviz"
 	"github.com/forkcloser/go-graphviz/cgraph"
+	"github.com/forkcloser/go-graphviz/gvc"
 )
 
 // nestedClusters is a digraph of one edge inside clusters nested depth deep.
@@ -65,9 +66,9 @@ func TestParseGraphvizGivesUpOnIsAnError(t *testing.T) {
 	closeOrError(t, deep.Close)
 }
 
-// What an earlier call left unread is not this parse's: a render Graphviz
-// reported an error for and still returned from leaves its message behind,
-// and the parse after it is a good one.
+// What an earlier call reported is not this parse's: a render Graphviz
+// reported an error for returns that error, and the parse after it is a
+// good one. The render returned nil once and left its message behind.
 func TestParseAfterAnErrorLeftUnread(t *testing.T) {
 	ctx := t.Context()
 
@@ -88,7 +89,9 @@ func TestParseAfterAnErrorLeftUnread(t *testing.T) {
 	var out bytes.Buffer
 
 	// Graphviz reports "bad label format" and draws the node all the same.
-	_ = g.Render(ctx, bad, graphviz.SVG, &out)
+	if err = g.Render(ctx, bad, graphviz.SVG, &out); !errors.Is(err, gvc.ErrReported) {
+		t.Fatalf("the render Graphviz reported an error for returned %v", err)
+	}
 
 	next, err := graphviz.ParseBytes([]byte(`digraph { a -> b }`))
 	if err != nil {

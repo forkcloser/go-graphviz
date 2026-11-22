@@ -95,6 +95,11 @@ func (c *Context) Close() error {
 // error a typed setter met on the graph (cgraph.Graph.Err), if one did: the
 // graph does not hold what the program set.
 //
+// An error that is ErrReported is a layout that is done: Graphviz reported
+// an error and laid the graph out all the same. The layout is on the graph,
+// to render and to free as after nil: a caller that returns on it without
+// FreeLayout leaves the layout in the module.
+//
 // ctx is honoured until the layout starts: when it is done before the
 // module is free for this call, Layout returns its error and lays nothing
 // out. A layout that is running is not interrupted, whatever ctx does.
@@ -108,17 +113,21 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 	}
 
 	return wasm.Exclusive(ctx, func(ctx context.Context) error {
+		// What an earlier call left unread is not this layout's.
+		_ = wasm.TakeLastError()
+
 		res, err := c.gvc.Layout(ctx, toGraphWasm(graph), engine)
 		if err != nil {
 			return err
 		}
 
-		return toError(res)
+		return outcome(res)
 	})
 }
 
 // RenderData renders graph, which a Layout has laid out, in format and
-// writes the result to w.
+// writes the result to w. An error that is ErrReported comes after the
+// write: the render is whole, and Graphviz reported an error during it.
 //
 // ctx is honoured until the render starts, as Layout's is; a render that is
 // running is not interrupted.
@@ -127,10 +136,16 @@ func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format st
 		return ErrClosed
 	}
 
-	var rendered string
+	var (
+		rendered string
+		reported error
+	)
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
 		defer c.releasePages()
+
+		// What an earlier call left unread is not this render's.
+		_ = wasm.TakeLastError()
 
 		out, res, err := c.gvc.RenderOutput(ctx, toGraphWasm(graph), format)
 		if err != nil {
@@ -139,7 +154,13 @@ func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format st
 
 		rendered = out
 
-		return toError(res)
+		if err = outcome(res); errors.Is(err, ErrReported) {
+			reported = err
+
+			return nil
+		}
+
+		return err
 	})
 	if err != nil {
 		return err
@@ -149,7 +170,7 @@ func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format st
 		return fmt.Errorf("writing the rendered %s: %w", format, err)
 	}
 
-	return nil
+	return reported
 }
 
 // RenderImage renders g in format and returns the image. For PNG with the
@@ -161,8 +182,10 @@ func (c *Context) RenderImage(ctx context.Context, graph *cgraph.Graph, format s
 	}
 
 	var buf bytes.Buffer
-	if err := c.RenderData(ctx, graph, format, &buf); err != nil {
-		return nil, err
+
+	reported := c.RenderData(ctx, graph, format, &buf)
+	if reported != nil && !errors.Is(reported, ErrReported) {
+		return nil, reported
 	}
 
 	img, _, err := image.Decode(&buf)
@@ -170,7 +193,7 @@ func (c *Context) RenderImage(ctx context.Context, graph *cgraph.Graph, format s
 		return nil, fmt.Errorf("decoding the rendered %s: %w", format, err)
 	}
 
-	return img, nil
+	return img, reported
 }
 
 // RenderFilename renders graph in format into the file at filename: a
@@ -179,8 +202,10 @@ func (c *Context) RenderImage(ctx context.Context, graph *cgraph.Graph, format s
 // it wrote nothing for any format and returned success.
 func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, format, filename string) error {
 	var buf bytes.Buffer
-	if err := c.RenderData(ctx, graph, format, &buf); err != nil {
-		return err
+
+	reported := c.RenderData(ctx, graph, format, &buf)
+	if reported != nil && !errors.Is(reported, ErrReported) {
+		return reported
 	}
 
 	// #nosec G306 -- the caller names its own output file, readable like the dot command's
@@ -188,22 +213,32 @@ func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, forma
 		return fmt.Errorf("writing %s: %w", filename, err)
 	}
 
-	return nil
+	return reported
 }
 
-// FreeLayout frees the layout a Layout left on the graph. On a closed
-// context there is nothing it can free it with, and it does nothing.
-func (c *Context) FreeLayout(ctx context.Context, g *cgraph.Graph) error {
+// FreeLayout frees the layout a Layout left on the graph, whatever ctx
+// says. On a closed context there is nothing it can free it with, and it
+// does nothing.
+func (c *Context) FreeLayout(ctx context.Context, graph *cgraph.Graph) error {
 	if c.gvc == nil {
 		return nil
 	}
 
-	res, err := c.gvc.FreeLayout(ctx, toGraphWasm(g))
-	if err != nil {
-		return err
-	}
+	// The call and the reading of what Graphviz reported are one turn in
+	// the module: read after it, the report of a layout another goroutine
+	// is in the middle of would be taken for this call's. A free runs
+	// whatever ctx says, as every free does: a layout kept because its
+	// context was done would stay in the module for good.
+	return wasm.Exclusive(context.WithoutCancel(ctx), func(ctx context.Context) error {
+		_ = wasm.TakeLastError()
 
-	return toError(res)
+		res, err := c.gvc.FreeLayout(ctx, toGraphWasm(graph))
+		if err != nil {
+			return err
+		}
+
+		return outcome(res)
+	})
 }
 
 // pngFormat is the format RenderImage takes the drawn page for directly;
@@ -219,7 +254,10 @@ func (c *Context) renderImageDirect(
 	format string,
 	renderer *ImageRenderer,
 ) (image.Image, error) {
-	var img image.Image
+	var (
+		img      image.Image
+		reported error
+	)
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
 		renderer.imageOnly = true
@@ -230,8 +268,9 @@ func (c *Context) renderImageDirect(
 			renderer.last = nil
 		}()
 
-		if err := c.RenderData(ctx, graph, format, io.Discard); err != nil {
-			return err
+		reported = c.RenderData(ctx, graph, format, io.Discard)
+		if reported != nil && !errors.Is(reported, ErrReported) {
+			return reported
 		}
 
 		img = renderer.last
@@ -246,7 +285,7 @@ func (c *Context) renderImageDirect(
 		return nil, fmt.Errorf("%w: the %s renderer drew no page", cgraph.ErrGraphviz, format)
 	}
 
-	return img, nil
+	return img, reported
 }
 
 // releasePages drops what c's raster renderers hold of the page they last
@@ -347,18 +386,24 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, *wasm.
 	return append(append([]*wasm.SymList{sym}, defaults...), symTerm), sym, nil
 }
 
-// toError maps a Graphviz result code: zero is success, anything else is a
-// failure, with the message Graphviz reported when it reported one.
-func toError(result int) error {
-	if result == 0 {
+// outcome is the error of a call Graphviz returned result from, read with
+// what Graphviz reported at its error level since the last read. A result
+// other than zero is a failure, with that message when there is one. Zero
+// with a message is a call that went on to its end past an error: the
+// message is returned with ErrReported.
+func outcome(result int) error {
+	text := strings.TrimRight(wasm.TakeLastError(), "\n")
+
+	switch {
+	case result != 0 && text != "":
+		return fmt.Errorf("%w: %s", cgraph.ErrGraphviz, text)
+	case result != 0:
+		return fmt.Errorf("%w: call failed with code %d and no message", cgraph.ErrGraphviz, result)
+	case text != "":
+		return fmt.Errorf("%w: %s (%w)", cgraph.ErrGraphviz, text, ErrReported)
+	default:
 		return nil
 	}
-
-	if text := wasm.TakeLastError(); text != "" {
-		return fmt.Errorf("%w: %s", cgraph.ErrGraphviz, strings.TrimRight(text, "\n"))
-	}
-
-	return fmt.Errorf("%w: call failed with code %d and no message", cgraph.ErrGraphviz, result)
 }
 
 // outputFileMode is the mode RenderFilename creates a file with: readable
@@ -367,6 +412,13 @@ const outputFileMode = 0o644
 
 // ErrClosed is returned by a call on a Context that has been closed.
 var ErrClosed = errors.New("graphviz context is closed")
+
+// ErrReported marks the error of a call that did all it was asked while
+// Graphviz reported an error on the way, a label it could not read for one:
+// the layout is on the graph, the render is written, the image is returned,
+// the file is there, as dot writes its output and exits 1. The error is a
+// cgraph.ErrGraphviz too, with the message Graphviz reported.
+var ErrReported = errors.New("reported, and the call went on to its end")
 
 // ErrNoContext is returned when Graphviz cannot allocate a rendering context.
 var ErrNoContext = errors.New("graphviz context could not be created")

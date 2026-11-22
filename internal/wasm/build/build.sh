@@ -211,6 +211,23 @@ grep -q 'go-graphviz: the fields built so far are counted' "${shapes}" || {
   exit 1
 }
 
+# A sixth: sfdp calls remove_overlap at the end of every layout, with the
+# node sizes when prism is to remove overlaps and with none otherwise. The
+# function begins by returning when it has no sizes. Built without a
+# triangulation library, as here, it is a stand-in that reports "Graphviz
+# not built with triangulation library" whatever it is given, and sfdp
+# never gives it sizes in such a build: an error reported for a layout that
+# asked nothing of the library. The stand-in reports when it has sizes.
+overlap="${gv}/lib/neatogen/overlap.c"
+if grep -q '^    if (!atomic_flag_test_and_set(&once)) {$' "${overlap}"; then
+  sed -i.orig 's/^    if (!atomic_flag_test_and_set(&once)) {$/    if (label_sizes \&\& !atomic_flag_test_and_set(\&once)) {/' "${overlap}"
+  rm -f "${overlap}.orig"
+fi
+grep -q '^    if (label_sizes && !atomic_flag_test_and_set(&once)) {$' "${overlap}" || {
+  echo "overlap.c: the stand-in remove_overlap does not look like the one this fix is for" >&2
+  exit 1
+}
+
 mkdir -p "${work}/out"
 raw="${work}/out/graphviz.raw.wasm"
 
