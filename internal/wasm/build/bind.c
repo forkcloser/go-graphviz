@@ -3753,6 +3753,15 @@ void wasm_bridge_freePluginList(void * _arg0) {
   );
 }
 
+WASM_EXPORT(wasm_bridge_freePlugin)
+void wasm_bridge_freePlugin(void * _arg0) {
+  gvplugin_api_t * arg0;
+  arg0 = (gvplugin_api_t *)_arg0;
+  bridge_free_plugin(
+    arg0
+  );
+}
+
 WASM_EXPORT(wasm_bridge_Context_layout)
 void wasm_bridge_Context_layout(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   GVC_t * arg0;

@@ -10931,3 +10931,14 @@ func FreePluginList(ctx context.Context, _arg0 *SymList) error {
 	}
 	return nil
 }
+
+func FreePlugin(ctx context.Context, _arg0 *PluginAPI) error {
+	arg0, err := mod.toObjectWasmValue(ctx, _arg0)
+	if err != nil {
+		return err
+	}
+	if err := mod.call(ctx, "freePlugin", arg0); err != nil {
+		return err
+	}
+	return nil
+}

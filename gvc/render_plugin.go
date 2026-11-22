@@ -356,12 +356,7 @@ func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, e
 		return nil, err
 	}
 
-	term, err := wasm.PluginInstalledZero(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := plg.SetTypes([]*wasm.PluginInstalled{types, term}); err != nil {
+	if err := setType(ctx, plg, types); err != nil {
 		return nil, err
 	}
 
@@ -370,7 +365,7 @@ func buildRenderPlugin(ctx context.Context, cfg *renderConfig) (*RenderPlugin, e
 		typ:    cfg.Type,
 		engine: cfg.RenderEngine,
 	}
-	dropCallbacksWith(plugin, wasm.WasmPtr(engine))
+	dropWith(plugin, plg, wasm.WasmPtr(engine))
 
 	return plugin, nil
 }

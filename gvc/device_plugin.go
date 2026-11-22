@@ -155,20 +155,21 @@ func buildDevicePlugin(ctx context.Context, cfg *deviceConfig) (*DevicePlugin, e
 		return nil, err
 	}
 
+	// The features hold a copy of dpi, not dpi.
+	if err = wasm.Free(ctx, wasm.WasmPtr(dpi)); err != nil {
+		return nil, err
+	}
+
 	if err = types.SetFeatures(features); err != nil {
 		return nil, err
 	}
 
-	term, err := wasm.PluginInstalledZero(ctx)
-	if err != nil {
+	if err := setType(ctx, plg, types); err != nil {
 		return nil, err
 	}
 
-	if err := plg.SetTypes([]*wasm.PluginInstalled{types, term}); err != nil {
-		return nil, err
-	}
+	plugin := &DevicePlugin{plugin: plg}
+	dropWith(plugin, plg, 0)
 
-	return &DevicePlugin{
-		plugin: plg,
-	}, nil
+	return plugin, nil
 }

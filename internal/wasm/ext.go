@@ -310,6 +310,14 @@ func Exclusive(ctx context.Context, calls func(context.Context) error) error {
 	return errors.Join(err, mod.takeCallbackError())
 }
 
+// Free frees the module memory at address, a handle's (WasmPtr) that a New
+// constructor made, once Graphviz holds a copy of what it points to and not
+// the handle's own: a struct set by value into another, an element copied
+// into an array.
+func Free(ctx context.Context, address uint64) error {
+	return mod.free(ctx, address)
+}
+
 // MemorySize is the module's memory size in bytes, for tests of growth.
 func MemorySize() uint32 {
 	if mod.mod == nil {

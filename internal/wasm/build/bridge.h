@@ -14,6 +14,10 @@ int bridge_free_context(GVC_t *gvc);
 // listed under, with its library, name and API array.
 void bridge_free_plugin_list(lt_symlist_t *sym);
 
+// bridge_free_plugin frees one plugin's API record, its types, and each
+// type's name, engine and features.
+void bridge_free_plugin(gvplugin_api_t *api);
+
 // bridge_render_data is gvRenderData, and leaves no job on the context when
 // the render failed.
 int bridge_render_data(GVC_t *gvc, graph_t *g, const char *format,

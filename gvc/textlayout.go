@@ -70,17 +70,12 @@ func NewTextLayoutPlugin(ctx context.Context) (*TextLayoutPlugin, error) {
 		return nil, err
 	}
 
-	term, err := wasm.PluginInstalledZero(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = plg.SetTypes([]*wasm.PluginInstalled{types, term}); err != nil {
+	if err = setType(ctx, plg, types); err != nil {
 		return nil, err
 	}
 
 	plugin := &TextLayoutPlugin{plugin: plg, funcID: funcID}
-	dropCallbacksWith(plugin, funcID)
+	dropWith(plugin, plg, funcID)
 
 	return plugin, nil
 }

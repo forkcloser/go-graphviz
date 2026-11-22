@@ -21,16 +21,51 @@ type Plugin interface {
 	release()
 }
 
-// dropCallbacksWith drops the callbacks registered under funcID, the
-// address of the engine plugin was built on, once plugin is collected. Not
-// when its last context closes: the plugin may be installed in another
-// after that, and with its callbacks gone it rendered nothing, in silence.
+// dropWith gives back what plugin holds of the module once plugin is
+// collected: the callbacks registered under funcID, the address of the
+// engine plugin was built on (0 for a plugin with no callback), and the
+// structures the bindings allocated for it, which api names. Not when its
+// last context closes: the plugin may be installed in another after that,
+// and with its callbacks gone it rendered nothing, in silence.
 //
 // A collection may find the plugin gone while its last render still runs.
-// The callbacks stay until that render has returned: dropping them takes
-// the module's lock, which a render or a layout holds from start to end.
-func dropCallbacksWith[P any](plugin *P, funcID uint64) {
-	runtime.AddCleanup(plugin, wasm.UnregisterCallbacks, funcID)
+// Callbacks and structures stay until that render has returned: dropping
+// them takes the module's lock, which a render or a layout holds from start
+// to end.
+func dropWith[P any](plugin *P, api *wasm.PluginAPI, funcID uint64) {
+	runtime.AddCleanup(plugin, drop, dropped{api: api, funcID: funcID})
+}
+
+// dropped is what a collected plugin leaves to give back.
+type dropped struct {
+	api    *wasm.PluginAPI
+	funcID uint64
+}
+
+func drop(left dropped) {
+	if left.funcID != 0 {
+		wasm.UnregisterCallbacks(left.funcID)
+	}
+
+	// Nothing hears a cleanup's error, and the only one there is, a module
+	// that trapped, has nothing left to free.
+	_ = wasm.FreePlugin(context.Background(), left.api)
+}
+
+// setType lists installed, and nothing else, as the types of the plugin api
+// describes. Graphviz reads the list up to a record with no name, and api
+// holds a copy of installed, so installed itself goes.
+func setType(ctx context.Context, api *wasm.PluginAPI, installed *wasm.PluginInstalled) error {
+	term, err := wasm.PluginInstalledZero(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := api.SetTypes([]*wasm.PluginInstalled{installed, term}); err != nil {
+		return err
+	}
+
+	return wasm.Free(ctx, wasm.WasmPtr(installed))
 }
 
 // sharedDefaults is the default plugin set, built once per process and

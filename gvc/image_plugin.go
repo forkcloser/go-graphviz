@@ -77,17 +77,12 @@ func buildLoadImagePlugin(ctx context.Context, cfg *loadImageConfig) (*LoadImage
 		return nil, err
 	}
 
-	term, err := wasm.PluginInstalledZero(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := plg.SetTypes([]*wasm.PluginInstalled{types, term}); err != nil {
+	if err := setType(ctx, plg, types); err != nil {
 		return nil, err
 	}
 
 	plugin := &LoadImagePlugin{plugin: plg}
-	dropCallbacksWith(plugin, wasm.WasmPtr(engine))
+	dropWith(plugin, plg, wasm.WasmPtr(engine))
 
 	return plugin, nil
 }
