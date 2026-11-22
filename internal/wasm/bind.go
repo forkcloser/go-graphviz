@@ -2701,8 +2701,11 @@ func (m *WasmModule) invoke(ctx context.Context, name string, args ...uint64) ([
 	if err != nil {
 		// Whatever stopped the call left Graphviz's heap and globals where
 		// it happened: nothing enters the module again.
-		err = fmt.Errorf("%w: %w", ErrTrapped, err)
-		m.trapped.Store(&err)
+		// The record is its own variable: err's address would put err on
+		// the heap in every call, trap or none.
+		trap := fmt.Errorf("%w: %w", ErrTrapped, err)
+		m.trapped.Store(&trap)
+		err = trap
 	}
 	if !outermost {
 		// A nested call (a host function reaching back in, a free after a
