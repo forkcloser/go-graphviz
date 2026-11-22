@@ -228,6 +228,25 @@ grep -q '^    if (label_sizes && !atomic_flag_test_and_set(&once)) {$' "${overla
   exit 1
 }
 
+# A seventh: the DOT writer puts a string in its canonical form into a buffer
+# of 2n+3 bytes for n characters (agstrcanon_bytes), and the form can be
+# longer: a quote is written as two bytes, and a line break, two more, goes
+# in after every linelength characters (128, or the graph's attribute) at
+# the next character an unquoted name could not hold. A value that is nearly
+# all quotes overran the buffer: an 8 KiB label came out with bytes of the
+# heap in it, a 2 MiB one trapped the module. A character is at most two
+# bytes and is followed by at most one break, so 4n, the two quotes around
+# them and the terminator hold any string.
+canon="${gv}/lib/cgraph/agstrcanon.h"
+if grep -q '^  return 2 \* strlen(str) + 3;$' "${canon}"; then
+  sed -i.orig 's/^  return 2 \* strlen(str) + 3;$/  return 4 * strlen(str) + 3;/' "${canon}"
+  rm -f "${canon}.orig"
+fi
+grep -q '^  return 4 \* strlen(str) + 3;$' "${canon}" || {
+  echo "agstrcanon.h: agstrcanon_bytes does not look like the one this fix is for" >&2
+  exit 1
+}
+
 mkdir -p "${work}/out"
 raw="${work}/out/graphviz.raw.wasm"
 
