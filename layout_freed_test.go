@@ -107,3 +107,39 @@ func TestALayoutThatDidNotStartFreesNothing(t *testing.T) {
 		t.Errorf("FreeLayout: %v", err)
 	}
 }
+
+// FreeLayout frees the layout of a graph whose context was closed first, two
+// deferred calls in the other order: Graphviz frees a layout without its
+// context. It did nothing then, and the layout stayed in the module, some
+// 2.7 KiB for three nodes.
+func TestFreeLayoutAfterItsContextClosed(t *testing.T) {
+	ctx := t.Context()
+
+	growth := memoryGrowth(2000, func() {
+		c, err := gvc.New(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		graph, err := graphviz.ParseBytes([]byte(`digraph { a -> b -> c }`))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := c.Layout(ctx, graph, "dot"); err != nil {
+			t.Fatal(err)
+		}
+
+		closeOrError(t, c.Close)
+
+		if err := c.FreeLayout(ctx, graph); err != nil {
+			t.Fatalf("FreeLayout after Close: %v", err)
+		}
+
+		closeOrError(t, graph.Close)
+	})
+
+	if growth != 0 {
+		t.Errorf("memory grew %d KiB over 2000 layouts freed after their context closed", growth/1024)
+	}
+}

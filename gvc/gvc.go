@@ -233,13 +233,8 @@ func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, forma
 }
 
 // FreeLayout frees the layout a Layout left on the graph, whatever ctx
-// says. On a closed context there is nothing it can free it with, and it
-// does nothing.
+// says, and on a closed context too: the layout is the graph's.
 func (c *Context) FreeLayout(ctx context.Context, graph *cgraph.Graph) error {
-	if c.gvc == nil {
-		return nil
-	}
-
 	// The call and the reading of what Graphviz reported are one turn in
 	// the module: read after it, the report of a layout another goroutine
 	// is in the middle of would be taken for this call's. A free runs
