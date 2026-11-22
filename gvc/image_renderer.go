@@ -146,6 +146,8 @@ func (r *ImageRenderer) EndPage(ctx context.Context, job *Job) error {
 			return fmt.Errorf("encoding the page as PNG: %w", err)
 		}
 	case r.isJPG(job):
+		onWhite(page)
+
 		if err := jpeg.Encode(&buf, page, &jpeg.Options{Quality: jpeg.DefaultQuality}); err != nil {
 			return fmt.Errorf("encoding the page as JPEG: %w", err)
 		}
@@ -471,6 +473,26 @@ func jfif(buf *bytes.Buffer, dpi float64) {
 
 	buf.Reset()
 	buf.Write(out)
+}
+
+// onWhite lays the page over white, as Graphviz's JPEG renderers do: JPEG
+// has no transparency, and its encoder takes the colours as they are, which
+// for what the drawing left transparent is black.
+func onWhite(page *image.RGBA) {
+	const opaque = 0xff
+
+	bounds := page.Bounds()
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		row := page.Pix[page.PixOffset(bounds.Min.X, y):page.PixOffset(bounds.Max.X, y)]
+
+		for i := 0; i < len(row); i += 4 {
+			// The colours are multiplied by alpha already: over white, each
+			// gains what alpha leaves of it.
+			under := opaque - row[i+3]
+			row[i], row[i+1], row[i+2], row[i+3] = row[i]+under, row[i+1]+under, row[i+2]+under, opaque
+		}
+	}
 }
 
 // page is the finished page: the canvas, turned back for a landscape page.
