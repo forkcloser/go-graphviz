@@ -382,10 +382,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -404,6 +400,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.UserRef(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -419,8 +422,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					result = value
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -439,10 +440,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -469,6 +466,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.DictWalk(arg0, arg1)
 			if err != nil {
 				mod.failCallback(err)
@@ -484,8 +488,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					result = value
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -500,10 +502,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -520,6 +518,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginJob(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -530,8 +535,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -546,10 +549,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -566,6 +565,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndJob(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -576,8 +582,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -592,10 +596,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -612,6 +612,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginGraph(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -622,8 +629,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -638,10 +643,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -658,6 +659,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndGraph(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -668,8 +676,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -684,10 +690,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -740,6 +742,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginLayer(arg0, arg1, arg2, arg3)
 			if err != nil {
 				mod.failCallback(err)
@@ -750,8 +759,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -766,10 +773,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -786,6 +789,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndLayer(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -796,8 +806,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -812,10 +820,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -832,6 +836,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginPage(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -842,8 +853,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -858,10 +867,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -878,6 +883,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndPage(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -888,8 +900,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -904,10 +914,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -924,6 +930,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginCluster(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -934,8 +947,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -950,10 +961,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -970,6 +977,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndCluster(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -980,8 +994,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -996,10 +1008,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1016,6 +1024,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNodes(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1026,8 +1041,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1042,10 +1055,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1062,6 +1071,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndNodes(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1072,8 +1088,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1088,10 +1102,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1108,6 +1118,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdges(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1118,8 +1135,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1134,10 +1149,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1154,6 +1165,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdges(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1164,8 +1182,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1180,10 +1196,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1200,6 +1212,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNode(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1210,8 +1229,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1226,10 +1243,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1246,6 +1259,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndNode(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1256,8 +1276,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1272,10 +1290,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1292,6 +1306,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdge(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1302,8 +1323,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1318,10 +1337,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1338,6 +1353,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdge(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1348,8 +1370,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1364,10 +1384,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1440,6 +1456,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginAnchor(arg0, arg1, arg2, arg3, arg4)
 			if err != nil {
 				mod.failCallback(err)
@@ -1450,8 +1473,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1466,10 +1487,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1486,6 +1503,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndAnchor(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1496,8 +1520,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1512,10 +1534,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1543,6 +1561,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_BeginLabel(arg0, arg1)
 			if err != nil {
 				mod.failCallback(err)
@@ -1553,8 +1578,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1569,10 +1592,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1589,6 +1608,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg0.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_EndLabel(arg0)
 			if err != nil {
 				mod.failCallback(err)
@@ -1599,8 +1625,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1615,10 +1639,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1646,6 +1666,9 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			defer mod.free(ctx, arg1.getPtr())
 			arg1.withToken(tokenOf(ctx))
 			arg2, err := func() (*Textspan, error) {
 				var zero *Textspan
@@ -1659,6 +1682,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg2.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_Textspan(arg0, arg1, arg2)
 			if err != nil {
 				mod.failCallback(err)
@@ -1669,9 +1699,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			mod.free(ctx, arg1.getPtr())
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1686,10 +1713,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1718,6 +1741,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}
 			arg1.withToken(tokenOf(ctx))
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_ResolveColor(arg0, arg1)
 			if err != nil {
 				mod.failCallback(err)
@@ -1728,8 +1758,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -1744,10 +1772,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1779,6 +1803,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			defer func() {
+				for _, e := range arg1 {
+					mod.free(ctx, e.getPtr())
+				}
+			}()
 			for _, e := range arg1 {
 				e.withToken(tokenOf(ctx))
 			}
@@ -1793,6 +1824,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_Ellipse(arg0, arg1, arg2)
 			if err != nil {
 				mod.failCallback(err)
@@ -1802,11 +1840,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
 					mod.failCallback(err)
 				}
-			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			for _, e := range arg1 {
-				mod.free(ctx, e.getPtr())
 			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
@@ -1822,10 +1855,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1858,6 +1887,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			defer func() {
+				for _, e := range arg1 {
+					mod.free(ctx, e.getPtr())
+				}
+			}()
 			for _, e := range arg1 {
 				e.withToken(tokenOf(ctx))
 			}
@@ -1882,6 +1918,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_Polygon(arg0, arg1, arg2, arg3)
 			if err != nil {
 				mod.failCallback(err)
@@ -1891,11 +1934,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
 					mod.failCallback(err)
 				}
-			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			for _, e := range arg1 {
-				mod.free(ctx, e.getPtr())
 			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
@@ -1911,10 +1949,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -1947,6 +1981,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			defer func() {
+				for _, e := range arg1 {
+					mod.free(ctx, e.getPtr())
+				}
+			}()
 			for _, e := range arg1 {
 				e.withToken(tokenOf(ctx))
 			}
@@ -1971,6 +2012,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_Beziercurve(arg0, arg1, arg2, arg3)
 			if err != nil {
 				mod.failCallback(err)
@@ -1980,11 +2028,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
 					mod.failCallback(err)
 				}
-			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			for _, e := range arg1 {
-				mod.free(ctx, e.getPtr())
 			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
@@ -2000,10 +2043,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -2035,6 +2074,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			defer func() {
+				for _, e := range arg1 {
+					mod.free(ctx, e.getPtr())
+				}
+			}()
 			for _, e := range arg1 {
 				e.withToken(tokenOf(ctx))
 			}
@@ -2049,6 +2095,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_Polyline(arg0, arg1, arg2)
 			if err != nil {
 				mod.failCallback(err)
@@ -2058,11 +2111,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				if err := fn(ctx, arg0, arg1, arg2); err != nil {
 					mod.failCallback(err)
 				}
-			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			for _, e := range arg1 {
-				mod.free(ctx, e.getPtr())
 			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
@@ -2078,10 +2126,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -2112,6 +2156,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_Comment(arg0, arg1)
 			if err != nil {
 				mod.failCallback(err)
@@ -2122,8 +2173,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},
@@ -2138,10 +2187,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -2188,6 +2233,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			defer func() {
+				for _, e := range arg2 {
+					mod.free(ctx, e.getPtr())
+				}
+			}()
 			for _, e := range arg2 {
 				e.withToken(tokenOf(ctx))
 			}
@@ -2212,6 +2264,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.RenderEngine_LibraryShape(arg0, arg1, arg2, arg3, arg4)
 			if err != nil {
 				mod.failCallback(err)
@@ -2221,11 +2280,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				if err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
 					mod.failCallback(err)
 				}
-			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			for _, e := range arg2 {
-				mod.free(ctx, e.getPtr())
 			}
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
@@ -2245,10 +2299,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -2283,6 +2333,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				return
 			}
 
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
+
 			funcID, err := mod.lookupFuncMap.TextLayoutEngine_TextLayout(arg0, arg1)
 			if err != nil {
 				mod.failCallback(err)
@@ -2298,8 +2355,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					result = value
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{api.ValueTypeI32},
@@ -2314,10 +2369,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -2357,6 +2408,9 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			defer mod.free(ctx, arg2.getPtr())
 			arg2.withToken(tokenOf(ctx))
 			arg3, err := func() (bool, error) {
 				var zero bool
@@ -2366,6 +2420,13 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			}()
 			if err != nil {
 				mod.failCallback(err)
+				return
+			}
+
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
 				return
 			}
 
@@ -2379,9 +2440,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(err)
 				}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			mod.free(ctx, arg2.getPtr())
 		}),
 		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
 		[]api.ValueType{},

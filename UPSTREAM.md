@@ -50,6 +50,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | `gvc.Context.FreeLayout` frees the layout of a graph whose context was closed first. It returned without freeing, and the layout stayed in the module; Graphviz frees a layout without its context | `gvc/gvc.go` |
 | A plugin nothing reaches any more gives back the module memory that describes it to Graphviz (its API record, its types, each type's name, engine and features), with its callbacks. Nothing freed them: a render plugin and a device plugin built for each render left some 500 bytes each time, for the life of the process | `gvc/plugin.go`, `internal/wasm/build/patch.c` |
 | `ParseBytes` tells a text that holds no graph (empty, blank, comments alone) from one Graphviz cannot read: its error is `cgraph.ErrNoGraph`. Graphviz's `dot` writes nothing for such an input and succeeds; a caller could not tell it from a syntax error | `cgraph/cgraph.go` |
+| A render whose callback fails or panics leaves nothing in the module. The callbacks Graphviz goes on to make are skipped, and the copies the bridge had made of their arguments (a point for each corner of a shape, a string for each name) stayed: some 300 bytes a node for each failed render | `internal/tools/nori/templates/bind.go.tmpl`, `internal/wasm/bind.go` |
 
 ## Graphviz source edits
 

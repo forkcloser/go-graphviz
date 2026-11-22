@@ -203,10 +203,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 					mod.failCallback(fmt.Errorf("%w: %v", ErrCallbackPanic, r))
 				}
 			}()
-			if mod.callbackErr != nil {
-				// An earlier callback of this call failed; the rest are skipped.
-				return
-			}
 			// An i32 argument is only the low half of its stack word: wazero
 			// does not clear the high half (the amd64 compiler leaves bits
 			// there), so it is cleared before any conversion reads the word.
@@ -233,8 +229,28 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				mod.failCallback(err)
 				return
 			}
+			{{- if .Value.IsValueStruct }}
+			// The bridge allocated a copy for an argument passed by value; it
+			// goes when the callback is over, run, skipped or failed.
+			{{- if .Value.IsSlice }}
+			defer func() {
+				for _, e := range arg{{ .Index }} {
+					mod.free(ctx, e.getPtr())
+				}
+			}()
+			{{- else }}
+			defer mod.free(ctx, arg{{ .Index }}.getPtr())
+			{{- end }}
+			{{- end }}
 			{{- template "inheritToken" (map "Dst" (printf "arg%d" .Index) "Value" .Value "Token" "tokenOf(ctx)") }}
 			{{- end }}
+
+			if mod.callbackErr != nil {
+				// An earlier callback of this call failed; the rest are
+				// skipped, once their arguments are read: reading them is
+				// what frees the bridge's copies.
+				return
+			}
 
 			funcID, err := mod.lookupFuncMap.{{ .Name }}({{- range .Args}}arg{{ .Index }},{{- end }})
 			if err != nil {
@@ -257,19 +273,6 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 				}
 				{{- end }}
 			}
-			// The bridge allocated a copy for every argument passed by value;
-			// the callback is over, so the copies go.
-			{{- range .Args }}
-			{{- if .Value.IsValueStruct }}
-			{{- if .Value.IsSlice }}
-			for _, e := range arg{{ .Index }} {
-				mod.free(ctx, e.getPtr())
-			}
-			{{- else }}
-			mod.free(ctx, arg{{ .Index }}.getPtr())
-			{{- end }}
-			{{- end }}
-			{{- end }}
 		}),
 		[]api.ValueType{ {{- range .Args }}api.ValueTypeI{{- if .Value.Is64Bit -}}64{{- else -}}32{{- end -}},{{- end }} },
 		{{- if .Return }}
