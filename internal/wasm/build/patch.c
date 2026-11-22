@@ -102,6 +102,22 @@ void bridge_free_plugin_list(lt_symlist_t *sym) {
   free(sym);
 }
 
+// bridge_free_plugin frees what the bindings allocated for one plugin: the
+// API record, its array of types, and each type's name, engine and
+// features. Graphviz keeps pointers to them for as long as a context lists
+// the plugin, and frees none of them with the context.
+void bridge_free_plugin(gvplugin_api_t *api) {
+  if (api->types != NULL) {
+    for (gvplugin_installed_t *type = api->types; type->type != NULL; type++) {
+      free((void *)type->type);
+      free(type->engine);
+      free(type->features);
+    }
+    free(api->types);
+  }
+  free(api);
+}
+
 // bridge_render_data is gvRenderData, and deletes the jobs of a render that
 // failed. For a format it does not know, gvRenderData returns with its job
 // still on the context, named by the caller's format string, which the

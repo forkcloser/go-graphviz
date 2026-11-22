@@ -193,6 +193,99 @@ func TestDroppedPluginReleasesCallbacks(t *testing.T) {
 	}
 }
 
+// A plugin nothing reaches any more gives back the module memory the
+// bindings allocated to describe it to Graphviz, each of the four kinds:
+// built for each render, they left some 700 bytes a round for good.
+func TestDroppedPluginsLeaveNoMemory(t *testing.T) {
+	ctx := t.Context()
+
+	graph, err := graphviz.ParseBytes([]byte("digraph { a -> b }"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	callbacks := wasm.RegisteredCallbacks()
+
+	// batch builds a hundred plugins of each kind, renders through the
+	// render and device ones, drops them all, and waits for the collector
+	// to have given them back: the callbacks are counted, and the
+	// structures go in the same cleanup, or for a device plugin, which has
+	// no callback, in one of the same sweep, a few collections at most.
+	batch := func() {
+		for range 100 {
+			engine := new(graphviz.DefaultRenderEngine)
+
+			render, err := graphviz.NewRenderPlugin(ctx, "dropped", engine)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			device, err := graphviz.NewDevicePlugin(ctx, "dropped:dropped")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err = gvc.NewLoadImagePlugin(ctx, "png:dropped", engine); err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err = graphviz.NewTextLayoutPlugin(ctx); err != nil {
+				t.Fatal(err)
+			}
+
+			g, err := graphviz.NewWithPlugins(ctx, render, device)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var out bytes.Buffer
+			if err := g.Render(ctx, graph, "dropped", &out); err != nil {
+				t.Fatal(err)
+			}
+
+			closeOrError(t, g.Close)
+		}
+
+		deadline := time.Now().Add(10 * time.Second)
+
+		for settled := 0; settled < 3; {
+			if time.Now().After(deadline) {
+				t.Fatalf(
+					"%d callbacks registered after the plugins were dropped, %d before",
+					wasm.RegisteredCallbacks(),
+					callbacks,
+				)
+			}
+
+			//revive:disable-next-line:call-to-gc // the plugins go at a collection, which the test asks for
+			runtime.GC()
+			time.Sleep(10 * time.Millisecond)
+
+			if wasm.RegisteredCallbacks() <= callbacks {
+				settled++
+			}
+		}
+	}
+
+	// The first batches take the memory a hundred live plugins need; the
+	// batches after them have it to use again.
+	for range 3 {
+		batch()
+	}
+
+	before := wasm.MemorySize()
+
+	for range 20 {
+		batch()
+	}
+
+	if growth := wasm.MemorySize() - before; growth != 0 {
+		t.Errorf("memory grew %d KiB over 2000 plugins of each kind built and dropped", growth/1024)
+	}
+}
+
 // Closing an instance twice closes it once: the second Close does nothing, a
 // render with the closed instance is ErrClosed, and an instance made after
 // renders the PNG one made before did. A second Close freed the context

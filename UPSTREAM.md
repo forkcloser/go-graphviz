@@ -48,6 +48,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | A render Graphviz reported an error during returns that error after its output (breaking): the render is whole, as dot writes its output and exits 1, and the error is a `gvc.ErrReported`. It returned nil, and the message stayed in the binding until a later failure carried it. `gvc.Context.Layout` returns such an error for a layout that is on the graph, to render and to free all the same | `gvc/gvc.go`, `graphviz.go` |
 | `gvc.Context.Layout` frees the layout it leaves behind an error that is not `ErrReported`. A callback's error (a font loader's, a text-layout plugin's) comes back from a layout Graphviz finished all the same, and a caller that returned on it, as the doc has it do, left the layout in the module | `gvc/gvc.go` |
 | `gvc.Context.FreeLayout` frees the layout of a graph whose context was closed first. It returned without freeing, and the layout stayed in the module; Graphviz frees a layout without its context | `gvc/gvc.go` |
+| A plugin nothing reaches any more gives back the module memory that describes it to Graphviz (its API record, its types, each type's name, engine and features), with its callbacks. Nothing freed them: a render plugin and a device plugin built for each render left some 500 bytes each time, for the life of the process | `gvc/plugin.go`, `internal/wasm/build/patch.c` |
 
 ## Graphviz source edits
 

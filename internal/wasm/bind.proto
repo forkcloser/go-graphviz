@@ -1807,6 +1807,17 @@ option (nori.file).export = {
       pointer: 1
     }
   }
+  // freePlugin frees one plugin's API record, its types, and each type's
+  // name, engine and features (patch.c).
+  func {
+    name: "freePlugin"
+    alias: "bridge_free_plugin"
+    args {
+      kind: STRUCT
+      ref: "PluginAPI"
+      pointer: 1
+    }
+  }
   method {
     recv: "Context"
     name: "layout"
