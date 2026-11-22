@@ -140,3 +140,50 @@ func TestParseWithAWarningIsAGraph(t *testing.T) {
 		t.Error("Graphviz did not warn about `1a`: the test measures nothing")
 	}
 }
+
+// A text that holds no graph and nothing wrong is ErrNoGraph, apart from a
+// text Graphviz cannot read: empty, blank or comments alone, where the text
+// ends before a graph begins. Graphviz's dot tells the two apart the same
+// way: it writes nothing for the first and succeeds, and fails on the
+// second.
+func TestATextWithNoGraph(t *testing.T) {
+	t.Parallel()
+
+	for name, tc := range map[string]struct {
+		text    string
+		noGraph bool
+	}{
+		"empty":               {"", true},
+		"blank":               {" \t\n\n", true},
+		"a line comment":      {"// nothing\n", true},
+		"a block comment":     {"/* nothing */", true},
+		"a preprocessor line": {"# 1 \"nothing\"\n", true},
+		"a graph cut short":   {"digraph { a -> ", false},
+		"a word":              {"nothing", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			graph, err := graphviz.ParseBytes([]byte(tc.text))
+			if graph != nil || !errors.Is(err, cgraph.ErrGraphviz) {
+				t.Fatalf("ParseBytes returned %v and %v, want no graph and a Graphviz error", graph, err)
+			}
+
+			if got := errors.Is(err, cgraph.ErrNoGraph); got != tc.noGraph {
+				t.Errorf("the error %q is ErrNoGraph: %v, want %v", err, got, tc.noGraph)
+			}
+
+			t.Run("as Graphviz's dot has it", func(t *testing.T) {
+				cmd := child(t, nativeDot(t), "-Tcanon")
+				cmd.Stdin = strings.NewReader(tc.text)
+
+				out, err := cmd.Output()
+
+				if succeeded := err == nil && len(out) == 0; succeeded != tc.noGraph {
+					t.Errorf("dot wrote %d bytes and returned %v: nothing written and success is %v, want %v",
+						len(out), err, succeeded, tc.noGraph)
+				}
+			})
+		})
+	}
+}
