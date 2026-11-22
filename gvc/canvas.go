@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/f64"
 	"golang.org/x/image/math/fixed"
 	"golang.org/x/image/vector"
@@ -35,7 +36,24 @@ const (
 	coincident = 1e-9
 	// subpixel is the fixed-point scale of font positions.
 	subpixel = 64
+	// maxGlyphMask is the most pixels a glyph is rasterized into as a mask
+	// of its own. A larger glyph is filled as an outline, no further than
+	// the page reaches: what a glyph costs follows the page, not its size.
+	maxGlyphMask = 1 << 16
+	// exactWidth is the width from which the rasterizer computes in
+	// floating point. In a narrower and no taller area it rounds an edge's
+	// position row by row, and a long edge ends most of a pixel away.
+	exactWidth = 513
+	// quadToCubic places the control points of the cubic Bézier that is a
+	// quadratic one: two thirds of the way from each end to its control.
+	quadToCubic = 2.0 / 3
 )
+
+// outliner is a face that gives a glyph's outline at the face's size: its
+// segments in 26.6 pixels from the glyph's origin, every contour closed.
+type outliner interface {
+	outline(char rune) (sfnt.Segments, bool)
+}
 
 // point is a position on the canvas, in pixels.
 type point struct{ x, y float64 }
@@ -224,7 +242,8 @@ func polygonBounds(polygons [][]point) image.Rectangle {
 // atY). Each glyph is rasterized at its position before the origin's offset
 // and moved by that offset with bilinear resampling, which lands nearer
 // Graphviz's own text than drawing it at the offset (measured against dot
-// 16.1.0 with the smoke test).
+// 16.1.0 with the smoke test). A glyph too large for a mask is filled as its
+// outline instead.
 func (c *canvas) drawString(face font.Face, text string, atX, atY float64, col color.Color) {
 	src := image.NewUniform(col)
 	dot := fixed.Point26_6{
@@ -238,17 +257,161 @@ func (c *canvas) drawString(face font.Face, text string, atX, atY float64, col c
 			dot.X += face.Kern(previous, char)
 		}
 
-		rect, mask, maskp, advance, ok := face.Glyph(dot, char)
-		if ok {
-			corner := c.origin.add(point{float64(rect.Min.X), float64(rect.Min.Y)})
-			transform := f64.Aff3{1, 0, corner.x, 0, 1, corner.y}
-			draw.BiLinear.Transform(c.img, transform, src, rect.Sub(rect.Min), draw.Over,
-				&draw.Options{SrcMask: mask, SrcMaskP: maskp})
-		}
-
-		dot.X += advance
+		dot.X += c.drawGlyph(face, char, dot, src)
 		previous = char
 	}
+}
+
+// drawGlyph draws char with its origin at dot, and returns its advance.
+func (c *canvas) drawGlyph(face font.Face, char rune, dot fixed.Point26_6, src image.Image) fixed.Int26_6 {
+	// The bounds come first: they cost no mask, and the mask is the size
+	// of the glyph, whatever the page.
+	bounds, advance, ok := face.GlyphBounds(char)
+	if !ok {
+		return advance
+	}
+
+	pixels := (bounds.Max.X - bounds.Min.X).Ceil() * (bounds.Max.Y - bounds.Min.Y).Ceil()
+
+	if outlined, gives := face.(outliner); gives && pixels > maxGlyphMask {
+		if segments, found := outlined.outline(char); found {
+			c.fillOutline(segments, c.origin.add(point{float64(dot.X) / subpixel, float64(dot.Y) / subpixel}), src)
+		}
+
+		return advance
+	}
+
+	if rect, mask, maskp, _, drawn := face.Glyph(dot, char); drawn {
+		corner := c.origin.add(point{float64(rect.Min.X), float64(rect.Min.Y)})
+		transform := f64.Aff3{1, 0, corner.x, 0, 1, corner.y}
+		draw.BiLinear.Transform(c.img, transform, src, rect.Sub(rect.Min), draw.Over,
+			&draw.Options{SrcMask: mask, SrcMaskP: maskp})
+	}
+
+	return advance
+}
+
+// fillOutline fills a glyph's outline, its origin at origin, with src,
+// rasterizing only the part of the page the outline's bounds cover.
+func (c *canvas) fillOutline(segments sfnt.Segments, origin point, src image.Image) {
+	// placed is a point of the outline, in pixels from from.
+	placed := func(p fixed.Point26_6, from point) point {
+		return from.add(point{float64(p.X) / subpixel, float64(p.Y) / subpixel})
+	}
+
+	bounds := segments.Bounds()
+	topLeft, bottomRight := placed(bounds.Min, origin), placed(bounds.Max, origin)
+
+	clip := image.Rect(
+		int(math.Floor(topLeft.x)), int(math.Floor(topLeft.y)),
+		int(math.Ceil(bottomRight.x)), int(math.Ceil(bottomRight.y)),
+	).Intersect(c.img.Bounds())
+	if clip.Empty() {
+		return
+	}
+
+	// A large glyph's edges are long: the area is made wide enough to be
+	// rasterized exactly, and no more of it is drawn for that.
+	c.ras.Reset(max(clip.Dx(), exactWidth), clip.Dy())
+
+	// The outline's origin from the corner of what is rasterized.
+	from := origin.sub(point{float64(clip.Min.X), float64(clip.Min.Y)})
+	path := clampedPath{ras: &c.ras, max: point{float64(clip.Dx()), float64(clip.Dy())}}
+
+	for _, segment := range segments {
+		switch segment.Op {
+		case sfnt.SegmentOpMoveTo:
+			path.moveTo(placed(segment.Args[0], from))
+		case sfnt.SegmentOpLineTo:
+			path.lineTo(placed(segment.Args[0], from))
+		case sfnt.SegmentOpQuadTo:
+			ctrl, end := placed(segment.Args[0], from), placed(segment.Args[1], from)
+			path.cubicTo(path.pen.lerp(ctrl, quadToCubic), end.lerp(ctrl, quadToCubic), end, 0)
+		case sfnt.SegmentOpCubeTo:
+			path.cubicTo(placed(segment.Args[0], from), placed(segment.Args[1], from), placed(segment.Args[2], from), 0)
+		}
+	}
+
+	c.ras.Draw(c.img, clip, src, image.Point{})
+}
+
+// clampedPath feeds a rasterizer a path of closed contours clamped to the
+// rectangle from the origin to max, the part of the rasterizer's area that
+// is drawn: what lies outside is drawn along the rectangle's edge. The
+// rasterizer sums, row by row, the height each line crosses, at the line's
+// column, or at the first column or past the last for a line outside, so a
+// line moved onto the edge covers the pixels inside as it did where it was,
+// and a path is walked no further than the rectangle, however far it runs.
+type clampedPath struct {
+	ras *vector.Rasterizer
+	max point
+	pen point
+}
+
+func (p *clampedPath) clamp(q point) (x, y float32) {
+	return float32(math.Min(math.Max(q.x, 0), p.max.x)), float32(math.Min(math.Max(q.y, 0), p.max.y))
+}
+
+func (p *clampedPath) moveTo(to point) {
+	p.ras.MoveTo(p.clamp(to))
+	p.pen = to
+}
+
+// lineTo draws the line from the pen to next, clamped: it is cut where it
+// crosses an edge of the rectangle, since a clamped line turns there.
+func (p *clampedPath) lineTo(next point) {
+	delta := next.sub(p.pen)
+	cuts := make([]float64, 0, 4)
+
+	for _, crossing := range [...]struct{ from, by, edge float64 }{
+		{p.pen.x, delta.x, 0},
+		{p.pen.x, delta.x, p.max.x},
+		{p.pen.y, delta.y, 0},
+		{p.pen.y, delta.y, p.max.y},
+	} {
+		if crossing.by == 0 {
+			continue
+		}
+
+		if t := (crossing.edge - crossing.from) / crossing.by; t > 0 && t < 1 {
+			cuts = append(cuts, t)
+		}
+	}
+
+	slices.Sort(cuts)
+
+	for _, t := range cuts {
+		p.ras.LineTo(p.clamp(p.pen.lerp(next, t)))
+	}
+
+	p.ras.LineTo(p.clamp(next))
+	p.pen = next
+}
+
+// cubicTo draws the cubic Bézier from the pen through two control points
+// to end as lines within flatness of it. A curve wholly to one side of the
+// rectangle is its chord: outside, only the rows a path crosses count, and
+// the chord crosses the rows the curve does, the same way.
+func (p *clampedPath) cubicTo(ctrl1, ctrl2, end point, depth int) {
+	left := math.Max(math.Max(p.pen.x, ctrl1.x), math.Max(ctrl2.x, end.x)) < 0
+	right := math.Min(math.Min(p.pen.x, ctrl1.x), math.Min(ctrl2.x, end.x)) > p.max.x
+	above := math.Max(math.Max(p.pen.y, ctrl1.y), math.Max(ctrl2.y, end.y)) < 0
+	below := math.Min(math.Min(p.pen.y, ctrl1.y), math.Min(ctrl2.y, end.y)) > p.max.y
+
+	if left || right || above || below || depth >= maxSubdivision ||
+		cubicDeviation(p.pen, ctrl1, ctrl2, end) <= flatness {
+		p.lineTo(end)
+
+		return
+	}
+
+	// de Casteljau at the midpoint.
+	first, second, third := p.pen.lerp(ctrl1, midpoint), ctrl1.lerp(ctrl2, midpoint), ctrl2.lerp(end, midpoint)
+	near, far := first.lerp(second, midpoint), second.lerp(third, midpoint)
+	mid := near.lerp(far, midpoint)
+
+	p.cubicTo(first, near, mid, depth+1)
+	p.cubicTo(far, third, end, depth+1)
 }
 
 // drawImage draws img with its top left corner at (atX, atY), rounded to
@@ -269,17 +432,7 @@ func (c *canvas) drawImage(img image.Image, atX, atY float64) {
 // control points to end, less its start, as line segments within flatness
 // of the curve.
 func flattenCubic(points []point, start, ctrl1, ctrl2, end point, depth int) []point {
-	chord := end.sub(start)
-	length := chord.length()
-
-	var deviation float64
-	if length == 0 {
-		deviation = math.Max(ctrl1.sub(start).length(), ctrl2.sub(start).length())
-	} else {
-		deviation = math.Max(math.Abs(chord.cross(ctrl1.sub(start))), math.Abs(chord.cross(ctrl2.sub(start)))) / length
-	}
-
-	if deviation <= flatness || depth >= maxSubdivision {
+	if cubicDeviation(start, ctrl1, ctrl2, end) <= flatness || depth >= maxSubdivision {
 		return append(points, end)
 	}
 
@@ -291,6 +444,19 @@ func flattenCubic(points []point, start, ctrl1, ctrl2, end point, depth int) []p
 	points = flattenCubic(points, start, first, left, mid, depth+1)
 
 	return flattenCubic(points, mid, right, third, end, depth+1)
+}
+
+// cubicDeviation is how far a cubic Bézier's control points lie from its
+// chord, which bounds how far the curve does.
+func cubicDeviation(start, ctrl1, ctrl2, end point) float64 {
+	chord := end.sub(start)
+
+	length := chord.length()
+	if length == 0 {
+		return math.Max(ctrl1.sub(start).length(), ctrl2.sub(start).length())
+	}
+
+	return math.Max(math.Abs(chord.cross(ctrl1.sub(start))), math.Abs(chord.cross(ctrl2.sub(start)))) / length
 }
 
 // dasher walks a polyline through a dash pattern, total long, on a page
