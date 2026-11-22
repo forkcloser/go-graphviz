@@ -770,6 +770,13 @@ func (s *Symbol) getWasm() *wasm.Sym {
 
 type ID uint64
 
+// ParseBytes reads the first graph of the DOT text given.
+//
+// An error that is ErrNoGraph is a text that ends before a graph begins,
+// with nothing Graphviz reports as wrong: empty, blank, comments alone, and
+// also a comment or a quote that is never closed. The text ends at its
+// first NUL byte, as a C string does. Any other error is a text Graphviz
+// could not read, with what it reported.
 func ParseBytes(bytes []byte) (*Graph, error) {
 	if errInit != nil {
 		return nil, errInit
@@ -803,7 +810,7 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 			return nil, reported
 		}
 
-		return nil, fmt.Errorf("%w: no graph was produced", ErrGraphviz)
+		return nil, fmt.Errorf("%w: %w", ErrGraphviz, ErrNoGraph)
 	}
 
 	// A parse that reported an error is a failed parse, graph or no graph.
@@ -907,6 +914,11 @@ func toError(result int) error {
 // Graphviz reported follows it, so errors.Is tells a Graphviz failure from
 // any other and the text is still there to read.
 var ErrGraphviz = errors.New("graphviz")
+
+// ErrNoGraph is the error of a DOT text that holds no graph and nothing
+// Graphviz reports as wrong: the end of the text came before a graph did.
+// Graphviz's dot renders nothing for such an input, and succeeds.
+var ErrNoGraph = errors.New("no graph was produced")
 
 // lastError is the latest message Graphviz reported as an error, as an
 // error, or nil when it reported none since the last read.
