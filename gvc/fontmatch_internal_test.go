@@ -259,7 +259,7 @@ func symbolEncodedFace(t *testing.T) font.Face {
 			continue
 		}
 
-		loaded, err := installed.load()
+		loaded, err := fonts.load(installed)
 		if err != nil {
 			continue
 		}
