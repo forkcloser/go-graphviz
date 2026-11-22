@@ -220,8 +220,10 @@ func (g *Graphviz) laidOut(ctx context.Context, graph *Graph, render func(contex
 }
 
 // SetFileSystem names the file system every file a graph names is read from:
-// the files Graphviz opens, node images among them, and the images the
-// renderer draws. nil restores the default, the host's. It is process-wide,
+// the files Graphviz opens, node images among them, the images the renderer
+// draws, and a font named by the path of its file. The fonts installed on
+// the machine, which a graph names by family, are read from the machine.
+// nil restores the default, the host's. It is process-wide,
 // for every instance, and takes effect on the next file opened, renders in
 // progress included.
 //

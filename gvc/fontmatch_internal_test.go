@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"golang.org/x/image/font"
@@ -172,7 +173,8 @@ func TestResolveFontFallbacks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if loaded.key != path+"#-1" {
+	// Its key says which file system the file was read through, then the file.
+	if !strings.HasSuffix(loaded.key, path+"#-1") {
 		t.Errorf("a font named by its path resolved to %s", loaded.key)
 	}
 }

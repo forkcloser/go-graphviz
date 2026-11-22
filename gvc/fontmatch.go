@@ -3,6 +3,7 @@ package gvc
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"math"
 	"os"
@@ -24,6 +25,8 @@ import (
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
+
+	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
 // Font resolution follows what Graphviz's Pango plugin asks fontconfig for.
@@ -385,6 +388,49 @@ type installedFace struct {
 	// that is not one.
 	index int
 	style fontStyle
+	// named says the graph names the file by its path: it is read through
+	// the file system the graph's files are read from, as a node image is,
+	// where an installed font is read from the host.
+	named bool
+}
+
+// fileKey is what the face's file is kept under: its path, and for a file
+// the graph names, the file system it was read through.
+func (f installedFace) fileKey() string {
+	if f.named {
+		return fmt.Sprintf("fs %d: %s", wasm.FileSystemGeneration(), f.path)
+	}
+
+	return f.path
+}
+
+// read reads the face's file whole. With no file system named, a file the
+// graph names is read from the host by its path as the graph wrote it: the
+// font's name arrives whole, so nothing is tried but that path.
+func (f installedFace) read() ([]byte, error) {
+	if !f.named || !wasm.FileSystemNamed() {
+		// #nosec G304 -- a file found in the platform's font directories, or named by the graph
+		data, err := os.ReadFile(f.path)
+		if err != nil {
+			return nil, fmt.Errorf("reading font %s: %w", f.path, err)
+		}
+
+		return data, nil
+	}
+
+	file, err := wasm.FileSystem().Open(f.path)
+	if err != nil {
+		return nil, fmt.Errorf("opening font %s: %w", f.path, err)
+	}
+
+	defer func() { _ = file.Close() }()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("reading font %s: %w", f.path, err)
+	}
+
+	return data, nil
 }
 
 // fontIndex is what the platform's font directories hold, by family.
@@ -631,7 +677,7 @@ type fontFile struct {
 
 // load is face's font, from the file kept for it or read now.
 func (c *fontCaches) load(face installedFace) (*loadedFont, error) {
-	key := fmt.Sprintf("%s#%d", face.path, face.index)
+	key := fmt.Sprintf("%s#%d", face.fileKey(), face.index)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -640,7 +686,7 @@ func (c *fontCaches) load(face installedFace) (*loadedFont, error) {
 		return loaded, nil
 	}
 
-	file, err := c.file(face.path, face.index >= 0)
+	file, err := c.file(face)
 	if err != nil {
 		return nil, err
 	}
@@ -659,24 +705,25 @@ func (c *fontCaches) load(face installedFace) (*loadedFont, error) {
 	return loaded, nil
 }
 
-// file is the font file at path, kept or read now, as a collection or as
-// one font. Keeping one more than maxFiles, or more than maxBytes together,
+// file is face's font file, kept or read now, as a collection or as one
+// font. Keeping one more than maxFiles, or more than maxBytes together,
 // first drops everything kept, so a file over maxBytes by itself is kept
 // alone. The caller holds c.mu.
-func (c *fontCaches) file(path string, collection bool) (fontFile, error) {
-	if kept, ok := c.files[path]; ok {
+func (c *fontCaches) file(face installedFace) (fontFile, error) {
+	path, key := face.path, face.fileKey()
+
+	if kept, ok := c.files[key]; ok {
 		return kept, nil
 	}
 
-	// #nosec G304 -- a file found in the platform's font directories or named by the graph
-	data, err := os.ReadFile(path)
+	data, err := face.read()
 	if err != nil {
-		return fontFile{}, fmt.Errorf("reading font %s: %w", path, err)
+		return fontFile{}, err
 	}
 
 	file := fontFile{size: int64(len(data))}
 
-	if collection {
+	if face.index >= 0 {
 		if file.collection, err = opentype.ParseCollection(data); err != nil {
 			return fontFile{}, fmt.Errorf("parsing font collection %s: %w", path, err)
 		}
@@ -688,7 +735,7 @@ func (c *fontCaches) file(path string, collection bool) (fontFile, error) {
 		c.drop()
 	}
 
-	c.files[path] = file
+	c.files[key] = file
 	c.held += file.size
 
 	return file, nil
@@ -754,8 +801,8 @@ func resolveFont(index *fontIndex, name string, request fontRequest) (*loadedFon
 
 // resolve is resolveFont with the fonts it loads kept in c.
 func (c *fontCaches) resolve(index *fontIndex, name string, request fontRequest) (*loadedFont, error) {
-	if info, err := os.Stat(name); err == nil && !info.IsDir() && isFontFile(name) {
-		if face, ok := fileFace(name, request.style); ok {
+	if isFontFile(name) {
+		if face, ok := c.namedFace(name, request.style); ok {
 			return c.load(face)
 		}
 	}
@@ -791,19 +838,42 @@ func (c *fontCaches) remember(key string, loaded *loadedFont) {
 	c.resolved[key] = loaded
 }
 
-// fileFace is the face, closest to style, of a font file the graph names by
-// path.
-func fileFace(path string, style fontStyle) (installedFace, bool) {
+// namedFace is the face, closest to style, of a font file the graph names
+// by path, read through the file system the graph's files are read from.
+func (c *fontCaches) namedFace(path string, style fontStyle) (installedFace, bool) {
+	whole := installedFace{path: path, index: -1, named: true}
+	if strings.EqualFold(filepath.Ext(path), ".ttc") {
+		whole.index = 0
+	}
+
+	c.mu.Lock()
+	file, err := c.file(whole)
+	c.mu.Unlock()
+
+	if err != nil {
+		return installedFace{}, false
+	}
+
 	var faces []installedFace
 
-	_ = withFonts(path, func(index int, member *sfnt.Font) bool {
+	add := func(index int, member *sfnt.Font) {
 		var buf sfnt.Buffer
 
 		subfamily := firstName(member, &buf, sfnt.NameIDTypographicSubfamily, sfnt.NameIDSubfamily)
-		faces = append(faces, installedFace{path: path, index: index, style: parseStyle(subfamily)})
+		faces = append(faces, installedFace{path: path, index: index, style: parseStyle(subfamily), named: true})
+	}
 
-		return true
-	})
+	if file.collection == nil {
+		add(-1, file.font)
+
+		return best(faces, style)
+	}
+
+	for index := range file.collection.NumFonts() {
+		if member, memberErr := file.collection.Font(index); memberErr == nil {
+			add(index, member)
+		}
+	}
 
 	return best(faces, style)
 }
@@ -836,7 +906,12 @@ func fontForSpan(ctx context.Context, textFont *TextFont) (*loadedFont, error) {
 // fontFor resolves a span's font, once per name, alias and flags.
 func fontFor(textFont *TextFont) (*loadedFont, error) {
 	request := requestFor(textFont.Name(), textFont.PostScriptAlias(), textFont.Flags())
+
 	key := fmt.Sprintf("%s|%v|%s|%+v", textFont.Name(), request.families, request.generic, request.style)
+	if isFontFile(textFont.Name()) {
+		// A file the graph names is the one in the file system of the day.
+		key = fmt.Sprintf("fs %d: %s", wasm.FileSystemGeneration(), key)
+	}
 
 	fonts.mu.Lock()
 	loaded, ok := fonts.resolved[key]

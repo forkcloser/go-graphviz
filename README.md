@@ -76,6 +76,10 @@ Latin, Greek and Cyrillic: a label in another script, CJK among them, draws as
 boxes on a machine with no font for it, unless a `FontLoader` (`SetFontLoader`)
 supplies one.
 
+A font can also be named by the path of its file (`fontname="/fonts/face.ttf"`).
+The file is read from the file system `SetFileSystem` names, as a node image
+is, and from the machine when none is named.
+
 Fonts are read from the platform's directories: on macOS `~/Library/Fonts`,
 `/Library/Fonts` and `/System/Library/Fonts`; on Windows the system and the
 user's `Fonts` folders; on Linux and the BSDs `~/.fonts`, then `fonts` under
