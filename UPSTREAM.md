@@ -46,6 +46,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | Every typed setter declares its attribute with the empty default, as Graphviz's DOT parser does for an attribute written on one object (breaking): a graph built with setters is the same graph written in DOT. Upstream declares some 110 of them with a value, which every other object of the kind then takes: one edge's `SetLabel` labels every edge with its name. The GV, XDOT and canon text of a setter-built graph no longer carries those defaults | `cgraph/attribute.go` |
 | `gvc.Context.Clone` and `FreeClonedContext` are gone (breaking): a cloned context trapped the module at its first layout | `gvc/gvc.go` |
 | A render Graphviz reported an error during returns that error after its output (breaking): the render is whole, as dot writes its output and exits 1, and the error is a `gvc.ErrReported`. It returned nil, and the message stayed in the binding until a later failure carried it. `gvc.Context.Layout` returns such an error for a layout that is on the graph, to render and to free all the same | `gvc/gvc.go`, `graphviz.go` |
+| `gvc.Context.Layout` frees the layout it leaves behind an error that is not `ErrReported`. A callback's error (a font loader's, a text-layout plugin's) comes back from a layout Graphviz finished all the same, and a caller that returned on it, as the doc has it do, left the layout in the module | `gvc/gvc.go` |
 
 ## Graphviz source edits
 
