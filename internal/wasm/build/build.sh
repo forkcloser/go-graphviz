@@ -190,6 +190,27 @@ grep -q '^	if (aagparse(scanner) != 0) graph_error(scanner);$' "${grammar}" || {
   exit 1
 }
 
+# A fifth: the parser of a record label (parse_reclbl, lib/common/shapes.c)
+# frees what it built, when the label cannot be read, by a count of fields
+# it sets only once it is done: the fields read before the fault were never
+# freed, about 330 bytes for each layout of label="{a|", more for a longer
+# label. reclbl-free.patch counts the fields as they are built. It is
+# applied to this Graphviz's shapes.c alone, by digest, as the patch above
+# is and for the same reason.
+shapes="${gv}/lib/common/shapes.c"
+reclbl_free_base=78370a37daef0003c4a00bd303b744f811dd240668fee57e3e7d6b06321aa82c
+if ! grep -q 'go-graphviz: the fields built so far are counted' "${shapes}"; then
+  echo "${reclbl_free_base}  ${shapes}" | sha256sum -c - > /dev/null || {
+    echo "shapes.c: not the file reclbl-free.patch was written against; recheck the patch for this Graphviz" >&2
+    exit 1
+  }
+  (cd "${gv}" && patch -p0 -N) < "${here}/reclbl-free.patch"
+fi
+grep -q 'go-graphviz: the fields built so far are counted' "${shapes}" || {
+  echo "shapes.c: reclbl-free.patch did not apply" >&2
+  exit 1
+}
+
 mkdir -p "${work}/out"
 raw="${work}/out/graphviz.raw.wasm"
 
