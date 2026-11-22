@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -188,5 +189,75 @@ func TestRenderEnginePanic(t *testing.T) {
 
 	if buf.Len() == 0 {
 		t.Fatal("empty SVG after a callback panic")
+	}
+}
+
+// cornerPanickingEngine panics in a callback Graphviz hands a shape's
+// corners, which the bridge copies for it.
+type cornerPanickingEngine struct {
+	*graphviz.DefaultRenderEngine
+}
+
+func (*cornerPanickingEngine) Polygon(context.Context, *graphviz.Job, []*graphviz.PointFloat, bool) error {
+	panic("polygon panicked")
+}
+
+// A render whose callback fails or panics leaves nothing in the module. The
+// callbacks Graphviz goes on to make are skipped, and the bridge has made
+// copies of their arguments by then, a point for each corner of a shape, a
+// string for each name: skipped before they were read, or passed over by a
+// panic, the copies stayed, some 300 bytes a node.
+func TestAFailedCallbackLeavesNoMemory(t *testing.T) {
+	ctx := t.Context()
+
+	var src strings.Builder
+
+	src.WriteString("digraph {")
+
+	for i := range 50 {
+		fmt.Fprintf(&src, " n%d [shape=box]; n%d -> n%d;", i, i, (i+1)%50)
+	}
+
+	src.WriteString(" }")
+
+	for name, engine := range map[string]graphviz.RenderEngine{
+		"a callback that returns an error":             &refusingEngine{new(graphviz.DefaultRenderEngine)},
+		"a callback that panics":                       &panickingEngine{new(graphviz.DefaultRenderEngine)},
+		"a callback that panics, its arguments copied": &cornerPanickingEngine{new(graphviz.DefaultRenderEngine)},
+	} {
+		render, err := graphviz.NewRenderPlugin(ctx, "fails", engine)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		device, err := graphviz.NewDevicePlugin(ctx, "fails:fails")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		g, err := graphviz.NewWithPlugins(ctx, render, device)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		growth := memoryGrowth(200, func() {
+			graph, err := graphviz.ParseBytes([]byte(src.String()))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var out bytes.Buffer
+			if err := g.Render(ctx, graph, "fails", &out); err == nil {
+				t.Fatal("the render returned no error: the engine's callback did not fail")
+			}
+
+			closeOrError(t, graph.Close)
+		})
+
+		if growth != 0 {
+			t.Errorf("%s: memory grew %d KiB over 200 renders", name, growth/1024)
+		}
+
+		closeOrError(t, g.Close)
 	}
 }
