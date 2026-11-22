@@ -198,20 +198,25 @@ func (c *canvas) paint(polygons [][]point, col color.Color) {
 
 	offset := point{float64(bounds.Min.X), float64(bounds.Min.Y)}
 
+	// Each polygon is clamped to what is rasterized: the rasterizer steps
+	// along an edge a row at a time from where it starts, rounding each
+	// step, and an edge that starts far off the page arrives pixels away
+	// from its place, or not at all.
+	path := clampedPath{ras: &c.ras, max: point{float64(bounds.Dx()), float64(bounds.Dy())}}
+
 	for _, polygon := range polygons {
 		if signedArea(polygon) < 0 {
 			polygon = reversed(polygon)
 		}
 
 		first := polygon[0].sub(offset)
-		c.ras.MoveTo(float32(first.x), float32(first.y))
+		path.moveTo(first)
 
 		for _, p := range polygon[1:] {
-			q := p.sub(offset)
-			c.ras.LineTo(float32(q.x), float32(q.y))
+			path.lineTo(p.sub(offset))
 		}
 
-		c.ras.ClosePath()
+		path.lineTo(first)
 	}
 
 	c.ras.Draw(c.img, bounds, image.NewUniform(col), image.Point{})
