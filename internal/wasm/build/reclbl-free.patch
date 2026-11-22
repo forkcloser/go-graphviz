@@ -1,0 +1,27 @@
+--- lib/common/shapes.c
++++ lib/common/shapes.c
+@@ -3419,16 +3419,22 @@
+ 	    if (mode != 0 || !*reclblp)
+ 		return parse_error(rv, tmpport);
+ 	    mode = HASTABLE;
+-	    if (!(rv->fld[fi++] = parse_reclbl(n, !LR, false, text)))
++	    // go-graphviz: the fields built so far are counted as they are
++	    // built, so that parse_error frees them: it freed by a count set
++	    // only at the end.
++	    if (!(rv->fld[fi] = parse_reclbl(n, !LR, false, text)))
+ 		return parse_error(rv, tmpport);
++	    rv->n_flds = ++fi;
+ 	    break;
+ 	case '}':
+ 	case '|':
+ 	case '\000':
+ 	    if ((!*reclblp && !flag) || (mode & INPORT))
+ 		return parse_error(rv, tmpport);
+-	    if (!(mode & HASTABLE))
++	    if (!(mode & HASTABLE)) {
+ 		fp = rv->fld[fi++] = gv_alloc(sizeof(field_t));
++		rv->n_flds = fi;
++	    }
+ 	    if (tmpport) {
+ 		fp->id = tmpport;
+ 		tmpport = NULL;
