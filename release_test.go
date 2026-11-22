@@ -12,11 +12,19 @@ import (
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
 
-// Closing an instance releases the callbacks its plugins registered, so a
-// process that creates and closes instances does not keep every render
-// engine it ever had.
+// An instance made and closed registers no callback that stays: a process
+// that creates and closes instances does not keep every render engine it
+// ever had. The default plugins are the process's, built with the first
+// instance and kept, so the count starts after one.
 func TestCloseReleasesCallbacks(t *testing.T) {
 	ctx := t.Context()
+
+	first, err := graphviz.New(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	closeOrError(t, first.Close)
 
 	before := wasm.RegisteredCallbacks()
 
