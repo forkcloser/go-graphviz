@@ -118,6 +118,11 @@ func (g *Graphviz) SetLayout(layout Layout) *Graphviz {
 // Render lays graph out with the instance's layout engine, renders it in
 // format and writes the result to w.
 //
+// An error that is gvc.ErrReported comes after the write: the render is
+// whole, and Graphviz reported an error on the way, a label it could not
+// read for one, as dot writes its output and exits 1. RenderImage returns
+// its image with such an error, and RenderFilename has written its file.
+//
 // One render runs at a time in the process, and ctx is honoured until this
 // one starts: when ctx is done before its turn comes, Render returns ctx's
 // error and nothing is laid out or written. A layout or a render that is
@@ -127,7 +132,7 @@ func (g *Graphviz) SetLayout(layout Layout) *Graphviz {
 func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io.Writer) error {
 	var buf bytes.Buffer
 
-	err := g.laidOut(ctx, graph, func(ctx context.Context) error {
+	reported, err := g.laidOut(ctx, graph, func(ctx context.Context) error {
 		return g.ctx.RenderData(ctx, graph, string(format), &buf)
 	})
 	if err != nil {
@@ -140,7 +145,7 @@ func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io
 		return fmt.Errorf("writing the rendered %s: %w", format, err)
 	}
 
-	return nil
+	return reported
 }
 
 // RenderImage lays graph out with the instance's layout engine and returns
@@ -148,7 +153,7 @@ func (g *Graphviz) Render(ctx context.Context, graph *Graph, format Format, w io
 func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (image.Image, error) {
 	var img image.Image
 
-	err := g.laidOut(ctx, graph, func(ctx context.Context) error {
+	reported, err := g.laidOut(ctx, graph, func(ctx context.Context) error {
 		var err error
 
 		img, err = g.ctx.RenderImage(ctx, graph, string(PNG))
@@ -159,15 +164,17 @@ func (g *Graphviz) RenderImage(ctx context.Context, graph *Graph) (image.Image, 
 		return nil, err
 	}
 
-	return img, nil
+	return img, reported
 }
 
 // RenderFilename lays graph out with the instance's layout engine and writes
 // it, rendered in format, to the file at path.
 func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Format, path string) error {
 	var buf bytes.Buffer
-	if err := g.Render(ctx, graph, format, &buf); err != nil {
-		return err
+
+	reported := g.Render(ctx, graph, format, &buf)
+	if reported != nil && !errors.Is(reported, gvc.ErrReported) {
+		return reported
 	}
 
 	// Written once the render has returned: a renderer's error is known
@@ -177,7 +184,7 @@ func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Form
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
 
-	return nil
+	return reported
 }
 
 // outputFileMode is the mode RenderFilename creates a file with: readable
@@ -205,18 +212,45 @@ func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
 // module from the layout to the free: the layout lives on the graph, so a
 // render of the same graph from another goroutine must not lay it out again
 // or free it in between.
-func (g *Graphviz) laidOut(ctx context.Context, graph *Graph, render func(context.Context) error) error {
-	return wasm.Exclusive(ctx, func(ctx context.Context) (err error) {
+//
+// What Graphviz reported while each step went on to its end
+// (gvc.ErrReported) comes back as reported, apart from err: a layout that
+// reported is rendered all the same. When a step fails, what was reported
+// before it is told in the failure and is no gvc.ErrReported any more.
+func (g *Graphviz) laidOut(
+	ctx context.Context,
+	graph *Graph,
+	render func(context.Context) error,
+) (reported, err error) {
+	// went sorts a step's error: one that is reported is kept and the step
+	// counts as done.
+	went := func(step error) error {
+		if errors.Is(step, gvc.ErrReported) {
+			reported = errors.Join(reported, step)
+
+			return nil
+		}
+
+		return step
+	}
+
+	err = wasm.Exclusive(ctx, func(ctx context.Context) (err error) {
 		defer func() {
-			err = errors.Join(err, g.ctx.FreeLayout(ctx, graph))
+			err = errors.Join(err, went(g.ctx.FreeLayout(ctx, graph)))
 		}()
 
-		if err := g.ctx.Layout(ctx, graph, string(g.layout)); err != nil {
+		if err := went(g.ctx.Layout(ctx, graph, string(g.layout))); err != nil {
 			return err
 		}
 
-		return render(ctx)
+		return went(render(ctx))
 	})
+	if err != nil && reported != nil {
+		// The text alone: in the chain it would say the output is there.
+		return nil, fmt.Errorf("%w (before it: %s)", err, reported.Error())
+	}
+
+	return reported, err
 }
 
 // SetFileSystem names the file system every file a graph names is read from:

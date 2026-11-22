@@ -204,6 +204,14 @@ its zero value), and the process has to be restarted to render again: a trap lea
 to draw from it, and no fresh module takes its place, since every graph and
 context a caller holds lives in the one that trapped.
 
+A render during which Graphviz reports an error and goes on, a record or an
+HTML label it cannot read for one, is written whole, and `Render` then returns
+that error, a `gvc.ErrReported`: what `dot` does when it writes its output and
+exits 1. `RenderImage` returns its image with it, and `RenderFilename` has
+written its file. Any other error of Graphviz's is a render that failed, with
+nothing written.
+What Graphviz only warns of goes to the writer `SetWarningWriter` names.
+
 # License
 
 MIT, see `LICENSE`.
