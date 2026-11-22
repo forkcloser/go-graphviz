@@ -42,6 +42,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | A `FontLoader` supplies the font the layout measures with (breaking) | https://github.com/forkcloser/go-graphviz/pull/84 |
 | The binding's and the generator's errors wrap sentinels | https://github.com/forkcloser/go-graphviz/pull/89 |
 | `gvc.Color`'s `SetRGBADouble`, `SetRGBAUint`, `SetRGBAInt` and `SetHSVA` are gone (breaking): none ever set a colour. The two that take integers wrote zeros over it and, with a first element over four, over the state beside it; the two that take floating point did nothing, or trapped | `gvc/render_plugin.go` |
+| A render that fails leaves no job on the context. Graphviz's `gvRenderData` returns from its early failures (a format it does not know, no layout, no memory) without deleting the job it made, named by the caller's format string; the next render on the context ran that job first, with a name since freed, and failed or trapped | `internal/wasm/build/patch.c` |
 
 ## Graphviz source edits
 

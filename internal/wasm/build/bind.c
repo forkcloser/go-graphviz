@@ -3822,7 +3822,7 @@ void wasm_bridge_Context_renderData(void * _arg0, void * _arg1, void * _arg2, vo
   arg3 = (char **)_arg3;
   unsigned int * arg4;
   arg4 = (unsigned int *)_arg4;
-  int ret = gvRenderData(
+  int ret = bridge_render_data(
     arg0,
     arg1,
     arg2,
