@@ -425,7 +425,11 @@ func SymListZero(ctx context.Context) (*SymList, error) {
 	return newSymList(ptr), nil
 }
 
-var fsMu sync.Mutex
+var (
+	fsMu sync.Mutex
+	// fsGeneration counts the file systems named, under fsMu.
+	fsGeneration uint64
+)
 
 // WasmFileSystem is the file system mounted at the module's root: the one
 // SetWasmFileSystem names, or the host's when it names none.
@@ -471,7 +475,27 @@ func (w *WasmFileSystem) Open(name string) (fs.File, error) {
 func SetWasmFileSystem(fsys fs.FS) {
 	fsMu.Lock()
 	mod.fs.subFS = fsys
+	fsGeneration++
 	fsMu.Unlock()
+}
+
+// FileSystemNamed says whether SetWasmFileSystem has named a file system:
+// with none, a name is the host's.
+func FileSystemNamed() bool {
+	fsMu.Lock()
+	defer fsMu.Unlock()
+
+	return mod.fs.subFS != nil
+}
+
+// FileSystemGeneration changes each time SetWasmFileSystem names a file
+// system: what was read under a name through one is not what the next
+// holds under it, so what is kept of a file is kept with this.
+func FileSystemGeneration() uint64 {
+	fsMu.Lock()
+	defer fsMu.Unlock()
+
+	return fsGeneration
 }
 
 func FileSystem() fs.FS {
