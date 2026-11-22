@@ -98,7 +98,8 @@ func (c *Context) Close() error {
 // An error that is ErrReported is a layout that is done: Graphviz reported
 // an error and laid the graph out all the same. The layout is on the graph,
 // to render and to free as after nil: a caller that returns on it without
-// FreeLayout leaves the layout in the module.
+// FreeLayout leaves the layout in the module. After any other error there
+// is nothing to free: what the layout left on the graph, Layout has freed.
 //
 // ctx is honoured until the layout starts: when it is done before the
 // module is free for this call, Layout returns its error and lays nothing
@@ -112,9 +113,13 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 		return fmt.Errorf("setting an attribute of the graph: %w", err)
 	}
 
-	return wasm.Exclusive(ctx, func(ctx context.Context) error {
+	ran := false
+
+	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
 		// What an earlier call left unread is not this layout's.
 		_ = wasm.TakeLastError()
+
+		ran = true
 
 		res, err := c.gvc.Layout(ctx, toGraphWasm(graph), engine)
 		if err != nil {
@@ -123,6 +128,17 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 
 		return outcome(res)
 	})
+
+	// A callback's error reaches here and not the calls above: Graphviz went
+	// on to the layout's end past it, and the layout is on the graph. A trap
+	// leaves nothing that can be freed.
+	if ran && err != nil && !errors.Is(err, ErrReported) && !errors.Is(err, ErrTrapped) {
+		if freeErr := c.FreeLayout(ctx, graph); freeErr != nil {
+			err = errors.Join(err, freeErr)
+		}
+	}
+
+	return err
 }
 
 // RenderData renders graph, which a Layout has laid out, in format and
@@ -217,13 +233,8 @@ func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, forma
 }
 
 // FreeLayout frees the layout a Layout left on the graph, whatever ctx
-// says. On a closed context there is nothing it can free it with, and it
-// does nothing.
+// says, and on a closed context too: the layout is the graph's.
 func (c *Context) FreeLayout(ctx context.Context, graph *cgraph.Graph) error {
-	if c.gvc == nil {
-		return nil
-	}
-
 	// The call and the reading of what Graphviz reported are one turn in
 	// the module: read after it, the report of a layout another goroutine
 	// is in the middle of would be taken for this call's. A free runs
