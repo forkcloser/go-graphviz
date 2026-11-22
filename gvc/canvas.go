@@ -493,41 +493,60 @@ func (d *dasher) cut(cut point) {
 	d.remaining = d.pattern[d.index]
 }
 
-// segment walks the segment from one point to the next. Where the segment
-// runs off the page, the whole turns of the pattern that lie off it are
-// stepped over: they leave nothing to see, and a segment is cut into no
-// more dashes than the page shows of it, and a turn before, however long it
-// is. A dash begun before a step is drawn from there, longer than it is by
-// what is off the page.
+// segment walks the segment from one point to the next, in three stretches:
+// what lies before the part of it whose dashes can reach the page, that
+// part, and what lies after it. Off the page, the whole turns of the
+// pattern are stepped over: they leave nothing to see, and a segment is cut
+// into no more dashes than the page shows of it, and a turn before and
+// after, however long it is. A dash begun before a step is drawn from
+// there, longer than it is by what is off the page.
 func (d *dasher) segment(from, next point) {
 	length := next.sub(from).length()
-	shownFrom, shownTo := d.shown(from, next, length)
-	done := 0.0
 
-	for length-done > d.remaining {
-		done += d.remaining
-		d.cut(from.lerp(next, done/length))
+	// A length that is no number has no pattern to walk: the segment goes
+	// by whole, in the state the pattern is in.
+	if !math.IsInf(length, 0) && !math.IsNaN(length) {
+		shownFrom, shownTo := d.shown(from, next, length)
 
-		var off float64
-
-		// A step stays inside its segment: past its end the path turns,
+		// A stretch stays inside its segment: past its end the path turns,
 		// and a dash that is off the page along this segment may reach it
 		// from the next one, by as much as half the pen.
-		switch {
-		case done < shownFrom:
-			off = math.Min(shownFrom, length) - done
-		case done > shownTo:
-			off = length - done
-		}
+		first := math.Min(math.Max(shownFrom, 0), length)
+		last := math.Min(math.Max(shownTo, first), length)
 
-		done += math.Floor(off/d.total) * d.total
+		d.stretch(from, next, length, 0, first, true)
+		d.stretch(from, next, length, first, last, false)
+		d.stretch(from, next, length, last, length, true)
 	}
-
-	d.remaining -= length - done
 
 	if d.drawing {
 		d.current = append(d.current, next)
 	}
+}
+
+// stretch walks the segment from start to end, both distances from its
+// beginning, whole turns of the pattern stepped over when the stretch is
+// off the page.
+//
+// What is done is counted from the stretch's start, never from the
+// segment's: far along a segment a dash is shorter than the gap between two
+// numbers there, a distance it is added to stays where it was, and a walk
+// that counted so cut dashes without end.
+func (d *dasher) stretch(from, next point, length, start, end float64, off bool) {
+	span := end - start
+	if off {
+		span = math.Mod(span, d.total)
+		start = end - span
+	}
+
+	done := 0.0
+
+	for span-done > d.remaining {
+		done += d.remaining
+		d.cut(from.lerp(next, (start+done)/length))
+	}
+
+	d.remaining -= span - done
 }
 
 // shown is the stretch of a segment, as distances from its start, whose
