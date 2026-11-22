@@ -884,7 +884,9 @@ func Canon(s string, html int) (string, error) {
 // Graphviz 14 removed agcanonStr in favour of agstrcanon with a caller-owned
 // buffer; the buffer is sized here.
 func CanonStr(s string) (string, error) {
-	return wasm.StrCanon(context.Background(), s, string(make([]byte, 2*len(s)+3)))
+	// Not 2n+3, the size Graphviz gives its own: a character is two bytes
+	// at most and a line break, two more, can follow each.
+	return wasm.StrCanon(context.Background(), s, string(make([]byte, 4*len(s)+3)))
 }
 
 // toError maps a Graphviz result code: zero is success, anything else is a
