@@ -54,6 +54,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | A C `int` keeps its sign on its way to Go. The binding read it as the low half of an unsigned word, so a result of -1 was 4294967295: a call Graphviz failed without a message said "code 4294967295" | `internal/tools/nori/templates/bind.go.tmpl`, `internal/wasm/bind.go` |
 | Kerning grows with the font size. The kern between two letters was the font's units read as pixels, the same at every size (x/image's `opentype.Face.Kern` hands sfnt the units per em for the pixels per em), so a label in a font with kerning was laid out at one width and drawn at another, and ran past its box. The face kerns at its own size | `gvc/fontmatch.go` |
 | `Version` is the Graphviz release the module was built from, answered by the module (`bridge_version`, what `gvcVersion` gives for a context) and written in no Go file | `graphviz.go`, `internal/wasm/build/patch.c` |
+| A graph call that fails (`Set`, `SafeSet`, `Delete`, `Close`, `Open` and the like) returns what Graphviz reported during it, and that alone, read in the same stay in the module as the call. It read whatever was unread, after the call: with two goroutines the message of one failing call was returned by the other, which left the first with "no message", and a call made from a callback inside a layout took the layout's own report, which the layout then never returned | `cgraph/cgraph.go`, `internal/wasm/ext.go` |
 
 ## Graphviz source edits
 
