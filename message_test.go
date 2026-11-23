@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -319,6 +320,130 @@ func TestACallInsideALayoutLeavesTheLayoutsError(t *testing.T) {
 	for _, err := range inside {
 		if err == nil || !strings.Contains(err.Error(), "and no message") {
 			t.Fatalf("a call from inside the layout returned %v, want its own failure with no message", err)
+		}
+	}
+}
+
+// A parse, a render and a free made from inside a layout, by a callback,
+// each read what Graphviz reported during them and leave the layout's: what
+// was reported for the layout before the callback ran is still the layout's
+// when it ends. Here the layout has a record label it cannot read, and the
+// font loader then parses a text that is no graph, renders a graph laid out
+// before, in a format Graphviz does not know and in one it does, and frees
+// the layout of another.
+func TestAParseOrARenderInsideALayoutLeavesTheLayoutsError(t *testing.T) {
+	lower, err := gvc.New(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, lower.Close) })
+
+	// Laid out before the loader is set: one to render, the others to free,
+	// one at each call of the loader.
+	var laid []*cgraph.Graph
+
+	for range 9 {
+		before, parseErr := graphviz.ParseBytes([]byte("digraph { x -> y }"))
+		if parseErr != nil {
+			t.Fatal(parseErr)
+		}
+
+		t.Cleanup(func() { closeOrError(t, before.Close) })
+
+		if layoutErr := lower.Layout(t.Context(), before, "dot"); layoutErr != nil {
+			t.Fatal(layoutErr)
+		}
+
+		laid = append(laid, before)
+	}
+
+	kept, toFree := laid[0], laid[1:]
+
+	t.Cleanup(func() {
+		for _, before := range append(toFree, kept) {
+			if freeErr := lower.FreeLayout(context.WithoutCancel(t.Context()), before); freeErr != nil {
+				t.Error(freeErr)
+			}
+		}
+	})
+
+	// A render Graphviz refuses with a message, made alone: what the same
+	// render says from inside the layout.
+	alone := lower.RenderData(t.Context(), kept, "nosuchformat", io.Discard)
+	if alone == nil {
+		t.Fatal("a render in a format Graphviz does not know returned nil")
+	}
+
+	var (
+		parsed, refused, rendered, freed []error
+		inside                           bool
+	)
+
+	graphviz.SetFontLoader(func(ctx context.Context, _ *graphviz.TextFont) (*opentype.Font, error) {
+		if inside {
+			return nil, nil //nolint:nilnil // no font asks for the usual resolution
+		}
+
+		inside = true
+		defer func() { inside = false }()
+
+		_, parseErr := graphviz.ParseBytes([]byte("digraph { a -> }"))
+		parsed = append(parsed, parseErr)
+
+		refused = append(refused, lower.RenderData(ctx, kept, "nosuchformat", io.Discard))
+		rendered = append(rendered, lower.RenderData(ctx, kept, "svg", io.Discard))
+
+		if len(toFree) > 0 {
+			freed = append(freed, lower.FreeLayout(ctx, toFree[0]))
+			toFree = toFree[1:]
+		}
+
+		return nil, nil //nolint:nilnil // no font asks for the usual resolution
+	})
+	t.Cleanup(func() { graphviz.SetFontLoader(nil) })
+
+	g, err := graphviz.New(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	graph, err := graphviz.ParseBytes([]byte(`digraph { a [shape=record label="{a|"]; b [label="after"] }`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	var out bytes.Buffer
+
+	err = g.Render(t.Context(), graph, graphviz.SVG, &out)
+	if !errors.Is(err, gvc.ErrReported) || !strings.Contains(err.Error(), "bad label format") ||
+		strings.Contains(err.Error(), "syntax error") || strings.Contains(err.Error(), "nosuchformat") {
+		t.Errorf("the render returned %v, want the layout's own report of the label and that alone", err)
+	}
+
+	if len(parsed) == 0 || len(freed) == 0 {
+		t.Fatal("the font loader was not asked: the test saw nothing")
+	}
+
+	for _, err := range parsed {
+		if err == nil || !strings.Contains(err.Error(), "syntax error") || strings.Contains(err.Error(), "bad label") {
+			t.Fatalf("a parse from inside the layout returned %v, want its own syntax error and that alone", err)
+		}
+	}
+
+	for _, err := range refused {
+		if err == nil || err.Error() != alone.Error() {
+			t.Fatalf("a refused render from inside the layout returned %q, want what it returns alone, %q", err, alone)
+		}
+	}
+
+	for _, err := range append(rendered, freed...) {
+		if err != nil {
+			t.Fatalf("a render or a free from inside the layout returned %v, want nil", err)
 		}
 	}
 }

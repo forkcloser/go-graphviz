@@ -844,16 +844,15 @@ func readGraph(read func(context.Context) (*wasm.Graph, error)) (*Graph, error) 
 	)
 
 	// The parse and the read of what Graphviz reported during it are one
-	// stay in the module, so that the errors are this parse's: what an
-	// earlier call left unread is dropped first, and no other goroutine's
-	// call comes between.
+	// stay in the module, so that the errors are this parse's, as in
+	// checked.
 	err := wasm.Exclusive(context.Background(), func(ctx context.Context) error {
-		_ = wasm.TakeLastError()
+		mark := wasm.ErrorMark()
 
 		var err error
 
 		graph, err = read(ctx)
-		reported = lastError()
+		reported = errorSince(mark)
 
 		return err
 	})
@@ -1022,16 +1021,6 @@ var ErrNoGraph = errors.New("no graph was produced")
 func errorSince(mark int) error {
 	if text := strings.Trim(wasm.TakeErrorsSince(mark), "\n"); text != "" {
 		return fmt.Errorf("%w: %s", ErrGraphviz, text)
-	}
-
-	return nil
-}
-
-// lastError is the latest message Graphviz reported as an error, as an
-// error, or nil when it reported none since the last read.
-func lastError() error {
-	if text := wasm.TakeLastError(); text != "" {
-		return fmt.Errorf("%w: %s", ErrGraphviz, strings.TrimRight(text, "\n"))
 	}
 
 	return nil
