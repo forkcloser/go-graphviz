@@ -64,13 +64,27 @@ fetch() {
   }
 }
 
-# unpack <file> <dir>: extract once; a present dir is a finished one.
+# unpack <file> <dir> [anew]: extract the archive to its directory under the
+# work dir. It is extracted beside its place and renamed there once tar is
+# done, so a directory that is there is a whole one, and is kept; an
+# extraction cut short leaves nothing a later build would compile.
+#
+# With "anew" the directory is removed and extracted again on every build.
+# That is for the trees this script edits, Graphviz and expat: kept, a tree
+# would carry the edits of the build that unpacked it, and a patch changed
+# since, or an edit removed from this script, would not show in the module.
 unpack() {
   local file="${work}/dl/$1" dir="${work}/src/$2"
+  if [ "${3:-}" = anew ]; then
+    rm -rf "${dir:?}"
+  fi
   [ -d "${dir}" ] && return
-  mkdir -p "${work}/src"
-  tar -xzf "${file}" -C "${work}/src"
-  [ -d "${dir}" ] || { echo "$1 did not unpack to $2" >&2; exit 1; }
+  rm -rf "${dir:?}.part"
+  mkdir -p "${dir}.part"
+  tar -xzf "${file}" -C "${dir}.part"
+  [ -d "${dir}.part/$2" ] || { echo "$1 did not unpack to $2" >&2; exit 1; }
+  mv "${dir}.part/$2" "${dir}"
+  rmdir "${dir}.part"
 }
 
 sdk_dir="wasi-sdk-${wasi_sdk_version}.0-${sdk_host}"
@@ -84,8 +98,8 @@ fetch expat "${expat_dir}.tar.gz"
 fetch graphviz "${gv_dir}.tar.gz"
 unpack "${sdk_dir}.tar.gz" "${sdk_dir}"
 unpack "${binaryen_dir}-${binaryen_host}.tar.gz" "${binaryen_dir}"
-unpack "${expat_dir}.tar.gz" "${expat_dir}"
-unpack "${gv_dir}.tar.gz" "${gv_dir}"
+unpack "${expat_dir}.tar.gz" "${expat_dir}" anew
+unpack "${gv_dir}.tar.gz" "${gv_dir}" anew
 
 sdk="${work}/src/${sdk_dir}"
 wasm_opt="${work}/src/${binaryen_dir}/bin/wasm-opt"
@@ -109,10 +123,8 @@ rm -f "${gv}/lib/rbtree/test_red_black_tree.c"
 # which under wasm is an indirect call into nowhere. The old count is the
 # number of spans stored so far.
 labels="${gv}/lib/common/labels.c"
-if grep -q 'size_t oldsz = lp->u.txt.nspans + 1;' "${labels}"; then
-  sed -i.orig 's/size_t oldsz = lp->u.txt.nspans + 1;/size_t oldsz = lp->u.txt.nspans;/' "${labels}"
-  rm -f "${labels}.orig"
-fi
+sed -i.orig 's/size_t oldsz = lp->u.txt.nspans + 1;/size_t oldsz = lp->u.txt.nspans;/' "${labels}"
+rm -f "${labels}.orig"
 grep -q 'size_t oldsz = lp->u.txt.nspans;' "${labels}" || {
   echo "labels.c: storeline does not look like the one this fix is for" >&2
   exit 1
@@ -125,10 +137,8 @@ grep -q 'size_t oldsz = lp->u.txt.nspans;' "${labels}" || {
 # gvusershape_file_access reopens a closed file when anything does, so
 # gvusershape_file_release always closes it.
 usershape="${gv}/lib/gvc/gvusershape.c"
-if grep -q '^  if (us->nocache) {$' "${usershape}"; then
-  sed -i.orig 's/^  if (us->nocache) {$/  if (us->f) {/' "${usershape}"
-  rm -f "${usershape}.orig"
-fi
+sed -i.orig 's/^  if (us->nocache) {$/  if (us->f) {/' "${usershape}"
+rm -f "${usershape}.orig"
 grep -q '^  if (us->f) {$' "${usershape}" || {
   echo "gvusershape.c: gvusershape_file_release does not look like the one this fix is for" >&2
   exit 1
@@ -146,15 +156,13 @@ grep -q '^  if (us->f) {$' "${usershape}" || {
 # bring its marker with it. A new Graphviz means rechecking the patch and
 # this digest together.
 webp_size_base=1af7a25ce49beda3222bd12dac1adbf67ffa11301a6112588a755138b5400e67
-if ! grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${usershape}"; then
-  echo "${webp_size_base}  ${usershape}" | sha256sum -c - > /dev/null || {
-    echo "gvusershape.c: not the file webp-size.patch was written against; recheck the patch for this Graphviz" >&2
-    exit 1
-  }
-  # POSIX options only: -p0 for the paths the patch names, -N to refuse a
-  # patch already applied.
-  (cd "${gv}" && patch -p0 -N) < "${here}/webp-size.patch"
-fi
+echo "${webp_size_base}  ${usershape}" | sha256sum -c - > /dev/null || {
+  echo "gvusershape.c: not the file webp-size.patch was written against; recheck the patch for this Graphviz" >&2
+  exit 1
+}
+# POSIX options only: -p0 for the paths the patch names, -N to refuse a
+# patch already applied.
+(cd "${gv}" && patch -p0 -N) < "${here}/webp-size.patch"
 grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${usershape}" || {
   echo "gvusershape.c: webp-size.patch did not apply" >&2
   exit 1
@@ -181,10 +189,8 @@ for f in "${neatogen[@]}"; do neatogen_sources+=("${gv}/lib/neatogen/${f}.c"); d
 # clean-up, graph_error, for any parse bison reports failed; after a syntax
 # error it finds the graph already gone and does nothing.
 grammar="${gv}/lib/cgraph/grammar.c"
-if grep -q '^	aagparse(scanner);$' "${grammar}"; then
-  sed -i.orig 's/^	aagparse(scanner);$/	if (aagparse(scanner) != 0) graph_error(scanner);/' "${grammar}"
-  rm -f "${grammar}.orig"
-fi
+sed -i.orig 's/^	aagparse(scanner);$/	if (aagparse(scanner) != 0) graph_error(scanner);/' "${grammar}"
+rm -f "${grammar}.orig"
 grep -q '^	if (aagparse(scanner) != 0) graph_error(scanner);$' "${grammar}" || {
   echo "grammar.c: agconcat does not look like the one this fix is for" >&2
   exit 1
@@ -199,13 +205,11 @@ grep -q '^	if (aagparse(scanner) != 0) graph_error(scanner);$' "${grammar}" || {
 # is and for the same reason.
 shapes="${gv}/lib/common/shapes.c"
 reclbl_free_base=78370a37daef0003c4a00bd303b744f811dd240668fee57e3e7d6b06321aa82c
-if ! grep -q 'go-graphviz: the fields built so far are counted' "${shapes}"; then
-  echo "${reclbl_free_base}  ${shapes}" | sha256sum -c - > /dev/null || {
-    echo "shapes.c: not the file reclbl-free.patch was written against; recheck the patch for this Graphviz" >&2
-    exit 1
-  }
-  (cd "${gv}" && patch -p0 -N) < "${here}/reclbl-free.patch"
-fi
+echo "${reclbl_free_base}  ${shapes}" | sha256sum -c - > /dev/null || {
+  echo "shapes.c: not the file reclbl-free.patch was written against; recheck the patch for this Graphviz" >&2
+  exit 1
+}
+(cd "${gv}" && patch -p0 -N) < "${here}/reclbl-free.patch"
 grep -q 'go-graphviz: the fields built so far are counted' "${shapes}" || {
   echo "shapes.c: reclbl-free.patch did not apply" >&2
   exit 1
@@ -219,10 +223,8 @@ grep -q 'go-graphviz: the fields built so far are counted' "${shapes}" || {
 # never gives it sizes in such a build: an error reported for a layout that
 # asked nothing of the library. The stand-in reports when it has sizes.
 overlap="${gv}/lib/neatogen/overlap.c"
-if grep -q '^    if (!atomic_flag_test_and_set(&once)) {$' "${overlap}"; then
-  sed -i.orig 's/^    if (!atomic_flag_test_and_set(&once)) {$/    if (label_sizes \&\& !atomic_flag_test_and_set(\&once)) {/' "${overlap}"
-  rm -f "${overlap}.orig"
-fi
+sed -i.orig 's/^    if (!atomic_flag_test_and_set(&once)) {$/    if (label_sizes \&\& !atomic_flag_test_and_set(\&once)) {/' "${overlap}"
+rm -f "${overlap}.orig"
 grep -q '^    if (label_sizes && !atomic_flag_test_and_set(&once)) {$' "${overlap}" || {
   echo "overlap.c: the stand-in remove_overlap does not look like the one this fix is for" >&2
   exit 1
@@ -238,10 +240,8 @@ grep -q '^    if (label_sizes && !atomic_flag_test_and_set(&once)) {$' "${overla
 # bytes and is followed by at most one break, so 4n, the two quotes around
 # them and the terminator hold any string.
 canon="${gv}/lib/cgraph/agstrcanon.h"
-if grep -q '^  return 2 \* strlen(str) + 3;$' "${canon}"; then
-  sed -i.orig 's/^  return 2 \* strlen(str) + 3;$/  return 4 * strlen(str) + 3;/' "${canon}"
-  rm -f "${canon}.orig"
-fi
+sed -i.orig 's/^  return 2 \* strlen(str) + 3;$/  return 4 * strlen(str) + 3;/' "${canon}"
+rm -f "${canon}.orig"
 grep -q '^  return 4 \* strlen(str) + 3;$' "${canon}" || {
   echo "agstrcanon.h: agstrcanon_bytes does not look like the one this fix is for" >&2
   exit 1
