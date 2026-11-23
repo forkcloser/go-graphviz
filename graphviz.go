@@ -268,6 +268,14 @@ func SetFileSystem(fsys fs.FS) {
 	wasm.SetWasmFileSystem(fsys)
 }
 
+// Version is the Graphviz release the embedded WebAssembly module was built
+// from, its numbers alone (major.minor.patch), as the module itself answers:
+// it is read from the module at every call and held nowhere in this package,
+// so it cannot differ from the engine that lays out and renders.
+func Version() (string, error) {
+	return wasm.Version(context.Background())
+}
+
 // SetWarningWriter names where Graphviz's warnings go, as the lines Graphviz
 // prints them; nil drops them, which is the default. Errors are not written
 // there: the call that caused one returns it.

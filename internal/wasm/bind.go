@@ -11007,3 +11007,16 @@ func FreePlugin(ctx context.Context, _arg0 *PluginAPI) error {
 	}
 	return nil
 }
+
+func Version(ctx context.Context) (string, error) {
+	var zero string
+	p, err := mod.callWithRet(ctx, "version")
+	if err != nil {
+		return zero, err
+	}
+	ret, err := mod.toString(ctx, p)
+	if err != nil {
+		return zero, err
+	}
+	return ret, nil
+}

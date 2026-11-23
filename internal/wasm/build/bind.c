@@ -3762,6 +3762,14 @@ void wasm_bridge_freePlugin(void * _arg0) {
   );
 }
 
+WASM_EXPORT(wasm_bridge_version)
+void wasm_bridge_version(void ** _arg0) {
+  char * ret = bridge_version(
+  );
+  GoString *v = newString(ret);
+  *_arg0 = v;
+}
+
 WASM_EXPORT(wasm_bridge_Context_layout)
 void wasm_bridge_Context_layout(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   GVC_t * arg0;

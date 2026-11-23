@@ -53,6 +53,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | A render whose callback fails or panics leaves nothing in the module. The callbacks Graphviz goes on to make are skipped, and the copies the bridge had made of their arguments (a point for each corner of a shape, a string for each name) stayed: some 300 bytes a node for each failed render | `internal/tools/nori/templates/bind.go.tmpl`, `internal/wasm/bind.go` |
 | A C `int` keeps its sign on its way to Go. The binding read it as the low half of an unsigned word, so a result of -1 was 4294967295: a call Graphviz failed without a message said "code 4294967295" | `internal/tools/nori/templates/bind.go.tmpl`, `internal/wasm/bind.go` |
 | Kerning grows with the font size. The kern between two letters was the font's units read as pixels, the same at every size (x/image's `opentype.Face.Kern` hands sfnt the units per em for the pixels per em), so a label in a font with kerning was laid out at one width and drawn at another, and ran past its box. The face kerns at its own size | `gvc/fontmatch.go` |
+| `Version` is the Graphviz release the module was built from, answered by the module (`bridge_version`, what `gvcVersion` gives for a context) and written in no Go file | `graphviz.go`, `internal/wasm/build/patch.c` |
 
 ## Graphviz source edits
 

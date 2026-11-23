@@ -18,6 +18,10 @@ void bridge_free_plugin_list(lt_symlist_t *sym);
 // type's name, engine and features.
 void bridge_free_plugin(gvplugin_api_t *api);
 
+// bridge_version is the Graphviz release the module is built from, as
+// gvcVersion answers it.
+char *bridge_version(void);
+
 // bridge_render_data is gvRenderData, and leaves no job on the context when
 // the render failed.
 int bridge_render_data(GVC_t *gvc, graph_t *g, const char *format,
