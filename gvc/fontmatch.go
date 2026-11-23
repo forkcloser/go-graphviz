@@ -224,7 +224,9 @@ func styled(words []string, style *fontStyle) bool {
 // families, where reading from the end took "Roman" and "Black" for a style
 // and looked for "Times New". Only a name of which index knows no start is
 // read from its end.
-func splitFamilyStyle(name string, index *fontIndex) (family string, style fontStyle, hasStyle bool) {
+func splitFamilyStyle(
+	name string, index *fontIndex, longest int,
+) (family string, style fontStyle, hasStyle bool) {
 	style = fontStyle{weight: weightRegular}
 
 	family, styles, _ := strings.Cut(name, ":")
@@ -237,7 +239,7 @@ func splitFamilyStyle(name string, index *fontIndex) (family string, style fontS
 
 	words, ends := nameWords(family)
 
-	if start, tail, ok := knownStart(family, words, ends, index, &style); ok {
+	if start, tail, ok := knownStart(family, words[:min(len(words), longest)], ends, words, index, &style); ok {
 		return start, style, hasStyle || tail
 	}
 
@@ -272,17 +274,28 @@ func nameWords(family string) (words []string, ends []int) {
 // it reads into style: the start as written, or its words with spaces
 // between. It reports whether words followed the start.
 //
-// No start longer than the longest family there is can be one, so none is
-// asked about: a name is read in a time that follows its length, where
-// asking about every start of a name of many words took the square of it.
+// starts is the words a start may be made of, and words all of them. No
+// start longer than the longest family there is can be one, so the caller
+// gives no more words than that: a name is read in a time that follows its
+// length, where asking about every start of a name of many words took the
+// square of it.
 func knownStart(
-	family string, words []string, ends []int, index *fontIndex, style *fontStyle,
+	family string, starts []string, ends []int, words []string, index *fontIndex, style *fontStyle,
 ) (start string, tail, ok bool) {
-	for end := min(len(words), index.longestFamily()); end >= 1; end-- {
-		for _, start := range []string{family[:ends[end-1]], strings.Join(words[:end], " ")} {
-			if index.knows(start) && styled(words[end:], style) {
-				return start, end < len(words), true
-			}
+	for end := len(starts); end >= 1; end-- {
+		written, spaced := family[:ends[end-1]], strings.Join(starts[:end], " ")
+
+		found := ""
+
+		switch {
+		case index.knows(written):
+			found = written
+		case written != spaced && index.knows(spaced):
+			found = spaced
+		}
+
+		if found != "" && styled(words[end:], style) {
+			return found, end < len(words), true
 		}
 	}
 
@@ -356,8 +369,12 @@ func aliasRequest(alias *PostScriptAlias) fontRequest {
 func listRequest(name string, index *fontIndex) fontRequest {
 	request := fontRequest{style: fontStyle{weight: weightRegular}}
 
+	// Asked once for the list: it is a walk of the substitutes' table, and
+	// a list may have as many entries as it has bytes.
+	longest := index.longestFamily()
+
 	for entry := range strings.SplitSeq(name, ",") {
-		family, style, hasStyle := splitFamilyStyle(strings.TrimSpace(entry), index)
+		family, style, hasStyle := splitFamilyStyle(strings.TrimSpace(entry), index, longest)
 		if family == "" {
 			continue
 		}
@@ -568,32 +585,43 @@ type fontIndex struct {
 	words int
 }
 
-// knownFamilyWords is the most words a family has among the ones a
-// substitute may stand in for and the generic ones, of which "sans-serif"
-// is two.
-func knownFamilyWords() int {
+// standIns is the families a substitute may stand in for, by their names
+// in lower case, and the most words one of them has; "sans-serif", of the
+// generic ones, is two.
+type standIns struct {
+	names map[string]bool
+	words int
+}
+
+// knownStandIns reads the substitutes' table once: a name asks of it for
+// each of its starts, and a list for each of its entries.
+//
+//nolint:gochecknoglobals // the table of substitutes, read once
+var knownStandIns = sync.OnceValue(func() standIns {
 	const genericWords = 2
 
-	longest := genericWords
+	known := standIns{names: map[string]bool{}, words: genericWords}
 
 	for _, group := range substituteGroups() {
 		for _, member := range group {
 			words, _ := nameWords(member)
-			longest = max(longest, len(words))
+
+			known.names[strings.ToLower(member)] = true
+			known.words = max(known.words, len(words))
 		}
 	}
 
-	return longest
-}
+	return known
+})
 
 // longestFamily is the most words a family index knows has: an installed
 // one, one a substitute may stand in for, or a generic one.
 func (index *fontIndex) longestFamily() int {
 	if index == nil {
-		return knownFamilyWords()
+		return knownStandIns().words
 	}
 
-	return max(index.words, knownFamilyWords())
+	return max(index.words, knownStandIns().words)
 }
 
 // knows reports whether a family of that name can be looked for: one that
@@ -604,11 +632,13 @@ func (index *fontIndex) knows(family string) bool {
 		return false
 	}
 
-	if index != nil && len(index.byFamily[strings.ToLower(family)]) > 0 {
+	key := strings.ToLower(family)
+
+	if index != nil && len(index.byFamily[key]) > 0 {
 		return true
 	}
 
-	return substitutesOf(family) != nil || genericOf(family) != ""
+	return knownStandIns().names[key] || genericOf(key) != ""
 }
 
 // requestFor resolves what Graphviz asks for: the font's name, the alias

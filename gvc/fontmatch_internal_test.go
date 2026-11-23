@@ -65,6 +65,11 @@ func TestRequestForPlainNames(t *testing.T) {
 		{"DejaVu Sans:bold:italic", 0, []string{"DejaVu Sans"}, "", fontStyle{weight: weightBold, italic: true}},
 		{"Inter, Helvetica, sans-serif", 0, []string{"Inter", "Helvetica"}, "sans-serif", fontStyle{weight: weightRegular}},
 		{"Bold", 0, []string{"Bold"}, "", fontStyle{weight: weightRegular}},
+		// Families a substitute stands in for are known where none is
+		// installed, and are not read from their end.
+		{"Times New Roman", 0, []string{"Times New Roman"}, "", fontStyle{weight: weightRegular}},
+		{"Times New Roman Bold", 0, []string{"Times New Roman"}, "", fontStyle{weight: weightBold}},
+		{"Nimbus Roman Italic", 0, []string{"Nimbus Roman"}, "", fontStyle{weight: weightRegular, italic: true}},
 		{"Arial", htmlBold | htmlItalic, []string{"Arial"}, "", fontStyle{weight: weightBold, italic: true}},
 	} {
 		got := requestFor(tc.name, tc.flags)

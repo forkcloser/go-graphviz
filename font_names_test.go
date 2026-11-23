@@ -28,6 +28,8 @@ func TestFontNamesAreReadAgainstTheFontsThereAre(t *testing.T) {
 		{family: "Zq Next", subfamily: "Bold", advance: 520, weight: 700},
 		{family: "Zq-Script_One", subfamily: "Regular", advance: 560},
 		{family: "Zq Wide", subfamily: "Regular", advance: 600},
+		// A family of more words than any that a substitute stands in for.
+		{family: "Zq Very Long New Roman", subfamily: "Regular", advance: 680},
 		{family: "Zq Wide", subfamily: "Condensed ExtraBold", advance: 640, weight: 800, width: 3},
 	}
 
@@ -42,7 +44,11 @@ func TestFontNamesAreReadAgainstTheFontsThereAre(t *testing.T) {
 			"Zq-Script_One": 560,
 			"zq new roman":  200,
 			"Zq-New-Roman":  200,
-			"Zq_New_Roman":  200,
+
+			// The longest family there is, by its name and with a style.
+			"Zq Very Long New Roman":      680,
+			"Zq Very Long New Roman Bold": 680,
+			"Zq_New_Roman":                200,
 
 			// A style after the family, in each way of writing it.
 			"Zq Bold":            320,
