@@ -23,7 +23,7 @@ func requestFor(name string, flags uint) fontRequest {
 	return (*fontIndex)(nil).requestFor(name, nil, flags)
 }
 
-func TestParseStyle(t *testing.T) {
+func TestASubfamilysWordsAreItsStyle(t *testing.T) {
 	for _, tc := range []struct {
 		subfamily string
 		want      fontStyle
@@ -39,9 +39,11 @@ func TestParseStyle(t *testing.T) {
 		{"W3", fontStyle{weight: weightRegular}},
 		{"W6", fontStyle{weight: weightBold}},
 		{"Chancery", fontStyle{weight: weightRegular}},
+		{"Extra Bold", fontStyle{weight: weightExtraBold}},
+		{"Heavy", fontStyle{weight: weightBlack}},
 	} {
-		if got := parseStyle(tc.subfamily); got != tc.want {
-			t.Errorf("parseStyle(%q) = %+v, want %+v", tc.subfamily, got, tc.want)
+		if got := readStyle(nil, nil, tc.subfamily); got != tc.want {
+			t.Errorf("the style of %q is %+v, want %+v", tc.subfamily, got, tc.want)
 		}
 	}
 }

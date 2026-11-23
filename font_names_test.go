@@ -18,17 +18,17 @@ import (
 func TestFontNamesAreReadAgainstTheFontsThereAre(t *testing.T) {
 	faces := []corpusFace{
 		{family: "Zq New Roman", subfamily: "Regular", advance: 200},
-		{family: "Zq New Roman", subfamily: "Bold", advance: 240},
+		{family: "Zq New Roman", subfamily: "Bold", advance: 240, weight: 700},
 		{family: "Zq", subfamily: "Regular", advance: 280},
-		{family: "Zq", subfamily: "Bold", advance: 320},
+		{family: "Zq", subfamily: "Bold", advance: 320, weight: 700},
 		{family: "Zq Black", subfamily: "Regular", advance: 360},
 		{family: "Zq Next", subfamily: "Regular", advance: 400},
-		{family: "Zq Next", subfamily: "Ultra Light", advance: 440},
-		{family: "Zq Next", subfamily: "Demi Bold", advance: 480},
-		{family: "Zq Next", subfamily: "Bold", advance: 520},
+		{family: "Zq Next", subfamily: "Ultra Light", advance: 440, weight: 200},
+		{family: "Zq Next", subfamily: "Demi Bold", advance: 480, weight: 600},
+		{family: "Zq Next", subfamily: "Bold", advance: 520, weight: 700},
 		{family: "Zq-Script_One", subfamily: "Regular", advance: 560},
 		{family: "Zq Wide", subfamily: "Regular", advance: 600},
-		{family: "Zq Wide", subfamily: "Condensed ExtraBold", advance: 640},
+		{family: "Zq Wide", subfamily: "Condensed ExtraBold", advance: 640, weight: 800, width: 3},
 	}
 
 	inFontCorpus(t, faces, func(t *testing.T) {

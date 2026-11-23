@@ -70,7 +70,17 @@ or narrower). A font name resolves the way Graphviz resolves it: a PostScript na
 as `Times-Roman` or `Helvetica-Bold`, a family with style words (`DejaVu Sans
 Bold`, `Arial:italic`), or a list of them, looked up among the installed fonts by
 name, with the metric-compatible substitutes Graphviz knows (Arial for Helvetica,
-the Liberation and TeX Gyre faces). Where nothing installed answers, the embedded
+the Liberation and TeX Gyre faces). An installed font is found by each of its
+family names, in whatever language its file has them, and matched by its style,
+read from the words of its style name in English (`Bold`, `Light Italic`) and from
+the numbers its file states (its OS/2 table). The weight is the word's where the
+name says one, or the number's when that is less than a step (100) from it, as
+the finer of the two; where the name says none, or says it in another language,
+it is the number's. Slant and width are the words' or the numbers', whichever
+states one. Some fonts hold a face this library cannot draw with (the regular of
+macOS's Helvetica Neue is one): such a family gives way to the next one named,
+and answers with another of its faces only when no family has the one asked for.
+Where nothing installed answers, the embedded
 Go fonts stand in, in regular, bold, italic and monospace cuts. Those cover
 Latin, Greek and Cyrillic: a label in another script, CJK among them, draws as
 boxes on a machine with no font for it, unless a `FontLoader` (`SetFontLoader`)

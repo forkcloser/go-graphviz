@@ -31,6 +31,20 @@ type corpusFace struct {
 	// advance is how far an A moves the pen, in the font's units of 2048 to
 	// the em.
 	advance uint16
+	// weight and width are the classes of the OS/2 table, 400 and 5 when
+	// left at zero, and italic its italic flag: a font says its style in
+	// numbers there, beside the words of its subfamily.
+	weight, width uint16
+	italic        bool
+	// names are records beside the English ones: the same names in other
+	// languages, or on another platform.
+	names []nameRecord
+	// noEnglish leaves the English records out: the font has its names in
+	// the other records alone.
+	noEnglish bool
+	// unparsable gives the font a character map the font parser does not
+	// take: the face is there and cannot be drawn with.
+	unparsable bool
 }
 
 // corpusSize is the font size at which a label of ten A is a tenth of the
@@ -116,6 +130,9 @@ type nameRecord struct {
 	language uint16
 	id       sfnt.NameID
 	text     string
+	// unicode puts the record on the Unicode platform, which has no
+	// language, and not on the Windows one.
+	unicode bool
 }
 
 const english = 0x409
@@ -132,6 +149,10 @@ func nameTable(records []nameRecord) []byte {
 
 	records = slices.Clone(records)
 	sort.SliceStable(records, func(i, j int) bool {
+		if records[i].unicode != records[j].unicode {
+			return records[i].unicode
+		}
+
 		if records[i].language != records[j].language {
 			return records[i].language < records[j].language
 		}
@@ -148,9 +169,17 @@ func nameTable(records []nameRecord) []byte {
 	for _, entry := range records {
 		text := utf16.Encode([]rune(entry.text))
 
-		out = binary.BigEndian.AppendUint16(out, windows)
-		out = binary.BigEndian.AppendUint16(out, unicode)
-		out = binary.BigEndian.AppendUint16(out, entry.language)
+		if entry.unicode {
+			// The Unicode platform, in its encoding for the basic plane.
+			out = binary.BigEndian.AppendUint16(out, 0)
+			out = binary.BigEndian.AppendUint16(out, 3)
+			out = binary.BigEndian.AppendUint16(out, 0)
+		} else {
+			out = binary.BigEndian.AppendUint16(out, windows)
+			out = binary.BigEndian.AppendUint16(out, unicode)
+			out = binary.BigEndian.AppendUint16(out, entry.language)
+		}
+
 		out = binary.BigEndian.AppendUint16(out, uint16(entry.id))
 		out = binary.BigEndian.AppendUint16(out, uint16(2*len(text)))
 		out = binary.BigEndian.AppendUint16(out, uint16(len(strings)))
@@ -163,28 +192,36 @@ func nameTable(records []nameRecord) []byte {
 	return append(out, strings...)
 }
 
-// font is the face as a TrueType font: Go Regular with the face's names and
-// its advance for A.
-func (face corpusFace) font(t *testing.T) []byte {
+// tables is the face as the tables of a TrueType font: Go Regular with the
+// face's names, its style in the OS/2 table and its advance for A.
+func (face corpusFace) tables(t *testing.T) map[string][]byte {
 	t.Helper()
 
 	tables := tablesOf(t, goregular.TTF)
 
-	records := []nameRecord{
-		{english, sfnt.NameIDFamily, face.family},
-		{english, sfnt.NameIDSubfamily, face.subfamily},
-		{english, sfnt.NameIDFull, face.family + " " + face.subfamily},
+	var records []nameRecord
+
+	if !face.noEnglish {
+		records = []nameRecord{
+			{language: english, id: sfnt.NameIDFamily, text: face.family},
+			{language: english, id: sfnt.NameIDSubfamily, text: face.subfamily},
+			{language: english, id: sfnt.NameIDFull, text: face.family + " " + face.subfamily},
+		}
+
+		if face.typoFamily != "" {
+			records = append(
+				records,
+				nameRecord{language: english, id: sfnt.NameIDTypographicFamily, text: face.typoFamily},
+			)
+		}
+
+		if face.typoSubfamily != "" {
+			records = append(records,
+				nameRecord{language: english, id: sfnt.NameIDTypographicSubfamily, text: face.typoSubfamily})
+		}
 	}
 
-	if face.typoFamily != "" {
-		records = append(records, nameRecord{english, sfnt.NameIDTypographicFamily, face.typoFamily})
-	}
-
-	if face.typoSubfamily != "" {
-		records = append(records, nameRecord{english, sfnt.NameIDTypographicSubfamily, face.typoSubfamily})
-	}
-
-	tables["name"] = nameTable(records)
+	tables["name"] = nameTable(append(records, face.names...))
 
 	parsed, err := sfnt.Parse(goregular.TTF)
 	if err != nil {
@@ -214,7 +251,97 @@ func (face corpusFace) font(t *testing.T) []byte {
 	binary.BigEndian.PutUint16(hmtx[metric*int(glyph):], face.advance)
 	tables["hmtx"] = hmtx
 
-	return fontOf(tables)
+	// OS/2: the weight class, the width class and the selection flags,
+	// whose first bit is italic.
+	const (
+		weightClass = 4
+		widthClass  = 6
+		selection   = 62
+	)
+
+	os2 := slices.Clone(tables["OS/2"])
+	if len(os2) < selection+2 {
+		t.Fatal("the font has no OS/2 table to say its style in")
+	}
+
+	weight, width := face.weight, face.width
+	if weight == 0 {
+		weight = 400
+	}
+
+	if width == 0 {
+		width = 5
+	}
+
+	binary.BigEndian.PutUint16(os2[weightClass:], weight)
+	binary.BigEndian.PutUint16(os2[widthClass:], width)
+
+	flags := binary.BigEndian.Uint16(os2[selection:]) &^ 1
+	if face.italic {
+		flags |= 1
+	}
+
+	binary.BigEndian.PutUint16(os2[selection:], flags)
+	tables["OS/2"] = os2
+
+	if face.unparsable {
+		// One subtable, for the Macintosh's Japanese: a version, a count,
+		// then platform 1, encoding 1 and where the subtable is; the
+		// subtable in format 0, 262 bytes of it.
+		cmap := []byte{0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 12, 0, 0, 1, 6, 0, 0}
+		tables["cmap"] = append(cmap, make([]byte, 256)...)
+	}
+
+	return tables
+}
+
+// font is the face as a TrueType font file.
+func (face corpusFace) font(t *testing.T) []byte {
+	t.Helper()
+
+	return fontOf(face.tables(t))
+}
+
+// collectionOf is the faces as one TrueType collection, in their order.
+func collectionOf(t *testing.T, faces ...corpusFace) []byte {
+	t.Helper()
+
+	const (
+		offsetTable = 12
+		record      = 16
+	)
+
+	out := []byte("ttcf")
+	out = binary.BigEndian.AppendUint32(out, 0x00010000)
+	out = binary.BigEndian.AppendUint32(out, uint32(len(faces)))
+
+	offsets := len(out)
+	out = append(out, make([]byte, 4*len(faces))...)
+
+	for i, face := range faces {
+		binary.BigEndian.PutUint32(out[offsets+4*i:], uint32(len(out)))
+
+		// The font as a file of its own, each table moved by where the
+		// font starts in the collection.
+		font, start := fontOf(face.tables(t)), len(out)
+
+		if len(font) < offsetTable {
+			t.Fatal("no font to put in the collection")
+		}
+
+		for table := range int(binary.BigEndian.Uint16(font[4:])) {
+			at := offsetTable + record*table + 8
+			if len(font) < at+4 {
+				t.Fatal("the font's table directory is cut short")
+			}
+
+			binary.BigEndian.PutUint32(font[at:], binary.BigEndian.Uint32(font[at:])+uint32(start))
+		}
+
+		out = append(out, font...)
+	}
+
+	return out
 }
 
 // fontCorpusEnv marks the process a corpus test runs in.
@@ -226,6 +353,21 @@ const fontCorpusEnv = "GO_GRAPHVIZ_TEST_FONT_CORPUS"
 // fonts are there too, which is why the corpus has names and widths no real
 // font has.
 func inFontCorpus(t *testing.T, faces []corpusFace, test func(t *testing.T)) {
+	t.Helper()
+
+	files := map[string][]byte{}
+
+	if os.Getenv(fontCorpusEnv) == "" {
+		for i, face := range faces {
+			files[fmt.Sprintf("corpus%02d.ttf", i)] = face.font(t)
+		}
+	}
+
+	inFontFiles(t, files, test)
+}
+
+// inFontFiles is inFontCorpus for font files made by the test, by name.
+func inFontFiles(t *testing.T, files map[string][]byte, test func(t *testing.T)) {
 	t.Helper()
 
 	if os.Getenv(fontCorpusEnv) != "" {
@@ -251,8 +393,8 @@ func inFontCorpus(t *testing.T, faces []corpusFace, test func(t *testing.T)) {
 		t.Fatal(err)
 	}
 
-	for i, face := range faces {
-		if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("corpus%02d.ttf", i)), face.font(t), 0o600); err != nil {
+	for name, data := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
