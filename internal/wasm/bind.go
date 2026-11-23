@@ -4043,6 +4043,51 @@ func newIDAllocatorSlice(v []uint64) []*IDAllocator {
 	return ret
 }
 
+type Reader struct {
+	ptr uint64
+	// token is the module lock's token of the call this handle was handed
+	// out in, when that was a callback; nil for a handle made outside.
+	token *callToken
+}
+
+// callContext is ctx with the handle's token, when it has one: a call made
+// through the handle from inside the callback proves itself the holder's.
+func (v *Reader) callContext(ctx context.Context) context.Context {
+	if v == nil || v.token == nil {
+		return ctx
+	}
+	return withToken(ctx, v.token)
+}
+
+// withToken hands the handle the token of the call it was made in.
+func (v *Reader) withToken(token *callToken) *Reader {
+	if v != nil {
+		v.token = token
+	}
+	return v
+}
+func newReader(ptr uint64) *Reader {
+	if ptr == 0 {
+		return nil
+	}
+	return &Reader{ptr: ptr}
+}
+
+func (v *Reader) getPtr() uint64 {
+	if v == nil {
+		return 0
+	}
+	return v.ptr
+}
+
+func newReaderSlice(v []uint64) []*Reader {
+	ret := make([]*Reader, 0, len(v))
+	for _, vv := range v {
+		ret = append(ret, newReader(vv))
+	}
+	return ret
+}
+
 type ClientDiscipline struct {
 	ptr uint64
 	// token is the module lock's token of the call this handle was handed
@@ -9763,6 +9808,26 @@ func (v *Graph) Close(ctx context.Context) (int, error) {
 	return ret, nil
 }
 
+func (v *Reader) Next(ctx context.Context) (*Graph, error) {
+	var zero *Graph
+	ctx = v.callContext(ctx)
+	p, err := mod.callWithRet(ctx, "Reader_next", v.getPtr())
+	if err != nil {
+		return zero, err
+	}
+	ret := newGraph(p)
+	ret.withToken(v.token)
+	return ret, nil
+}
+
+func (v *Reader) Close(ctx context.Context) error {
+	ctx = v.callContext(ctx)
+	if err := mod.call(ctx, "Reader_close", v.getPtr()); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (v *Graph) IsSimple(ctx context.Context) (int, error) {
 	var zero int
 	ctx = v.callContext(ctx)
@@ -10694,6 +10759,21 @@ func MemRead(ctx context.Context, _arg0 string) (*Graph, error) {
 		return zero, err
 	}
 	ret := newGraph(p)
+	return ret, nil
+}
+
+func ReaderOpen(ctx context.Context, _arg0 string) (*Reader, error) {
+	var zero *Reader
+	arg0, err := mod.toStringWasmValue(ctx, _arg0)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, arg0)
+	p, err := mod.callWithRet(ctx, "readerOpen", arg0)
+	if err != nil {
+		return zero, err
+	}
+	ret := newReader(p)
 	return ret, nil
 }
 

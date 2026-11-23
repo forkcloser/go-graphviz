@@ -33,6 +33,7 @@ import (
 	"image"
 	"io"
 	"io/fs"
+	"iter"
 	"os"
 	"sync/atomic"
 
@@ -279,6 +280,12 @@ func (g *Graphviz) laidOut(
 // working directory and then from the root.
 func SetFileSystem(fsys fs.FS) {
 	wasm.SetWasmFileSystem(fsys)
+}
+
+// ParseAll reads every graph of the DOT text given, in turn: see
+// cgraph.ParseAll. ParseBytes reads the first alone.
+func ParseAll(text []byte) iter.Seq2[*Graph, error] {
+	return cgraph.ParseAll(text)
 }
 
 // Version is the Graphviz release the embedded WebAssembly module was built

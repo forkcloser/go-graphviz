@@ -56,6 +56,14 @@ message IDAllocator {
 
 }
 
+// Reader reads the graphs of one DOT text in turn (patch.c).
+message Reader {
+  option (nori.message) = {
+    alias: "bridge_reader_t"
+    constructor: false
+  };
+}
+
 message ClientDiscipline {
   option (nori.message).alias = "Agdisc_t";
 
@@ -171,6 +179,34 @@ option (nori.file).export = {
       ref: "Graph"
       pointer: 1
     }
+  }
+  func {
+    name: "readerOpen"
+    alias: "bridge_reader_open"
+    args {
+      kind: CHARPTR
+      const: true
+    }
+    return {
+      kind: STRUCT
+      ref: "Reader"
+      pointer: 1
+    }
+  }
+  method {
+    recv: "Reader"
+    name: "next"
+    alias: "bridge_reader_next"
+    return {
+      kind: STRUCT
+      ref: "Graph"
+      pointer: 1
+    }
+  }
+  method {
+    recv: "Reader"
+    name: "close"
+    alias: "bridge_reader_close"
   }
   func {
     name: "write"

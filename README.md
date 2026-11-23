@@ -165,6 +165,18 @@ if err != nil { panic(err) }
 graph, err := graphviz.ParseBytes(b)
 ```
 
+A text may hold several graphs. `ParseBytes` reads the first and nothing of
+what follows it; `ParseAll` reads each in turn, and ends on the error of a
+part Graphviz cannot read:
+
+```go
+for graph, err := range graphviz.ParseAll(b) {
+	if err != nil { panic(err) }
+	// lay out and render graph
+	graph.Close()
+}
+```
+
 ## 3. Render Graph
 
 ```go

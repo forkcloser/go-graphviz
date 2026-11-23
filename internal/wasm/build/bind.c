@@ -2906,6 +2906,17 @@ void wasm_bridge_memRead(void * _arg0, void ** _arg1) {
   *_arg1 = v;
 }
 
+WASM_EXPORT(wasm_bridge_readerOpen)
+void wasm_bridge_readerOpen(void * _arg0, void ** _arg1) {
+  const char * arg0;
+  arg0 = (const char *)_arg0;
+  bridge_reader_t * ret = bridge_reader_open(
+    arg0
+  );
+  bridge_reader_t * v = (bridge_reader_t *)ret;
+  *_arg1 = v;
+}
+
 WASM_EXPORT(wasm_bridge_write)
 void wasm_bridge_write(void * _arg0, void * _arg1, int* _arg2) {
   Agraph_t * arg0;
@@ -3100,6 +3111,26 @@ void wasm_bridge_Graph_close(void * _arg0, int* _arg1) {
   );
   int v = (int)ret;
   *_arg1 = v;
+}
+
+WASM_EXPORT(wasm_bridge_Reader_next)
+void wasm_bridge_Reader_next(void * _arg0, void ** _arg1) {
+  bridge_reader_t * arg0;
+  arg0 = (bridge_reader_t *)_arg0;
+  Agraph_t * ret = bridge_reader_next(
+    arg0
+  );
+  Agraph_t * v = (Agraph_t *)ret;
+  *_arg1 = v;
+}
+
+WASM_EXPORT(wasm_bridge_Reader_close)
+void wasm_bridge_Reader_close(void * _arg0) {
+  bridge_reader_t * arg0;
+  arg0 = (bridge_reader_t *)_arg0;
+  bridge_reader_close(
+    arg0
+  );
 }
 
 WASM_EXPORT(wasm_bridge_Graph_isSimple)
