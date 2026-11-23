@@ -18,6 +18,11 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
+// requestFor is the request for a name where no font is installed.
+func requestFor(name string, flags uint) fontRequest {
+	return (*fontIndex)(nil).requestFor(name, nil, flags)
+}
+
 func TestParseStyle(t *testing.T) {
 	for _, tc := range []struct {
 		subfamily string
@@ -26,7 +31,9 @@ func TestParseStyle(t *testing.T) {
 		{"Regular", fontStyle{weight: weightRegular}},
 		{"Bold Italic", fontStyle{weight: weightBold, italic: true}},
 		{"BoldOblique", fontStyle{weight: weightBold, italic: true}},
-		{"Demi Bold", fontStyle{weight: weightBold}},
+		{"Demi Bold", fontStyle{weight: weightDemi}},
+		{"Ultra Light", fontStyle{weight: weightExtraLight}},
+		{"Extra-Condensed Semi Bold", fontStyle{weight: weightDemi, condensed: true}},
 		{"SemiBold", fontStyle{weight: weightDemi}},
 		{"Condensed Light", fontStyle{weight: weightLight, condensed: true}},
 		{"W3", fontStyle{weight: weightRegular}},
@@ -58,7 +65,7 @@ func TestRequestForPlainNames(t *testing.T) {
 		{"Bold", 0, []string{"Bold"}, "", fontStyle{weight: weightRegular}},
 		{"Arial", htmlBold | htmlItalic, []string{"Arial"}, "", fontStyle{weight: weightBold, italic: true}},
 	} {
-		got := requestFor(tc.name, nil, tc.flags)
+		got := requestFor(tc.name, tc.flags)
 		if !slices.Equal(got.families, tc.families) || got.generic != tc.generic || got.style != tc.style {
 			t.Errorf("requestFor(%q, %d) = %+v, want families %v, generic %q, style %+v",
 				tc.name, tc.flags, got, tc.families, tc.generic, tc.style)
@@ -66,24 +73,28 @@ func TestRequestForPlainNames(t *testing.T) {
 	}
 }
 
-// A condensed request tries the narrow cut of every candidate family before
-// any regular cut; the substitutes of a family follow it.
+// A condensed request first asks every candidate family for a condensed
+// face, a family's own before the next family's narrow cut, and then for
+// any face; the substitutes of a family follow it.
 func TestCandidates(t *testing.T) {
 	request := fontRequest{
-		families: []string{"Helvetica"},
+		families: []string{"Futura"},
 		generic:  "sans-serif",
 		style:    fontStyle{weight: weightRegular, condensed: true},
 	}
 
 	got := request.candidates()
-	narrow, plain := slices.Index(got, "Arial Narrow"), slices.Index(got, "Helvetica")
+	own := slices.Index(got, candidate{"Futura", true})
+	narrow := slices.Index(got, candidate{"Arial Narrow", false})
+	plain := slices.Index(got, candidate{"Futura", false})
 
-	if narrow < 0 || plain < 0 || narrow > plain {
-		t.Errorf("Arial Narrow at %d, Helvetica at %d in %v; want the narrow cut first", narrow, plain, got)
+	if own < 0 || narrow < 0 || plain < 0 || own > narrow || narrow > plain {
+		t.Errorf("Futura condensed at %d, Arial Narrow at %d, Futura at %d in %v; want them in that order",
+			own, narrow, plain, got)
 	}
 
-	request.style.condensed = false
-	if got := request.candidates(); len(got) < 2 || got[0] != "Helvetica" || got[1] != "Arial" {
+	request = fontRequest{families: []string{"Helvetica"}, style: fontStyle{weight: weightRegular}}
+	if got := request.candidates(); len(got) < 2 || got[0].family != "Helvetica" || got[1].family != "Arial" {
 		t.Errorf("candidates are %v, want Helvetica then its substitute Arial first", got)
 	}
 }
@@ -123,7 +134,7 @@ func TestResolveFontFromIndex(t *testing.T) {
 		{"Go Black", "b.ttf"},
 		{"Go Light Oblique", "c.ttf"},
 	} {
-		loaded, err := resolveFont(index, tc.name, requestFor(tc.name, nil, 0))
+		loaded, err := resolveFont(index, tc.name, requestFor(tc.name, 0))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -145,8 +156,8 @@ func TestResolveFontFallbacks(t *testing.T) {
 		request fontRequest
 		want    string
 	}{
-		{"NoSuchFont", requestFor("NoSuchFont", nil, 0), "go mono=false bold=false italic=false"},
-		{"NoSuchFont Bold Italic", requestFor("NoSuchFont Bold Italic", nil, 0), "go mono=false bold=true italic=true"},
+		{"NoSuchFont", requestFor("NoSuchFont", 0), "go mono=false bold=false italic=false"},
+		{"NoSuchFont Bold Italic", requestFor("NoSuchFont Bold Italic", 0), "go mono=false bold=true italic=true"},
 		{
 			"NoSuchMono",
 			fontRequest{generic: genericMonospace, style: fontStyle{weight: weightBold}},
@@ -168,7 +179,7 @@ func TestResolveFontFallbacks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	loaded, err := resolveFont(empty, path, requestFor(path, nil, 0))
+	loaded, err := resolveFont(empty, path, requestFor(path, 0))
 	if err != nil {
 		t.Fatal(err)
 	}

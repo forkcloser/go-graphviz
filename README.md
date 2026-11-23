@@ -76,6 +76,24 @@ Latin, Greek and Cyrillic: a label in another script, CJK among them, draws as
 boxes on a machine with no font for it, unless a `FontLoader` (`SetFontLoader`)
 supplies one.
 
+A name is read against the fonts there are, and in three places that is not how
+Graphviz's own Pango plugin reads it, each for a name that plugin sends to
+another font than the one written:
+
+- A family whose own name ends in a word a style could be (`Times New Roman`,
+  `Arial Black`) is found by its name, with a style after it or none, when it
+  is a family there is. Graphviz takes `Roman` for a style and looks for a
+  family `Times New`, unless a comma follows the name (`Times New Roman,`).
+- A weight may be written in two words (`Semi Bold`, `Ultra Light`). Graphviz
+  reads it with a hyphen or as one word (`Semi-Bold`), and takes the first of
+  two words for the family's.
+- In a list, the style words of an earlier entry count when the last entry
+  has none: `Helvetica Bold, Inter` is bold. Graphviz reads style words after
+  the whole list only (`Inter, Helvetica Bold`).
+
+A node whose label is set in such a name is sized here for the font the name
+says, and by Graphviz's own tools for the font they fall back to.
+
 A font can also be named by the path of its file (`fontname="/fonts/face.ttf"`).
 The file is read from the file system `SetFileSystem` names, as a node image
 is, and from the machine when none is named.
