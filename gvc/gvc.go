@@ -68,27 +68,36 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 // plugins a second time, the default ones the process's, and every PNG and
 // JPEG rendered after it was empty. Layout and RenderData on a closed
 // context return ErrClosed.
+//
+// The whole of it is one turn in the module, as the closed check of Layout
+// and RenderData is part of theirs: a context may be closed from one
+// goroutine while another renders with it, and the render is then whole or
+// refused. Freed in several turns, a render waiting for the module got it
+// between the free and the mark that says so, and laid out on the freed
+// context, which trapped the module.
 func (c *Context) Close() error {
-	if c.gvc == nil {
-		return nil
-	}
-
-	_, err := c.gvc.FreeContext(context.Background())
-	c.gvc = nil
-
-	if c.list != nil {
-		if freeErr := wasm.FreePluginList(context.Background(), c.list); err == nil {
-			err = freeErr
+	return wasm.Exclusive(context.Background(), func(ctx context.Context) error {
+		if c.gvc == nil {
+			return nil
 		}
 
-		c.list = nil
-	}
+		_, err := c.gvc.FreeContext(ctx)
+		c.gvc = nil
 
-	for _, plugin := range c.plugins {
-		plugin.release()
-	}
+		if c.list != nil {
+			if freeErr := wasm.FreePluginList(ctx, c.list); err == nil {
+				err = freeErr
+			}
 
-	return err
+			c.list = nil
+		}
+
+		for _, plugin := range c.plugins {
+			plugin.release()
+		}
+
+		return err
+	})
 }
 
 // Layout lays the graph out with the named engine. It first returns the
@@ -105,10 +114,6 @@ func (c *Context) Close() error {
 // module is free for this call, Layout returns its error and lays nothing
 // out. A layout that is running is not interrupted, whatever ctx does.
 func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string) error {
-	if c.gvc == nil {
-		return ErrClosed
-	}
-
 	if err := graph.Err(); err != nil {
 		return fmt.Errorf("setting an attribute of the graph: %w", err)
 	}
@@ -116,6 +121,11 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 	ran := false
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
+		// Read in the turn that uses it: see Close.
+		if c.gvc == nil {
+			return ErrClosed
+		}
+
 		// What an earlier call left unread is not this layout's.
 		_ = wasm.TakeLastError()
 
@@ -148,16 +158,17 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 // ctx is honoured until the render starts, as Layout's is; a render that is
 // running is not interrupted.
 func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format string, w io.Writer) error {
-	if c.gvc == nil {
-		return ErrClosed
-	}
-
 	var (
 		rendered string
 		reported error
 	)
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
+		// Read in the turn that uses it: see Close.
+		if c.gvc == nil {
+			return ErrClosed
+		}
+
 		defer c.releasePages()
 
 		// What an earlier call left unread is not this render's.

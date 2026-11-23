@@ -34,6 +34,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"sync/atomic"
 
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/gvc"
@@ -41,10 +42,11 @@ import (
 )
 
 type Graphviz struct {
-	ctx    *gvc.Context
-	name   string
-	dir    *GraphDescriptor
-	layout Layout
+	ctx  *gvc.Context
+	name string
+	dir  *GraphDescriptor
+	// layout is read by a render and set by SetLayout, from any goroutine.
+	layout atomic.Pointer[Layout]
 }
 
 type Layout string
@@ -86,11 +88,18 @@ func New(ctx context.Context) (*Graphviz, error) {
 		return nil, err
 	}
 
-	return &Graphviz{
-		ctx:    gctx,
-		dir:    Directed,
-		layout: DOT,
-	}, nil
+	return newGraphviz(gctx), nil
+}
+
+// newGraphviz is an instance on gctx with the defaults: directed graphs,
+// the dot layout.
+func newGraphviz(gctx *gvc.Context) *Graphviz {
+	g := &Graphviz{ctx: gctx, dir: Directed}
+
+	layout := DOT
+	g.layout.Store(&layout)
+
+	return g
 }
 
 func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Graphviz, error) {
@@ -99,19 +108,21 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Graphviz, error) {
 		return nil, err
 	}
 
-	return &Graphviz{
-		ctx:    gctx,
-		dir:    Directed,
-		layout: DOT,
-	}, nil
+	return newGraphviz(gctx), nil
 }
 
+// Close frees the instance. It may be called while another goroutine
+// renders with the instance: that render is whole, or it returns
+// gvc.ErrClosed, as every render after it does. A second Close does nothing.
 func (g *Graphviz) Close() error {
 	return g.ctx.Close()
 }
 
+// SetLayout names the layout engine the instance's next renders use. A
+// render that has started keeps the engine it started with.
 func (g *Graphviz) SetLayout(layout Layout) *Graphviz {
-	g.layout = layout
+	g.layout.Store(&layout)
+
 	return g
 }
 
@@ -195,7 +206,9 @@ const outputFileMode = 0o644
 // options apply to this graph only, and the next call starts again from the
 // defaults the instance was created with (unnamed, directed).
 func (g *Graphviz) Graph(option ...GraphOption) (*Graph, error) {
-	call := *g
+	// A fresh value for the options to write on, with the instance's
+	// defaults: the instance itself is not theirs to change.
+	call := Graphviz{name: g.name, dir: g.dir}
 	for _, opt := range option {
 		opt(&call)
 	}
@@ -239,7 +252,7 @@ func (g *Graphviz) laidOut(
 			err = errors.Join(err, went(g.ctx.FreeLayout(ctx, graph)))
 		}()
 
-		if err := went(g.ctx.Layout(ctx, graph, string(g.layout))); err != nil {
+		if err := went(g.ctx.Layout(ctx, graph, string(*g.layout.Load()))); err != nil {
 			return err
 		}
 
