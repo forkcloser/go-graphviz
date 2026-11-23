@@ -1818,6 +1818,12 @@ option (nori.file).export = {
       pointer: 1
     }
   }
+  // version is the Graphviz release the module is built from (patch.c).
+  func {
+    name: "version"
+    alias: "bridge_version"
+    return { kind: CHARPTR }
+  }
   method {
     recv: "Context"
     name: "layout"

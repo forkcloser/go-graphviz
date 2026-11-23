@@ -118,6 +118,19 @@ void bridge_free_plugin(gvplugin_api_t *api) {
   free(api);
 }
 
+// bridge_version is the Graphviz release the module is built from, as
+// Graphviz answers it: gvcVersion, of a context made for the question that
+// holds nothing else. Not PACKAGE_VERSION read here: the config.h beside
+// this file is the template, with the release not filled in.
+char *bridge_version(void) {
+  GVC_t *gvc = gvNEWcontext(NULL, 0);
+  char *version = gvcVersion(gvc);
+
+  free(gvc);
+
+  return version;
+}
+
 // bridge_render_data is gvRenderData, and deletes the jobs of a render that
 // failed. For a format it does not know, gvRenderData returns with its job
 // still on the context, named by the caller's format string, which the

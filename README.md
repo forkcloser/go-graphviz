@@ -18,7 +18,7 @@ upstream since.
 
 # Features
 
-The embedded Graphviz is the version of the `graphviz` entry in [pins.yaml](./pins.yaml).
+The embedded Graphviz is the version of the `graphviz` entry in [pins.yaml](./pins.yaml); `graphviz.Version()` asks the module itself.
 
 - Pure Go Library
 - No need to install Graphviz library ( ~`brew install graphviz`~ or ~`apt-get install graphviz`~ )
