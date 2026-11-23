@@ -985,6 +985,30 @@ type outlinedFace struct {
 	buf  sfnt.Buffer
 }
 
+// Kern is how far the pen moves between left and right beside their
+// advances, at the face's size. The face's own Kern gives the font's units
+// for pixels, the same number at every size (it hands sfnt the units per em
+// where sfnt wants the pixels per em), so a kerned label was laid out and
+// drawn at two widths, neither of them the font's.
+func (f *outlinedFace) Kern(left, right rune) fixed.Int26_6 {
+	first, err := f.font.GlyphIndex(&f.buf, left)
+	if err != nil {
+		return 0
+	}
+
+	second, err := f.font.GlyphIndex(&f.buf, right)
+	if err != nil {
+		return 0
+	}
+
+	kern, err := f.font.Kern(&f.buf, first, second, f.ppem, font.HintingNone)
+	if err != nil {
+		return 0
+	}
+
+	return kern
+}
+
 func (f *outlinedFace) outline(char rune) (sfnt.Segments, bool) {
 	index, err := f.font.GlyphIndex(&f.buf, char)
 	if err != nil || index == 0 {
