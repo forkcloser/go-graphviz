@@ -377,17 +377,7 @@ func inFontFiles(t *testing.T, files map[string][]byte, test func(t *testing.T))
 	}
 
 	home := t.TempDir()
-
-	var dir string
-
-	switch runtime.GOOS {
-	case "darwin":
-		dir = filepath.Join(home, "Library", "Fonts")
-	case "windows":
-		dir = filepath.Join(home, "Microsoft", "Windows", "Fonts")
-	default:
-		dir = filepath.Join(home, ".fonts")
-	}
+	dir := userFontDirectory(home)
 
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
@@ -405,6 +395,19 @@ func inFontFiles(t *testing.T, files map[string][]byte, test func(t *testing.T))
 
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("the process with the font corpus: %v\n%s", err, out)
+	}
+}
+
+// userFontDirectory is where the platform reads the fonts of the user whose
+// home, and local application data on Windows, is home.
+func userFontDirectory(home string) string {
+	switch runtime.GOOS {
+	case "darwin":
+		return filepath.Join(home, "Library", "Fonts")
+	case "windows":
+		return filepath.Join(home, "Microsoft", "Windows", "Fonts")
+	default:
+		return filepath.Join(home, ".fonts")
 	}
 }
 

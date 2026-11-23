@@ -113,7 +113,8 @@ Fonts are read from the platform's directories: on macOS `~/Library/Fonts`,
 user's `Fonts` folders; on Linux and the BSDs `~/.fonts`, then `fonts` under
 `XDG_DATA_HOME` (`~/.local/share/fonts` when it is unset) and under each
 `XDG_DATA_DIRS` entry (`/usr/local/share/fonts` and `/usr/share/fonts` when it
-is unset); on Android `/system/fonts`.
+is unset); on Android `/system/fonts`. A directory, or a font file, that is a
+symbolic link is read through the link.
 
 # Installation
 

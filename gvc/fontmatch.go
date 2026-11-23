@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
@@ -660,24 +659,57 @@ func (index *fontIndex) listedRequest(name string) fontRequest {
 	return request
 }
 
-// buildFontIndex indexes the font files under dirs, reading only each
-// font's name table.
+// buildFontIndex indexes the font files under dirs, reading of each font
+// its names and its style.
 func buildFontIndex(dirs []string) *fontIndex {
 	index := &fontIndex{byFamily: map[string][]installedFace{}, byFile: map[string][]installedFace{}}
+	walked := map[string]bool{}
 
 	for _, dir := range dirs {
-		_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
-			if err != nil || entry.IsDir() || !isFontFile(path) {
-				return nil //nolint:nilerr // an unreadable entry is skipped, not fatal
-			}
-
-			index.addFile(path)
-
-			return nil
-		})
+		index.addDirectory(dir, walked)
 	}
 
 	return index
+}
+
+// addDirectory indexes the font files under dir, in name order, through
+// symbolic links: dir may be one, and so may a directory or a file under
+// it, as a user's font directory linked from elsewhere is, and the
+// directories some systems link under share/fonts. walked holds the
+// directories read, by the path their links come to, so that one reached
+// twice, or a link that leads back to where it is, is read once.
+//
+// Only a file is opened: a pipe or a device named like a font is not one,
+// and opening it would wait for whoever writes to it.
+func (index *fontIndex) addDirectory(dir string, walked map[string]bool) {
+	resolved, err := filepath.EvalSymlinks(dir)
+	if err != nil || walked[resolved] {
+		return
+	}
+
+	walked[resolved] = true
+
+	entries, err := os.ReadDir(resolved)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		path := filepath.Join(resolved, entry.Name())
+
+		// What the entry is, or leads to.
+		info, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+
+		switch {
+		case info.IsDir():
+			index.addDirectory(path, walked)
+		case info.Mode().IsRegular() && isFontFile(path):
+			index.addFile(path)
+		}
+	}
 }
 
 func isFontFile(path string) bool {
