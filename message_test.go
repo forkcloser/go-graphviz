@@ -170,3 +170,19 @@ func TestErrorMessageIsConsumed(t *testing.T) {
 		t.Fatalf("the earlier parse error was attached to an unrelated failure: %v", err)
 	}
 }
+
+// A call that fails without a message is reported with the code Graphviz
+// returned: agset's failure is -1, and that is what the error says.
+func TestAFailedCallReportsGraphvizsCode(t *testing.T) {
+	graph, err := graphviz.ParseBytes([]byte("digraph { a -> b }"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	err = graph.Set("nosuchattribute", "x")
+	if !errors.Is(err, cgraph.ErrGraphviz) || !strings.Contains(err.Error(), "code -1 ") {
+		t.Fatalf("Set on an undeclared attribute returned %v, want a Graphviz error with code -1", err)
+	}
+}

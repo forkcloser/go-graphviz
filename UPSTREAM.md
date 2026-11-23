@@ -51,6 +51,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | A plugin nothing reaches any more gives back the module memory that describes it to Graphviz (its API record, its types, each type's name, engine and features), with its callbacks. Nothing freed them: a render plugin and a device plugin built for each render left some 500 bytes each time, for the life of the process | `gvc/plugin.go`, `internal/wasm/build/patch.c` |
 | `ParseBytes` tells a text that holds no graph (empty, blank, comments alone) from one Graphviz cannot read: its error is `cgraph.ErrNoGraph`. Graphviz's `dot` writes nothing for such an input and succeeds; a caller could not tell it from a syntax error | `cgraph/cgraph.go` |
 | A render whose callback fails or panics leaves nothing in the module. The callbacks Graphviz goes on to make are skipped, and the copies the bridge had made of their arguments (a point for each corner of a shape, a string for each name) stayed: some 300 bytes a node for each failed render | `internal/tools/nori/templates/bind.go.tmpl`, `internal/wasm/bind.go` |
+| A C `int` keeps its sign on its way to Go. The binding read it as the low half of an unsigned word, so a result of -1 was 4294967295: a call Graphviz failed without a message said "code 4294967295" | `internal/tools/nori/templates/bind.go.tmpl`, `internal/wasm/bind.go` |
 
 ## Graphviz source edits
 
