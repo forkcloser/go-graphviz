@@ -180,7 +180,7 @@ func (v *GoValue) GoTypeConverter() string {
 	case nori.TypeKind_UINT64:
 		typeName = "mod.toUint64"
 	case nori.TypeKind_ENUM:
-		typeName = toPublicGoVariable(v.typ.Ref.(*Enum).Name)
+		typeName = fmt.Sprintf("toEnum[%s]", toPublicGoVariable(v.typ.Ref.(*Enum).Name))
 	case nori.TypeKind_VOIDPTR:
 		typeName = "mod.toAny"
 	case nori.TypeKind_CHARPTR, nori.TypeKind_STRING:

@@ -1553,7 +1553,7 @@ func (m *WasmModule) loadWith(ctx context.Context, blob []byte, cache wazero.Com
 			arg1, err := func() (LabelType, error) {
 				var zero LabelType
 				_ = zero
-				ret := LabelType(stack[1])
+				ret := toEnum[LabelType](stack[1])
 				return ret, nil
 			}()
 			if err != nil {
@@ -3100,8 +3100,15 @@ func (m *WasmModule) toFloat64Slice(ctx context.Context, v []uint64) ([]float64,
 	return ret, nil
 }
 
+// A C int arrives in the low half of a word whose high half is zero, a
+// result slot or a stack word alike: its sign is bit 31, not bit 63.
 func (m *WasmModule) toInt(p uint64) int {
-	return int(p)
+	return int(int32(p))
+}
+
+// toEnum is toInt for a C enum, which is an int.
+func toEnum[T ~int](p uint64) T {
+	return T(int32(p))
 }
 
 func (m *WasmModule) toIntSlice(v []uint64) []int {
@@ -5509,7 +5516,7 @@ func (v *UserShape) getType(ctx context.Context) (ImageType, error) {
 	if err != nil {
 		return zero, err
 	}
-	ret := ImageType(p)
+	ret := toEnum[ImageType](p)
 	return ret, nil
 }
 
@@ -5835,7 +5842,7 @@ func (v *ObjectState) getType(ctx context.Context) (ObjectType, error) {
 	if err != nil {
 		return zero, err
 	}
-	ret := ObjectType(p)
+	ret := toEnum[ObjectType](p)
 	return ret, nil
 }
 
@@ -6030,7 +6037,7 @@ func (v *ObjectState) getPen(ctx context.Context) (PenType, error) {
 	if err != nil {
 		return zero, err
 	}
-	ret := PenType(p)
+	ret := toEnum[PenType](p)
 	return ret, nil
 }
 
@@ -6057,7 +6064,7 @@ func (v *ObjectState) getFill(ctx context.Context) (FillType, error) {
 	if err != nil {
 		return zero, err
 	}
-	ret := FillType(p)
+	ret := toEnum[FillType](p)
 	return ret, nil
 }
 
@@ -7286,7 +7293,7 @@ func (v *Color) getType(ctx context.Context) (ColorType, error) {
 	if err != nil {
 		return zero, err
 	}
-	ret := ColorType(p)
+	ret := toEnum[ColorType](p)
 	return ret, nil
 }
 
@@ -8866,7 +8873,7 @@ func (v *RenderFeatures) getColorType(ctx context.Context) (ColorType, error) {
 	if err != nil {
 		return zero, err
 	}
-	ret := ColorType(p)
+	ret := toEnum[ColorType](p)
 	return ret, nil
 }
 
@@ -9180,7 +9187,7 @@ func (v *PluginAPI) getApi(ctx context.Context) (API, error) {
 	if err != nil {
 		return zero, err
 	}
-	ret := API(p)
+	ret := toEnum[API](p)
 	return ret, nil
 }
 

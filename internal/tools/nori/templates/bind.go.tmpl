@@ -774,8 +774,15 @@ func (m *WasmModule) toFloat64Slice(ctx context.Context, v []uint64) ([]float64,
 	return ret, nil
 }
 
+// A C int arrives in the low half of a word whose high half is zero, a
+// result slot or a stack word alike: its sign is bit 31, not bit 63.
 func (m *WasmModule) toInt(p uint64) int {
-	return int(p)
+	return int(int32(p))
+}
+
+// toEnum is toInt for a C enum, which is an int.
+func toEnum[T ~int](p uint64) T {
+	return T(int32(p))
 }
 
 func (m *WasmModule) toIntSlice(v []uint64) []int {
