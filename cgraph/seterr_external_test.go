@@ -98,39 +98,38 @@ func TestSetterErrors(t *testing.T) {
 	}
 }
 
-// Closing a root graph forgets its setter error. The module reuses a closed
-// graph's address for the next one, which would otherwise inherit it.
+// Closing a root graph forgets its setter error, and closing a subgraph
+// does not. The module makes later graphs where closed ones were, and one
+// made at a closed root's address would otherwise return its error. Where
+// the next graph lands is the allocator's choice, so the test reads what is
+// kept for the address, not a graph hoped to be made there.
 func TestSetterErrorForgottenOnClose(t *testing.T) {
-	const dot = `digraph { a -> b }`
-
-	closed, err := graphviz.ParseBytes([]byte(dot))
+	root, err := graphviz.ParseBytes([]byte(`digraph { subgraph s { a -> b } }`))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	address := cgraph.RootAddress(closed)
-	cgraph.InjectSetterError(closed, errFirstSetter)
+	address := cgraph.RootAddress(root)
+	cgraph.InjectSetterError(root, errFirstSetter)
 
-	if err = closed.Close(); err != nil {
+	sub, err := root.SubGraphByName("s")
+	if err != nil || sub == nil {
+		t.Fatalf("subgraph s: %v", err)
+	}
+
+	if err = sub.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	reused, err := graphviz.ParseBytes([]byte(dot))
-	if err != nil {
+	if kept := cgraph.SetterErrorAt(address); !errors.Is(kept, errFirstSetter) {
+		t.Fatalf("after a subgraph closed, the root's address keeps %v, want the setter's error", kept)
+	}
+
+	if err = root.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	defer func() { _ = reused.Close() }()
-
-	if cgraph.RootAddress(reused) != address {
-		t.Fatalf(
-			"the new graph is at %#x, the closed one was at %#x: the test needs the address reused",
-			cgraph.RootAddress(reused),
-			address,
-		)
-	}
-
-	if setErr := reused.Err(); setErr != nil {
-		t.Errorf("a graph at a closed graph's address has its setter error %v", setErr)
+	if kept := cgraph.SetterErrorAt(address); kept != nil {
+		t.Errorf("after the root closed, its address still keeps %v", kept)
 	}
 }

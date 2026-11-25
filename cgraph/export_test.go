@@ -21,3 +21,12 @@ func InjectSetterError(obj any, err error) {
 func RootAddress(g *Graph) uint64 {
 	return wasm.WasmPtr(g.wasm.GetRoot())
 }
+
+// SetterErrorAt is the setter error kept for the root graph at address, or
+// nil: what Err returns from a graph made there.
+func SetterErrorAt(address uint64) error {
+	setterErrors.mu.Lock()
+	defer setterErrors.mu.Unlock()
+
+	return setterErrors.byRoot[address]
+}
