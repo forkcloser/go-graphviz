@@ -2,12 +2,18 @@ package graphviz_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
+
+	"golang.org/x/image/font/opentype"
 
 	"github.com/forkcloser/go-graphviz"
 	"github.com/forkcloser/go-graphviz/cgraph"
+	"github.com/forkcloser/go-graphviz/gvc"
 )
 
 // A format Graphviz does not know is reported with Graphviz's own message,
@@ -184,5 +190,135 @@ func TestAFailedCallReportsGraphvizsCode(t *testing.T) {
 	err = graph.Set("nosuchattribute", "x")
 	if !errors.Is(err, cgraph.ErrGraphviz) || !strings.Contains(err.Error(), "code -1 ") {
 		t.Fatalf("Set on an undeclared attribute returned %v, want a Graphviz error with code -1", err)
+	}
+}
+
+// A call's error is its own when other goroutines' calls fail beside it.
+// One goroutine deletes a node of another graph, which Graphviz refuses
+// with a message; another sets an attribute nobody declared, which it
+// refuses without one. Read after the call had left the module, the
+// message of the one was taken by the other, and the first was left with
+// none.
+func TestACallsErrorIsItsOwnAmongGoroutines(t *testing.T) {
+	gv, err := graphviz.New(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, gv.Close) })
+
+	mine, err := gv.Graph()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, mine.Close) })
+
+	other, err := gv.Graph()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, other.Close) })
+
+	stranger, err := other.CreateNodeByName("stranger")
+	if err != nil || stranger == nil {
+		t.Fatalf("no node to delete: %v", err)
+	}
+
+	const rounds = 20000
+
+	var (
+		group   sync.WaitGroup
+		deleted atomic.Pointer[error]
+		set     atomic.Pointer[error]
+	)
+
+	group.Go(func() {
+		for range rounds {
+			err := mine.Delete(stranger)
+			if err == nil || !strings.Contains(err.Error(), "agdelete on wrong graph") {
+				deleted.CompareAndSwap(nil, &err)
+
+				return
+			}
+		}
+	})
+
+	group.Go(func() {
+		for range rounds {
+			err := other.Set("nosuchattribute", "x")
+			if err == nil || !strings.Contains(err.Error(), "and no message") {
+				set.CompareAndSwap(nil, &err)
+
+				return
+			}
+		}
+	})
+
+	group.Wait()
+
+	if wrong := deleted.Load(); wrong != nil {
+		t.Errorf("deleting another graph's node returned %v, want Graphviz's own message", *wrong)
+	}
+
+	if wrong := set.Load(); wrong != nil {
+		t.Errorf("setting an undeclared attribute returned %v, want a failure with no message", *wrong)
+	}
+}
+
+// A graph call made from inside a layout, by a callback, has its own error
+// and leaves the layout's: what Graphviz reported for the layout before the
+// callback ran is still the layout's when it ends. A font loader is such a
+// callback. Here the layout has a record label it cannot read, which it
+// reports and goes on from, and the loader then sets an attribute nobody
+// declared on another graph.
+func TestACallInsideALayoutLeavesTheLayoutsError(t *testing.T) {
+	other, err := graphviz.ParseBytes([]byte("digraph { x }"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, other.Close) })
+
+	var inside []error
+
+	graphviz.SetFontLoader(func(context.Context, *graphviz.TextFont) (*opentype.Font, error) {
+		//nolint:contextcheck // Set takes no context: the call is made in the layout's own stay
+		inside = append(inside, other.Set("nosuchattribute", "x"))
+
+		return nil, nil //nolint:nilnil // no font asks for the usual resolution
+	})
+	t.Cleanup(func() { graphviz.SetFontLoader(nil) })
+
+	g, err := graphviz.New(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, g.Close) })
+
+	graph, err := graphviz.ParseBytes([]byte(`digraph { a [shape=record label="{a|"]; b [label="after"] }`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	var out bytes.Buffer
+
+	err = g.Render(t.Context(), graph, graphviz.SVG, &out)
+	if !errors.Is(err, gvc.ErrReported) || !strings.Contains(err.Error(), "bad label format") {
+		t.Errorf("the render returned %v, want the layout's own report of the label", err)
+	}
+
+	if len(inside) == 0 {
+		t.Fatal("the font loader was not asked: the test saw nothing")
+	}
+
+	for _, err := range inside {
+		if err == nil || !strings.Contains(err.Error(), "and no message") {
+			t.Fatalf("a call from inside the layout returned %v, want its own failure with no message", err)
+		}
 	}
 }

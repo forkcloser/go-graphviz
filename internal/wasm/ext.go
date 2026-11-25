@@ -281,6 +281,35 @@ func TakeLastError() string {
 	return text
 }
 
+// ErrorMark is where the text of the errors Graphviz has reported stands
+// now: what TakeErrorsSince takes from.
+func ErrorMark() int {
+	messageMu.Lock()
+	defer messageMu.Unlock()
+
+	return lastErrorText.Len()
+}
+
+// TakeErrorsSince returns the text of the errors Graphviz reported since
+// mark and clears that much, leaving what it had reported before where it
+// is. It is how a call reads its own errors when it may be made inside
+// another's stay in the module, from a callback of a layout or a render:
+// what that one has had reported so far is its own to read at its end.
+func TakeErrorsSince(mark int) string {
+	messageMu.Lock()
+	defer messageMu.Unlock()
+
+	text := lastErrorText.String()
+	if mark >= len(text) {
+		return ""
+	}
+
+	lastErrorText.Reset()
+	lastErrorText.WriteString(text[:mark])
+
+	return text[mark:]
+}
+
 // Exclusive runs calls with the module's lock held from start to end, so
 // that no other goroutine's call runs between the calls it makes; it makes
 // them through the context it is given, which carries the lock's token. An

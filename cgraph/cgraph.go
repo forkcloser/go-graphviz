@@ -35,12 +35,11 @@ func (g *Graph) GraphRoot() *Graph {
 }
 
 func (g *Graph) CopyAttr(t *Graph) error {
-	res, err := wasm.CopyAttr(context.Background(), g.wasm, t.getWasm())
-	if err != nil {
-		return err
-	}
+	self, other := g.wasm, t.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.CopyAttr(ctx, self, other)
+	})
 }
 
 func (g *Graph) GetStr(name string) string {
@@ -53,42 +52,38 @@ func (g *Graph) SymbolName(sym *Symbol) (string, error) {
 }
 
 func (g *Graph) Set(name, value string) error {
-	res, err := wasm.SetStr(context.Background(), g.wasm, name, value)
-	if err != nil {
-		return err
-	}
+	self := g.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SetStr(ctx, self, name, value)
+	})
 }
 
 func (g *Graph) SetSymbolName(sym *Symbol, value string) error {
-	res, err := wasm.SetSymName(context.Background(), g.wasm, sym.getWasm(), value)
-	if err != nil {
-		return err
-	}
+	self, symbol := g.wasm, sym.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SetSymName(ctx, self, symbol, value)
+	})
 }
 
 func (g *Graph) SafeSet(name, value, def string) error {
-	res, err := wasm.SafeSetStr(context.Background(), g.wasm, name, value, def)
-	if err != nil {
-		return err
-	}
+	self := g.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SafeSetStr(ctx, self, name, value, def)
+	})
 }
 
 // SafeSetHTML is SafeSet for an HTML-like value. Since Graphviz 13 a value
 // set through SafeSet is plain text and an HTML label set that way renders
 // as escaped markup; this is the call for a label such as <table>...</table>.
 func (g *Graph) SafeSetHTML(name, value, def string) error {
-	res, err := wasm.SafeSetStrHTML(context.Background(), g.wasm, name, value, def)
-	if err != nil {
-		return err
-	}
+	self := g.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SafeSetStrHTML(ctx, self, name, value, def)
+	})
 }
 
 func (g *Graph) Close() error {
@@ -96,12 +91,7 @@ func (g *Graph) Close() error {
 		forgetSetterErrors(root)
 	}
 
-	res, err := g.wasm.Close(context.Background())
-	if err != nil {
-		return err
-	}
-
-	return toError(res)
+	return checked(g.wasm.Close)
 }
 
 func (g *Graph) IsSimple() (bool, error) {
@@ -325,21 +315,19 @@ func (g *Graph) Name() (string, error) {
 }
 
 func (g *Graph) Delete(obj any) error {
-	res, err := g.wasm.Delete(context.Background(), obj)
-	if err != nil {
-		return err
-	}
+	self := g.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return self.Delete(ctx, obj)
+	})
 }
 
 func (g *Graph) DeleteSubGraph(sub *Graph) error {
-	res, err := g.wasm.DeleteSubGraph(context.Background(), sub.getWasm())
-	if err != nil {
-		return err
-	}
+	self, other := g.wasm, sub.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return self.DeleteSubGraph(ctx, other)
+	})
 }
 
 func (g *Graph) DeleteNode(n *Node) (bool, error) {
@@ -530,12 +518,11 @@ func (n *Node) Name() (string, error) {
 }
 
 func (n *Node) CopyAttr(t *Node) error {
-	res, err := wasm.CopyAttr(context.Background(), n.wasm, t.getWasm())
-	if err != nil {
-		return err
-	}
+	self, other := n.wasm, t.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.CopyAttr(ctx, self, other)
+	})
 }
 
 func (n *Node) GetStr(name string) string {
@@ -548,60 +535,54 @@ func (n *Node) SymbolName(sym *Symbol) (string, error) {
 }
 
 func (n *Node) Set(name, value string) error {
-	res, err := wasm.SetStr(context.Background(), n.wasm, name, value)
-	if err != nil {
-		return err
-	}
+	self := n.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SetStr(ctx, self, name, value)
+	})
 }
 
 func (n *Node) SetSymbolName(sym *Symbol, value string) error {
-	res, err := wasm.SetSymName(context.Background(), n.wasm, sym.getWasm(), value)
-	if err != nil {
-		return err
-	}
+	self, symbol := n.wasm, sym.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SetSymName(ctx, self, symbol, value)
+	})
 }
 
 func (n *Node) SafeSet(name, value, def string) error {
-	res, err := wasm.SafeSetStr(context.Background(), n.wasm, name, value, def)
-	if err != nil {
-		return err
-	}
+	self := n.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SafeSetStr(ctx, self, name, value, def)
+	})
 }
 
 // SafeSetHTML is SafeSet for an HTML-like value. Since Graphviz 13 a value
 // set through SafeSet is plain text and an HTML label set that way renders
 // as escaped markup; this is the call for a label such as <table>...</table>.
 func (n *Node) SafeSetHTML(name, value, def string) error {
-	res, err := wasm.SafeSetStrHTML(context.Background(), n.wasm, name, value, def)
-	if err != nil {
-		return err
-	}
+	self := n.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SafeSetStrHTML(ctx, self, name, value, def)
+	})
 }
 
 func (n *Node) ReLabel(newname string) error {
-	res, err := n.wasm.ReLabel(context.Background(), newname)
-	if err != nil {
-		return err
-	}
+	self := n.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return self.ReLabel(ctx, newname)
+	})
 }
 
 func (n *Node) Before(v *Node) error {
-	res, err := n.wasm.Before(context.Background(), v.getWasm())
-	if err != nil {
-		return err
-	}
+	self, other := n.wasm, v.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return self.Before(ctx, other)
+	})
 }
 
 func (n *Node) getWasm() *wasm.Node {
@@ -647,12 +628,11 @@ func (e *Edge) Name() (string, error) {
 }
 
 func (e *Edge) CopyAttr(t *Edge) error {
-	res, err := wasm.CopyAttr(context.Background(), e.wasm, t.getWasm())
-	if err != nil {
-		return err
-	}
+	self, other := e.wasm, t.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.CopyAttr(ctx, self, other)
+	})
 }
 
 func (e *Edge) GetStr(name string) string {
@@ -665,42 +645,38 @@ func (e *Edge) SymbolName(sym *Symbol) (string, error) {
 }
 
 func (e *Edge) Set(name, value string) error {
-	res, err := wasm.SetStr(context.Background(), e.wasm, name, value)
-	if err != nil {
-		return err
-	}
+	self := e.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SetStr(ctx, self, name, value)
+	})
 }
 
 func (e *Edge) SetSymbolName(sym *Symbol, value string) error {
-	res, err := wasm.SetSymName(context.Background(), e.wasm, sym.getWasm(), value)
-	if err != nil {
-		return err
-	}
+	self, symbol := e.wasm, sym.getWasm()
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SetSymName(ctx, self, symbol, value)
+	})
 }
 
 func (e *Edge) SafeSet(name, value, def string) error {
-	res, err := wasm.SafeSetStr(context.Background(), e.wasm, name, value, def)
-	if err != nil {
-		return err
-	}
+	self := e.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SafeSetStr(ctx, self, name, value, def)
+	})
 }
 
 // SafeSetHTML is SafeSet for an HTML-like value. Since Graphviz 13 a value
 // set through SafeSet is plain text and an HTML label set that way renders
 // as escaped markup; this is the call for a label such as <table>...</table>.
 func (e *Edge) SafeSetHTML(name, value, def string) error {
-	res, err := wasm.SafeSetStrHTML(context.Background(), e.wasm, name, value, def)
-	if err != nil {
-		return err
-	}
+	self := e.wasm
 
-	return toError(res)
+	return checked(func(ctx context.Context) (int, error) {
+		return wasm.SafeSetStrHTML(ctx, self, name, value, def)
+	})
 }
 
 func (e *Edge) getWasm() *wasm.Edge {
@@ -828,15 +804,6 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 	return toGraph(graph), nil
 }
 
-// parseError is the error for a read or open that returned no graph.
-func parseError() error {
-	if err := lastError(); err != nil {
-		return err
-	}
-
-	return fmt.Errorf("%w: no graph was produced", ErrGraphviz)
-}
-
 func ParseFile(path string) (*Graph, error) {
 	// #nosec G304 -- reading the file the caller names is this function's purpose
 	file, err := os.ReadFile(path)
@@ -854,13 +821,35 @@ func Open(name string, desc *Desc) (*Graph, error) {
 		return nil, errInit
 	}
 
-	graph, err := wasm.Open(context.Background(), name, desc.getWasm(), nil)
+	var (
+		graph   *wasm.Graph
+		failure error
+	)
+
+	// One stay in the module for the call and for what Graphviz reported
+	// during it, and that alone, as in checked.
+	err := wasm.Exclusive(context.Background(), func(ctx context.Context) error {
+		mark := wasm.ErrorMark()
+
+		var err error
+
+		graph, err = wasm.Open(ctx, name, desc.getWasm(), nil)
+		reported := errorSince(mark)
+
+		if err == nil && graph == nil {
+			if failure = reported; failure == nil {
+				failure = fmt.Errorf("%w: no graph was produced", ErrGraphviz)
+			}
+		}
+
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	if graph == nil {
-		return nil, parseError()
+	if failure != nil {
+		return nil, failure
 	}
 
 	return toGraph(graph), nil
@@ -896,18 +885,46 @@ func CanonStr(s string) (string, error) {
 	return wasm.StrCanon(context.Background(), s, string(make([]byte, 4*len(s)+3)))
 }
 
-// toError maps a Graphviz result code: zero is success, anything else is a
-// failure, with the message Graphviz reported when it reported one.
-func toError(result int) error {
-	if result == 0 {
-		return nil
-	}
+// checked makes one Graphviz call that returns a result code, and its
+// error: zero is success, anything else a failure, with the message
+// Graphviz reported when it reported one.
+//
+// The call and the reading of that message are one stay in the module.
+// Read after it, the message could be one another goroutine's call
+// reported in between, and this call's own could be taken by that one.
+//
+// What Graphviz had reported before the call is not the call's, and is left
+// where it is: the call may be made from a callback of a layout or a
+// render, inside that one's stay, and what was reported so far is that
+// one's to read at its end. What is reported during the call is taken
+// whatever the result, so that none of it stays for another call to find.
+//
+// A caller reads its handles before it calls: a nil one then panics in the
+// caller, not in the module's turn.
+func checked(call func(context.Context) (int, error)) error {
+	var failure error
 
-	if err := lastError(); err != nil {
+	err := wasm.Exclusive(context.Background(), func(ctx context.Context) error {
+		mark := wasm.ErrorMark()
+
+		result, err := call(ctx)
+		reported := errorSince(mark)
+
+		if err != nil || result == 0 {
+			return err
+		}
+
+		if failure = reported; failure == nil {
+			failure = fmt.Errorf("%w: call failed with code %d and no message", ErrGraphviz, result)
+		}
+
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
-	return fmt.Errorf("%w: call failed with code %d and no message", ErrGraphviz, result)
+	return failure
 }
 
 // ErrGraphviz is the error every failed Graphviz call wraps; the message
@@ -919,6 +936,16 @@ var ErrGraphviz = errors.New("graphviz")
 // Graphviz reports as wrong: the end of the text came before a graph did.
 // Graphviz's dot renders nothing for such an input, and succeeds.
 var ErrNoGraph = errors.New("no graph was produced")
+
+// errorSince is what Graphviz reported as an error since mark, as an error,
+// or nil when it reported nothing; what it had reported before stays.
+func errorSince(mark int) error {
+	if text := strings.Trim(wasm.TakeErrorsSince(mark), "\n"); text != "" {
+		return fmt.Errorf("%w: %s", ErrGraphviz, text)
+	}
+
+	return nil
+}
 
 // lastError is the latest message Graphviz reported as an error, as an
 // error, or nil when it reported none since the last read.
