@@ -328,9 +328,9 @@ func TestACallInsideALayoutLeavesTheLayoutsError(t *testing.T) {
 // each read what Graphviz reported during them and leave the layout's: what
 // was reported for the layout before the callback ran is still the layout's
 // when it ends. Here the layout has a record label it cannot read, and the
-// font loader then parses a text that is no graph, renders a graph laid out
-// before, in a format Graphviz does not know and in one it does, and frees
-// the layout of another.
+// font loader then parses a text that is no graph, asks for a render of a
+// graph laid out before, which is refused while another layout runs, and
+// frees the layout of another.
 func TestAParseOrARenderInsideALayoutLeavesTheLayoutsError(t *testing.T) {
 	lower, err := gvc.New(t.Context())
 	if err != nil {
@@ -368,16 +368,9 @@ func TestAParseOrARenderInsideALayoutLeavesTheLayoutsError(t *testing.T) {
 		}
 	})
 
-	// A render Graphviz refuses with a message, made alone: what the same
-	// render says from inside the layout.
-	alone := lower.RenderData(t.Context(), kept, "nosuchformat", io.Discard)
-	if alone == nil {
-		t.Fatal("a render in a format Graphviz does not know returned nil")
-	}
-
 	var (
-		parsed, refused, rendered, freed []error
-		inside                           bool
+		parsed, rendered, freed []error
+		inside                  bool
 	)
 
 	graphviz.SetFontLoader(func(ctx context.Context, _ *graphviz.TextFont) (*opentype.Font, error) {
@@ -391,8 +384,9 @@ func TestAParseOrARenderInsideALayoutLeavesTheLayoutsError(t *testing.T) {
 		_, parseErr := graphviz.ParseBytes([]byte("digraph { a -> }"))
 		parsed = append(parsed, parseErr)
 
-		refused = append(refused, lower.RenderData(ctx, kept, "nosuchformat", io.Discard))
-		rendered = append(rendered, lower.RenderData(ctx, kept, "svg", io.Discard))
+		rendered = append(rendered,
+			lower.RenderData(ctx, kept, "nosuchformat", io.Discard),
+			lower.RenderData(ctx, kept, "svg", io.Discard))
 
 		if len(toFree) > 0 {
 			freed = append(freed, lower.FreeLayout(ctx, toFree[0]))
@@ -435,15 +429,17 @@ func TestAParseOrARenderInsideALayoutLeavesTheLayoutsError(t *testing.T) {
 		}
 	}
 
-	for _, err := range refused {
-		if err == nil || err.Error() != alone.Error() {
-			t.Fatalf("a refused render from inside the layout returned %q, want what it returns alone, %q", err, alone)
+	// While a layout runs, the graph Graphviz holds the state of is the one
+	// being laid out, and no other is rendered.
+	for _, err := range rendered {
+		if !errors.Is(err, gvc.ErrNotLaidOutLast) {
+			t.Fatalf("a render from inside the layout returned %v, want gvc.ErrNotLaidOutLast", err)
 		}
 	}
 
-	for _, err := range append(rendered, freed...) {
+	for _, err := range freed {
 		if err != nil {
-			t.Fatalf("a render or a free from inside the layout returned %v, want nil", err)
+			t.Fatalf("a free from inside the layout returned %v, want nil", err)
 		}
 	}
 }
