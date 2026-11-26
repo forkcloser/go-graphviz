@@ -20,7 +20,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 | Change | Here |
 | --- | --- |
 | The fork ships no `dot` command; the command is [forkcloser/dot](https://github.com/forkcloser/dot) | https://github.com/forkcloser/go-graphviz/pull/2 |
-| Graphviz 16.1.1 embedded, built reproducibly from a pinned tarball; `disintegration/imaging` replaced by `x/image/draw` | https://github.com/forkcloser/go-graphviz/pull/3 |
+| Graphviz 16.1.2 embedded, built reproducibly from a pinned tarball; `disintegration/imaging` replaced by `x/image/draw` | https://github.com/forkcloser/go-graphviz/pull/3 |
 | Fonts are parsed by `x/image`'s opentype, not the archived freetype | https://github.com/forkcloser/go-graphviz/pull/22 |
 | A label's first span is zeroed before Graphviz fills it: an empty first line no longer frees a garbage pointer | https://github.com/forkcloser/go-graphviz/pull/30 |
 | A callback's error reaches the caller instead of a panic; Graphviz's own result codes and messages are reported | https://github.com/forkcloser/go-graphviz/pull/31, https://github.com/forkcloser/go-graphviz/pull/32 |
@@ -65,7 +65,7 @@ Fork of https://github.com/goccy/go-graphviz (`master`).
 
 ## Graphviz source edits
 
-`internal/wasm/graphviz.wasm` is Graphviz 16.1.1, built from its release tarball with these edits, which `internal/wasm/build/build.sh` applies and checks.
+`internal/wasm/graphviz.wasm` is Graphviz 16.1.2, built from its release tarball with these edits, which `internal/wasm/build/build.sh` applies and checks.
 
 It is built without a triangulation library (no `HAVE_GTS`) and without the IPSEP solver (no `IPSEPCOLA`): prism overlap removal, sfdp's default overlap removal and neato's `mode=ipsep` are not in it. The README's [Supported Layout](./README.md#supported-layout) says what each does instead.
 
