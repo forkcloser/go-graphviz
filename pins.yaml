@@ -39,7 +39,7 @@ pins:
   - name: expat
     renovate: github-tags libexpat/libexpat
     versioning: regex:^R_(?<major>\d+)_(?<minor>\d+)_(?<patch>\d+)$
-    version: R_2_10_0
+    version: R_2_11_0
     url: https://github.com/libexpat/libexpat/releases/download/${version}/expat-${major}.${minor}.${patch}.tar.gz
     verify: pgp-detached https://github.com/libexpat/libexpat/releases/download/${version}/expat-${major}.${minor}.${patch}.tar.gz.asc https://github.com/hartwork.gpg CB8DE70A90CFBF6C3BF5CC5696262ACFFBD3AEC6
     digest:
