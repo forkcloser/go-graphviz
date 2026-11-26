@@ -61,12 +61,12 @@ func TestFontFilesKeptWithinTheirCount(t *testing.T) {
 	for i := range maxFontFiles + more {
 		name := fmt.Sprintf("copy%03d", i)
 
-		loaded, err := c.resolve(index, name, requestFor(name, nil, 0))
+		loaded, err := c.resolve(index, name, requestFor(name, 0))
 		if err != nil || !strings.Contains(loaded.key, name) {
 			t.Fatalf("%s resolved to %+v, %v; want the file of that name", name, loaded, err)
 		}
 
-		if again, _ := c.resolve(index, name, requestFor(name, nil, 0)); again != loaded {
+		if again, _ := c.resolve(index, name, requestFor(name, 0)); again != loaded {
 			t.Fatalf("%s: asked for twice, two fonts", name)
 		}
 
@@ -105,7 +105,7 @@ func TestFontFilesKeptWithinTheirBytes(t *testing.T) {
 		if loaded, err := c.resolve(
 			index,
 			name,
-			requestFor(name, nil, 0),
+			requestFor(name, 0),
 		); err != nil ||
 			!strings.Contains(loaded.key, name) {
 			t.Fatalf("%s resolved to %+v, %v; want the file of that name", name, loaded, err)
@@ -127,7 +127,7 @@ func TestFontFilesKeptWithinTheirBytes(t *testing.T) {
 		if loaded, err := small.resolve(
 			index,
 			name,
-			requestFor(name, nil, 0),
+			requestFor(name, 0),
 		); err != nil ||
 			!strings.Contains(loaded.key, name) {
 			t.Fatalf("%s, a byte over the bound, resolved to %+v, %v; want the file of that name", name, loaded, err)
@@ -266,5 +266,23 @@ func TestFontCachesForget(t *testing.T) {
 			len(fallback.byRune),
 			maxFallbackRunes+10,
 		)
+	}
+}
+
+// The names read against an index are kept as many as maxResolved at most:
+// a process that sets text in ever new names does not keep them all.
+func TestNamesReadAreKeptWithinTheirBound(t *testing.T) {
+	index := fontDirectory(t, copies(1))
+
+	for i := range 2*maxResolved + 10 {
+		name := fmt.Sprintf("Family %d Bold", i)
+
+		if request := index.requestFor(name, nil, 0); len(request.families) != 1 || request.style.weight != weightBold {
+			t.Fatalf("%q read as %+v", name, request)
+		}
+
+		if kept := len(index.listed); kept > maxResolved {
+			t.Fatalf("%d names kept after %d were read, want %d at most", kept, i+1, maxResolved)
+		}
 	}
 }

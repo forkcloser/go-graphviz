@@ -209,7 +209,7 @@ func goroutineID() int64 {
 // ("Error" or "Warning"), then ": ", then the text; a continuation line
 // (AGPREV) comes as text alone. The module routes that stream here rather
 // than to the guest's stderr, which wazero discards: the errors since the
-// last read wait for TakeLastError, and warnings go to the writer
+// last read wait for TakeErrorsSince, and warnings go to the writer
 // SetWarningWriter names.
 var (
 	messageMu     sync.Mutex
@@ -268,17 +268,12 @@ func onMessage(_ context.Context, fragment string) (int, error) {
 	return 0, nil
 }
 
-// TakeLastError returns the text of the errors Graphviz reported since the
-// last read, with their continuation lines, and clears it; "" when there
-// is none.
-func TakeLastError() string {
+// dropErrors forgets the errors Graphviz reported and no call read.
+func dropErrors() {
 	messageMu.Lock()
 	defer messageMu.Unlock()
 
-	text := lastErrorText.String()
 	lastErrorText.Reset()
-
-	return text
 }
 
 // ErrorMark is where the text of the errors Graphviz has reported stands
@@ -291,10 +286,12 @@ func ErrorMark() int {
 }
 
 // TakeErrorsSince returns the text of the errors Graphviz reported since
-// mark and clears that much, leaving what it had reported before where it
-// is. It is how a call reads its own errors when it may be made inside
-// another's stay in the module, from a callback of a layout or a render:
-// what that one has had reported so far is its own to read at its end.
+// mark, with their continuation lines, and clears that much, leaving what
+// it had reported before where it is; "" when there is none. It is how a
+// call reads its own errors, between a mark taken at its start and its
+// end, both in one Exclusive: the call may be made inside another's stay
+// in the module, from a callback of a layout or a render, and what that
+// one has had reported so far is its own to read at its end.
 func TakeErrorsSince(mark int) string {
 	messageMu.Lock()
 	defer messageMu.Unlock()
@@ -319,6 +316,10 @@ func TakeErrorsSince(mark int) string {
 // free, it returns ctx's error and calls does not run. Once calls runs,
 // nothing stops it: the module cannot be interrupted without being closed.
 // Called from inside another Exclusive, it runs calls whatever ctx says.
+//
+// A stay that is not inside another begins with no error to read: what
+// Graphviz reported to the calls before it, and none of them read, is
+// dropped.
 func Exclusive(ctx context.Context, calls func(context.Context) error) error {
 	if mod.mod == nil {
 		return mod.unavailable()
@@ -330,6 +331,10 @@ func Exclusive(ctx context.Context, calls func(context.Context) error) error {
 	}
 
 	defer call.leave()
+
+	if call.outermost {
+		dropErrors()
+	}
 
 	err = calls(ctx)
 	if !call.outermost {

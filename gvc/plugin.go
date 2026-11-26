@@ -32,8 +32,14 @@ type Plugin interface {
 // Callbacks and structures stay until that render has returned: dropping
 // them takes the module's lock, which a render or a layout holds from start
 // to end.
+//
+// So the drop waits on a goroutine of its own, and the cleanup returns at
+// once: the runtime has few goroutines to run a program's cleanups on, one
+// for every four processors and at least one, and dropped plugins waiting
+// there for the module held up the cleanups behind them for as long as a
+// layout took.
 func dropWith[P any](plugin *P, api *wasm.PluginAPI, funcID uint64) {
-	runtime.AddCleanup(plugin, drop, dropped{api: api, funcID: funcID})
+	runtime.AddCleanup(plugin, func(left dropped) { go drop(left) }, dropped{api: api, funcID: funcID})
 }
 
 // dropped is what a collected plugin leaves to give back.

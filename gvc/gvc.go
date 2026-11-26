@@ -68,27 +68,36 @@ func NewWithPlugins(ctx context.Context, plugins ...Plugin) (*Context, error) {
 // plugins a second time, the default ones the process's, and every PNG and
 // JPEG rendered after it was empty. Layout and RenderData on a closed
 // context return ErrClosed.
+//
+// The whole of it is one turn in the module, as the closed check of Layout
+// and RenderData is part of theirs: a context may be closed from one
+// goroutine while another renders with it, and the render is then whole or
+// refused. Freed in several turns, a render waiting for the module got it
+// between the free and the mark that says so, and laid out on the freed
+// context, which trapped the module.
 func (c *Context) Close() error {
-	if c.gvc == nil {
-		return nil
-	}
-
-	_, err := c.gvc.FreeContext(context.Background())
-	c.gvc = nil
-
-	if c.list != nil {
-		if freeErr := wasm.FreePluginList(context.Background(), c.list); err == nil {
-			err = freeErr
+	return wasm.Exclusive(context.Background(), func(ctx context.Context) error {
+		if c.gvc == nil {
+			return nil
 		}
 
-		c.list = nil
-	}
+		_, err := c.gvc.FreeContext(ctx)
+		c.gvc = nil
 
-	for _, plugin := range c.plugins {
-		plugin.release()
-	}
+		if c.list != nil {
+			if freeErr := wasm.FreePluginList(ctx, c.list); err == nil {
+				err = freeErr
+			}
 
-	return err
+			c.list = nil
+		}
+
+		for _, plugin := range c.plugins {
+			plugin.release()
+		}
+
+		return err
+	})
 }
 
 // Layout lays the graph out with the named engine. It first returns the
@@ -105,10 +114,6 @@ func (c *Context) Close() error {
 // module is free for this call, Layout returns its error and lays nothing
 // out. A layout that is running is not interrupted, whatever ctx does.
 func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string) error {
-	if c.gvc == nil {
-		return ErrClosed
-	}
-
 	if err := graph.Err(); err != nil {
 		return fmt.Errorf("setting an attribute of the graph: %w", err)
 	}
@@ -116,9 +121,12 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 	ran := false
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
-		// What an earlier call left unread is not this layout's.
-		_ = wasm.TakeLastError()
+		// Read in the turn that uses it: see Close.
+		if c.gvc == nil {
+			return ErrClosed
+		}
 
+		mark := wasm.ErrorMark()
 		ran = true
 
 		res, err := c.gvc.Layout(ctx, toGraphWasm(graph), engine)
@@ -126,7 +134,7 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 			return err
 		}
 
-		return outcome(res)
+		return outcome(res, mark)
 	})
 
 	// A callback's error reaches here and not the calls above: Graphviz went
@@ -148,20 +156,20 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 // ctx is honoured until the render starts, as Layout's is; a render that is
 // running is not interrupted.
 func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format string, w io.Writer) error {
-	if c.gvc == nil {
-		return ErrClosed
-	}
-
 	var (
 		rendered string
 		reported error
 	)
 
 	err := wasm.Exclusive(ctx, func(ctx context.Context) error {
+		// Read in the turn that uses it: see Close.
+		if c.gvc == nil {
+			return ErrClosed
+		}
+
 		defer c.releasePages()
 
-		// What an earlier call left unread is not this render's.
-		_ = wasm.TakeLastError()
+		mark := wasm.ErrorMark()
 
 		out, res, err := c.gvc.RenderOutput(ctx, toGraphWasm(graph), format)
 		if err != nil {
@@ -170,7 +178,7 @@ func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format st
 
 		rendered = out
 
-		if err = outcome(res); errors.Is(err, ErrReported) {
+		if err = outcome(res, mark); errors.Is(err, ErrReported) {
 			reported = err
 
 			return nil
@@ -241,14 +249,14 @@ func (c *Context) FreeLayout(ctx context.Context, graph *cgraph.Graph) error {
 	// whatever ctx says, as every free does: a layout kept because its
 	// context was done would stay in the module for good.
 	return wasm.Exclusive(context.WithoutCancel(ctx), func(ctx context.Context) error {
-		_ = wasm.TakeLastError()
+		mark := wasm.ErrorMark()
 
 		res, err := c.gvc.FreeLayout(ctx, toGraphWasm(graph))
 		if err != nil {
 			return err
 		}
 
-		return outcome(res)
+		return outcome(res, mark)
 	})
 }
 
@@ -398,12 +406,14 @@ func newPlugins(ctx context.Context, plugins ...Plugin) ([]*wasm.SymList, *wasm.
 }
 
 // outcome is the error of a call Graphviz returned result from, read with
-// what Graphviz reported at its error level since the last read. A result
-// other than zero is a failure, with that message when there is one. Zero
-// with a message is a call that went on to its end past an error: the
-// message is returned with ErrReported.
-func outcome(result int) error {
-	text := strings.TrimRight(wasm.TakeLastError(), "\n")
+// what Graphviz reported at its error level since mark, taken at the call's
+// start in the same stay in the module: the call may be made inside
+// another's, whose report so far stays that one's. A result other than zero
+// is a failure, with that message when there is one. Zero with a message is
+// a call that went on to its end past an error: the message is returned
+// with ErrReported.
+func outcome(result, mark int) error {
+	text := strings.Trim(wasm.TakeErrorsSince(mark), "\n")
 
 	switch {
 	case result != 0 && text != "":

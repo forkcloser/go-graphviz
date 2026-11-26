@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"os"
 	"strconv"
 	"strings"
@@ -746,7 +747,9 @@ func (s *Symbol) getWasm() *wasm.Sym {
 
 type ID uint64
 
-// ParseBytes reads the first graph of the DOT text given.
+// ParseBytes reads the first graph of the DOT text given, and nothing of
+// what follows it: a text may hold several graphs, which ParseAll reads in
+// turn.
 //
 // An error that is ErrNoGraph is a text that ends before a graph begins,
 // with nothing Graphviz reports as wrong: empty, blank, comments alone, and
@@ -758,22 +761,98 @@ func ParseBytes(bytes []byte) (*Graph, error) {
 		return nil, errInit
 	}
 
+	return readGraph(func(ctx context.Context) (*wasm.Graph, error) {
+		return wasm.MemRead(ctx, string(bytes))
+	})
+}
+
+// ParseAll reads every graph of the DOT text given, in the order the text
+// has them: the sequence yields each graph once it is read, the caller's to
+// close, and reads the next when asked for it.
+//
+// A graph that starts on the line another ends on is read, where Graphviz's
+// dot loses it with the rest of that line, and so is one that follows the
+// semicolon some write after a graph's brace. Anything else that follows a
+// graph on its line (a brace too many, a word, a semicolon with no graph
+// after it) is dropped to the end of the line, as Graphviz's dot drops it.
+//
+// A text with no graph in it (empty, blank, comments alone) yields nothing.
+// A part Graphviz cannot read ends the sequence: it yields the error, after
+// the graphs that came before, and nothing of what follows is read, as with
+// Graphviz's dot. The text ends at its first NUL byte, as a C string does.
+//
+// The line an error names is the line of the text, counted from its start:
+// a "# N" line directive in the text renumbers the lines of the graph it
+// precedes and of no graph after that one.
+func ParseAll(text []byte) iter.Seq2[*Graph, error] {
+	return func(yield func(*Graph, error) bool) {
+		reader, err := openReader(text)
+		if err != nil {
+			yield(nil, err)
+
+			return
+		}
+
+		// Whatever ends the sequence frees the reader: its end, an error, a
+		// caller that stops, a loop body that panics. A close fails only
+		// once the module has, which the read before it has then said.
+		defer func() { _ = reader.Close(context.Background()) }()
+
+		for {
+			graph, err := readGraph(reader.Next)
+			if err != nil {
+				// ErrNoGraph is the end of the text.
+				if !errors.Is(err, ErrNoGraph) {
+					yield(nil, err)
+				}
+
+				return
+			}
+
+			if !yield(graph, nil) {
+				return
+			}
+		}
+	}
+}
+
+// openReader is a reader at the start of text, which it has copied.
+func openReader(text []byte) (*wasm.Reader, error) {
+	if errInit != nil {
+		return nil, errInit
+	}
+
+	reader, err := wasm.ReaderOpen(context.Background(), string(text))
+	if err != nil {
+		return nil, err
+	}
+
+	if reader == nil {
+		return nil, fmt.Errorf("%w: a reader for %d bytes of DOT", wasm.ErrOutOfMemory, len(text))
+	}
+
+	return reader, nil
+}
+
+// readGraph is the graph read returns, or the error of a read that returned
+// none: ErrNoGraph when Graphviz reported nothing, what it reported
+// otherwise.
+func readGraph(read func(context.Context) (*wasm.Graph, error)) (*Graph, error) {
 	var (
 		graph    *wasm.Graph
 		reported error
 	)
 
 	// The parse and the read of what Graphviz reported during it are one
-	// stay in the module, so that the errors are this parse's: what an
-	// earlier call left unread is dropped first, and no other goroutine's
-	// call comes between.
+	// stay in the module, so that the errors are this parse's, as in
+	// checked.
 	err := wasm.Exclusive(context.Background(), func(ctx context.Context) error {
-		_ = wasm.TakeLastError()
+		mark := wasm.ErrorMark()
 
 		var err error
 
-		graph, err = wasm.MemRead(ctx, string(bytes))
-		reported = lastError()
+		graph, err = read(ctx)
+		reported = errorSince(mark)
 
 		return err
 	})
@@ -942,16 +1021,6 @@ var ErrNoGraph = errors.New("no graph was produced")
 func errorSince(mark int) error {
 	if text := strings.Trim(wasm.TakeErrorsSince(mark), "\n"); text != "" {
 		return fmt.Errorf("%w: %s", ErrGraphviz, text)
-	}
-
-	return nil
-}
-
-// lastError is the latest message Graphviz reported as an error, as an
-// error, or nil when it reported none since the last read.
-func lastError() error {
-	if text := wasm.TakeLastError(); text != "" {
-		return fmt.Errorf("%w: %s", ErrGraphviz, strings.TrimRight(text, "\n"))
 	}
 
 	return nil

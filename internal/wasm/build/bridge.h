@@ -18,6 +18,21 @@ void bridge_free_plugin_list(lt_symlist_t *sym);
 // type's name, engine and features.
 void bridge_free_plugin(gvplugin_api_t *api);
 
+// bridge_reader_t reads the graphs of one DOT text in turn, each from where
+// the one before it ended.
+typedef struct bridge_reader bridge_reader_t;
+
+// bridge_reader_open copies text and returns a reader at its start, or NULL
+// when there is no memory for it.
+bridge_reader_t *bridge_reader_open(const char *text);
+
+// bridge_reader_next is the next graph of the text, or NULL when the rest
+// holds none or Graphviz cannot read it.
+Agraph_t *bridge_reader_next(bridge_reader_t *reader);
+
+// bridge_reader_close frees the reader and its copy of the text.
+void bridge_reader_close(bridge_reader_t *reader);
+
 // bridge_version is the Graphviz release the module is built from, as
 // gvcVersion answers it.
 char *bridge_version(void);

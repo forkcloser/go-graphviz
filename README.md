@@ -70,11 +70,39 @@ or narrower). A font name resolves the way Graphviz resolves it: a PostScript na
 as `Times-Roman` or `Helvetica-Bold`, a family with style words (`DejaVu Sans
 Bold`, `Arial:italic`), or a list of them, looked up among the installed fonts by
 name, with the metric-compatible substitutes Graphviz knows (Arial for Helvetica,
-the Liberation and TeX Gyre faces). Where nothing installed answers, the embedded
+the Liberation and TeX Gyre faces). An installed font is found by each of its
+family names, in whatever language its file has them, and matched by its style,
+read from the words of its style name in English (`Bold`, `Light Italic`) and from
+the numbers its file states (its OS/2 table). The weight is the word's where the
+name says one, or the number's when that is less than a step (100) from it, as
+the finer of the two; where the name says none, or says it in another language,
+it is the number's. Slant and width are the words' or the numbers', whichever
+states one. Some fonts hold a face this library cannot draw with (the regular of
+macOS's Helvetica Neue is one): such a family gives way to the next one named,
+and answers with another of its faces only when no family has the one asked for.
+Where nothing installed answers, the embedded
 Go fonts stand in, in regular, bold, italic and monospace cuts. Those cover
 Latin, Greek and Cyrillic: a label in another script, CJK among them, draws as
 boxes on a machine with no font for it, unless a `FontLoader` (`SetFontLoader`)
 supplies one.
+
+A name is read against the fonts there are, and in three places that is not how
+Graphviz's own Pango plugin reads it, each for a name that plugin sends to
+another font than the one written:
+
+- A family whose own name ends in a word a style could be (`Times New Roman`,
+  `Arial Black`) is found by its name, with a style after it or none, when it
+  is a family there is. Graphviz takes `Roman` for a style and looks for a
+  family `Times New`, unless a comma follows the name (`Times New Roman,`).
+- A weight may be written in two words (`Semi Bold`, `Ultra Light`). Graphviz
+  reads it with a hyphen or as one word (`Semi-Bold`), and takes the first of
+  two words for the family's.
+- In a list, the style words of an earlier entry count when the last entry
+  has none: `Helvetica Bold, Inter` is bold. Graphviz reads style words after
+  the whole list only (`Inter, Helvetica Bold`).
+
+A node whose label is set in such a name is sized here for the font the name
+says, and by Graphviz's own tools for the font they fall back to.
 
 A font can also be named by the path of its file (`fontname="/fonts/face.ttf"`).
 The file is read from the file system `SetFileSystem` names, as a node image
@@ -85,7 +113,8 @@ Fonts are read from the platform's directories: on macOS `~/Library/Fonts`,
 user's `Fonts` folders; on Linux and the BSDs `~/.fonts`, then `fonts` under
 `XDG_DATA_HOME` (`~/.local/share/fonts` when it is unset) and under each
 `XDG_DATA_DIRS` entry (`/usr/local/share/fonts` and `/usr/share/fonts` when it
-is unset); on Android `/system/fonts`.
+is unset); on Android `/system/fonts`. A directory, or a font file, that is a
+symbolic link is read through the link.
 
 # Installation
 
@@ -145,6 +174,18 @@ path := "/path/to/dot.gv"
 b, err := os.ReadFile(path)
 if err != nil { panic(err) }
 graph, err := graphviz.ParseBytes(b)
+```
+
+A text may hold several graphs. `ParseBytes` reads the first and nothing of
+what follows it; `ParseAll` reads each in turn, and ends on the error of a
+part Graphviz cannot read:
+
+```go
+for graph, err := range graphviz.ParseAll(b) {
+	if err != nil { panic(err) }
+	// lay out and render graph
+	graph.Close()
+}
 ```
 
 ## 3. Render Graph

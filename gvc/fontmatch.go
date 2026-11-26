@@ -1,10 +1,10 @@
 package gvc
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
@@ -115,9 +115,9 @@ func weightOf(word string) int {
 		return weightDemi
 	case "bold":
 		return weightBold
-	case "extrabold", "ultrabold", "heavy":
+	case "extrabold", "ultrabold":
 		return weightExtraBold
-	case "black":
+	case "black", "heavy", "extrablack", "ultrablack":
 		return weightBlack
 	}
 
@@ -142,7 +142,7 @@ func applyStyleWord(word string, style *fontStyle) bool {
 		style.italic = true
 
 		return true
-	case "condensed", "narrow", "compressed":
+	case "condensed", "narrow", "compressed", "semicondensed", "extracondensed", "ultracondensed":
 		style.condensed = true
 
 		return true
@@ -167,39 +167,163 @@ func applyStyleWord(word string, style *fontStyle) bool {
 	return false
 }
 
-// parseStyle reads a subfamily such as "Bold Italic", "Condensed Light" or
-// "W6".
-func parseStyle(subfamily string) fontStyle {
-	style := fontStyle{weight: weightRegular}
+// styleWords is words with a style written in two of them made one: "Semi
+// Bold", "Ultra Light" and "Extra Condensed" are one weight or one width
+// each, as "SemiBold" is, and read apart they were the second word alone
+// ("Demi Bold" was bold, "Ultra Light" light).
+func styleWords(words []string) []string {
+	joined := make([]string, 0, len(words))
 
-	for _, word := range strings.FieldsFunc(subfamily, isNameSeparator) {
-		applyStyleWord(word, &style)
+	for i := 0; i < len(words); i++ {
+		word := strings.ToLower(words[i])
+
+		if i+1 < len(words) && slices.Contains([]string{"semi", "demi", "extra", "ultra"}, word) {
+			var scratch fontStyle
+
+			if pair := word + strings.ToLower(words[i+1]); applyStyleWord(pair, &scratch) {
+				joined = append(joined, pair)
+				i++
+
+				continue
+			}
+		}
+
+		joined = append(joined, word)
 	}
 
-	return style
+	return joined
 }
 
 func isNameSeparator(char rune) bool { return char == ' ' || char == '-' || char == '_' }
 
-// splitFamilyStyle reads one font name of a list: a family followed by
-// style words, separated by spaces or hyphens ("Arial Bold", "Go-Italic"),
-// or by colons as in a fontconfig pattern ("DejaVu Sans:bold").
-func splitFamilyStyle(name string) (string, fontStyle) {
-	style := fontStyle{weight: weightRegular}
+// styled reads words as the words of a style, into style, and reports
+// whether every one of them is one.
+func styled(words []string, style *fontStyle) bool {
+	read := *style
 
-	family, styles, _ := strings.Cut(name, ":")
-	for _, word := range strings.FieldsFunc(styles, func(char rune) bool { return char == ':' || char == ' ' }) {
-		applyStyleWord(word, &style)
+	for _, word := range styleWords(words) {
+		if !applyStyleWord(word, &read) {
+			return false
+		}
 	}
 
-	words := strings.FieldsFunc(family, isNameSeparator)
+	*style = read
 
+	return true
+}
+
+// splitFamilyStyle reads one font name of a list: a family followed by
+// style words, separated by spaces or hyphens ("Arial Bold", "Go-Italic"),
+// or by colons as in a fontconfig pattern ("DejaVu Sans:bold"). It reports
+// whether the name had style words.
+//
+// Which words are the family's is asked of index, which knows the families
+// that can be looked for: the name whole, then the longest start of it that
+// is a family when what follows is all style, each as written and with its
+// separators as spaces. So "Times New Roman" and "Arial Black" are
+// families, where reading from the end took "Roman" and "Black" for a style
+// and looked for "Times New". Only a name of which index knows no start is
+// read from its end.
+func splitFamilyStyle(
+	name string, index *fontIndex, longest int,
+) (family string, style fontStyle, hasStyle bool) {
+	style = fontStyle{weight: weightRegular}
+
+	family, styles, _ := strings.Cut(name, ":")
+	family = strings.TrimSpace(family)
+
+	colon := strings.FieldsFunc(styles, func(char rune) bool { return char == ':' || char == ' ' })
+	for _, word := range styleWords(colon) {
+		hasStyle = applyStyleWord(word, &style) || hasStyle
+	}
+
+	words, ends := nameWords(family)
+
+	if start, tail, ok := knownStart(family, words[:min(len(words), longest)], ends, words, index, &style); ok {
+		return start, style, hasStyle || tail
+	}
+
+	end := styleFromEnd(words, &style)
+
+	return strings.Join(words[:end], " "), style, hasStyle || end < len(words)
+}
+
+// nameWords is the words of a family name, and where each ends in the name
+// as it is written: a family may have a hyphen or an underscore of its own.
+func nameWords(family string) (words []string, ends []int) {
+	words, ends = []string{}, []int{}
+	start := -1
+
+	for position, char := range family + " " {
+		switch {
+		case !isNameSeparator(char):
+			if start < 0 {
+				start = position
+			}
+		case start >= 0:
+			words, ends = append(words, family[start:position]), append(ends, position)
+			start = -1
+		}
+	}
+
+	return words, ends
+}
+
+// knownStart is the longest start of the name, the whole of it first, that
+// is a family index knows when the words after it are all a style's, which
+// it reads into style: the start as written, or its words with spaces
+// between. It reports whether words followed the start.
+//
+// starts is the words a start may be made of, and words all of them. No
+// start longer than the longest family there is can be one, so the caller
+// gives no more words than that: a name is read in a time that follows its
+// length, where asking about every start of a name of many words took the
+// square of it.
+func knownStart(
+	family string, starts []string, ends []int, words []string, index *fontIndex, style *fontStyle,
+) (start string, tail, ok bool) {
+	for end := len(starts); end >= 1; end-- {
+		written, spaced := family[:ends[end-1]], strings.Join(starts[:end], " ")
+
+		found := ""
+
+		switch {
+		case index.knows(written):
+			found = written
+		case written != spaced && index.knows(spaced):
+			found = spaced
+		}
+
+		if found != "" && styled(words[end:], style) {
+			return found, end < len(words), true
+		}
+	}
+
+	return "", false, false
+}
+
+// styleFromEnd reads the words at the end of a name that are a style's into
+// style, down to one word of family, and returns how many words are left
+// for the family: the reading of a name no start of which is a family
+// anybody knows.
+func styleFromEnd(words []string, style *fontStyle) int {
 	end := len(words)
-	for end > 1 && applyStyleWord(words[end-1], &style) {
+
+	for end > 1 {
+		if end > 2 && len(styleWords(words[end-2:end])) == 1 && styled(words[end-2:end], style) {
+			end -= 2
+
+			continue
+		}
+
+		if !styled(words[end-1:end], style) {
+			break
+		}
+
 		end--
 	}
 
-	return strings.Join(words[:end], " "), style
+	return end
 }
 
 // genericOf is the generic family a font list entry names, or "".
@@ -218,28 +342,6 @@ func genericOf(entry string) string {
 	return ""
 }
 
-// requestFor resolves what Graphviz asks for: the font's name, the alias
-// Graphviz found for it if it is a PostScript name, and the font flags of
-// an HTML label.
-func requestFor(name string, alias *PostScriptAlias, flags uint) fontRequest {
-	var request fontRequest
-	if alias != nil && alias.Family() != "" {
-		request = aliasRequest(alias)
-	} else {
-		request = listRequest(name)
-	}
-
-	if flags&htmlBold != 0 && request.style.weight < weightBold {
-		request.style.weight = weightBold
-	}
-
-	if flags&htmlItalic != 0 {
-		request.style.italic = true
-	}
-
-	return request
-}
-
 // aliasRequest is the request for a PostScript name, from Graphviz's alias.
 func aliasRequest(alias *PostScriptAlias) fontRequest {
 	request := fontRequest{
@@ -256,27 +358,37 @@ func aliasRequest(alias *PostScriptAlias) fontRequest {
 }
 
 // listRequest is the request for any other name: a comma-separated list of
-// families, the first with the style, possibly ending with a generic family.
-func listRequest(name string) fontRequest {
+// families, each possibly followed by style words, possibly with a generic
+// family among them. The style is the list's: the words of the last entry
+// that has any. Those of the last entry are how Pango reads a list
+// ("Inter, Helvetica Bold" is bold); those of an earlier one, when the last
+// has none, are this library's reading, which Pango takes for a part of
+// that family's name ("Helvetica Bold, Inter" is bold here and regular in
+// Graphviz's dot). A generic family takes style words as any other does:
+// "Monospace Bold" is the monospace family, in bold.
+func listRequest(name string, index *fontIndex) fontRequest {
 	request := fontRequest{style: fontStyle{weight: weightRegular}}
 
-	for i, entry := range strings.Split(name, ",") {
-		entry = strings.TrimSpace(entry)
-		if generic := genericOf(entry); generic != "" {
+	// Asked once for the list: it is a walk of the substitutes' table, and
+	// a list may have as many entries as it has bytes.
+	longest := index.longestFamily()
+
+	for entry := range strings.SplitSeq(name, ",") {
+		family, style, hasStyle := splitFamilyStyle(strings.TrimSpace(entry), index, longest)
+		if family == "" {
+			continue
+		}
+
+		if hasStyle {
+			request.style = style
+		}
+
+		if generic := genericOf(family); generic != "" {
 			if request.generic == "" {
 				request.generic = generic
 			}
 
 			continue
-		}
-
-		family, style := splitFamilyStyle(entry)
-		if family == "" {
-			continue
-		}
-
-		if i == 0 {
-			request.style = style
 		}
 
 		request.families = append(request.families, family)
@@ -285,11 +397,10 @@ func listRequest(name string) fontRequest {
 	return request
 }
 
-// substitutesOf lists, for a family a graph names, the families with the
-// same metrics or the same design that may be installed instead, the way
-// fontconfig substitutes them for Graphviz's Pango plugin, or nil.
-func substitutesOf(family string) []string {
-	groups := [][]string{
+// substituteGroups is the families that stand in for one another, group
+// by group: the same metrics or the same design under another name.
+func substituteGroups() [][]string {
+	return [][]string{
 		{
 			"Times", "Times New Roman", "Nimbus Roman", "Nimbus Roman No9 L",
 			"Liberation Serif", "Tinos", "TeX Gyre Termes",
@@ -313,8 +424,13 @@ func substitutesOf(family string) []string {
 		{"Symbol", "Standard Symbols PS", "Standard Symbols L"},
 		{"Dingbats", "Zapf Dingbats", "ITC Zapf Dingbats", "D050000L"},
 	}
+}
 
-	for _, group := range groups {
+// substitutesOf lists, for a family a graph names, the families with the
+// same metrics or the same design that may be installed instead, the way
+// fontconfig substitutes them for Graphviz's Pango plugin, or nil.
+func substitutesOf(family string) []string {
+	for _, group := range substituteGroups() {
 		if slices.ContainsFunc(group, func(member string) bool { return strings.EqualFold(member, family) }) {
 			return group
 		}
@@ -341,18 +457,32 @@ func genericSubstitutesOf(generic string) []string {
 	return nil
 }
 
-// candidates lists the families to look for, in order: each named family
-// with its substitutes, then the generic family's. A condensed request
-// tries the narrow cut of every one of them before any regular cut.
-func (request fontRequest) candidates() []string {
-	var families []string
+// candidate is a family to look for, and whether only a condensed face of
+// it will do.
+type candidate struct {
+	family    string
+	condensed bool
+}
 
-	seen := map[string]bool{}
-	add := func(family string) {
-		if key := strings.ToLower(family); !seen[key] {
+// candidates lists the families to look for, in order: each named family
+// with its substitutes, then the generic family's.
+//
+// A condensed request first goes through the same families asking for a
+// condensed face: of each family in turn, its narrow cut under a name of
+// its own ("Arial Narrow"), then the family itself where it keeps a
+// condensed face under its plain name. A named family's own condensed face
+// so comes before the narrow cut of a generic family's stand-in. Then every
+// family again, for whatever face it has.
+func (request fontRequest) candidates() []candidate {
+	var found []candidate
+
+	seen := map[candidate]bool{}
+	add := func(family string, condensed bool) {
+		key := candidate{strings.ToLower(family), condensed}
+		if !seen[key] {
 			seen[key] = true
 
-			families = append(families, family)
+			found = append(found, candidate{family, condensed})
 		}
 	}
 
@@ -366,19 +496,20 @@ func (request fontRequest) candidates() []string {
 	if request.style.condensed {
 		for _, group := range groups {
 			for _, member := range group {
-				add(member + " Narrow")
-				add(member + " Condensed")
+				add(member+" Narrow", false)
+				add(member+" Condensed", false)
+				add(member, true)
 			}
 		}
 	}
 
 	for _, group := range groups {
 		for _, member := range group {
-			add(member)
+			add(member, false)
 		}
 	}
 
-	return families
+	return found
 }
 
 // installedFace is one face of an installed font file.
@@ -392,6 +523,9 @@ type installedFace struct {
 	// the file system the graph's files are read from, as a node image is,
 	// where an installed font is read from the host.
 	named bool
+	// unloadable says the font parser does not take the face: it is known
+	// to be there, with its style, and cannot be drawn with.
+	unloadable bool
 }
 
 // fileKey is what the face's file is kept under: its path, and for a file
@@ -440,70 +574,229 @@ type fontIndex struct {
 	// for a graph that names a font file.
 	byFile map[string][]installedFace
 	faces  []installedFace
+
+	// listed keeps the last names read against the index, as many as
+	// maxResolved: a graph sets most of its text in a few names, and each
+	// span asks.
+	mu     sync.Mutex
+	listed map[string]fontRequest
+
+	// words is the most words an installed family's name has.
+	words int
 }
 
-// buildFontIndex indexes the font files under dirs, reading only each
-// font's name table.
+// standIns is the families a substitute may stand in for, by their names
+// in lower case, and the most words one of them has; "sans-serif", of the
+// generic ones, is two.
+type standIns struct {
+	names map[string]bool
+	words int
+}
+
+// knownStandIns reads the substitutes' table once: a name asks of it for
+// each of its starts, and a list for each of its entries.
+//
+//nolint:gochecknoglobals // the table of substitutes, read once
+var knownStandIns = sync.OnceValue(func() standIns {
+	const genericWords = 2
+
+	known := standIns{names: map[string]bool{}, words: genericWords}
+
+	for _, group := range substituteGroups() {
+		for _, member := range group {
+			words, _ := nameWords(member)
+
+			known.names[strings.ToLower(member)] = true
+			known.words = max(known.words, len(words))
+		}
+	}
+
+	return known
+})
+
+// longestFamily is the most words a family index knows has: an installed
+// one, one a substitute may stand in for, or a generic one.
+func (index *fontIndex) longestFamily() int {
+	if index == nil {
+		return knownStandIns().words
+	}
+
+	return max(index.words, knownStandIns().words)
+}
+
+// knows reports whether a family of that name can be looked for: one that
+// is installed, one a substitute may stand in for, or a generic one. A nil
+// index has no installed family.
+func (index *fontIndex) knows(family string) bool {
+	if family == "" {
+		return false
+	}
+
+	key := strings.ToLower(family)
+
+	if index != nil && len(index.byFamily[key]) > 0 {
+		return true
+	}
+
+	return knownStandIns().names[key] || genericOf(key) != ""
+}
+
+// requestFor resolves what Graphviz asks for: the font's name, the alias
+// Graphviz found for it if it is a PostScript name, and the font flags of
+// an HTML label.
+//
+// The name is read against the families index holds: see splitFamilyStyle.
+func (index *fontIndex) requestFor(name string, alias *PostScriptAlias, flags uint) fontRequest {
+	var request fontRequest
+	if alias != nil && alias.Family() != "" {
+		request = aliasRequest(alias)
+	} else {
+		request = index.listedRequest(name)
+	}
+
+	if flags&htmlBold != 0 && request.style.weight < weightBold {
+		request.style.weight = weightBold
+	}
+
+	if flags&htmlItalic != 0 {
+		request.style.italic = true
+	}
+
+	return request
+}
+
+// listedRequest is listRequest for name against the index, read once for each
+// name among the last ones asked.
+func (index *fontIndex) listedRequest(name string) fontRequest {
+	if index == nil {
+		return listRequest(name, index)
+	}
+
+	index.mu.Lock()
+	defer index.mu.Unlock()
+
+	if request, ok := index.listed[name]; ok {
+		return request
+	}
+
+	if index.listed == nil || len(index.listed) >= maxResolved {
+		index.listed = map[string]fontRequest{}
+	}
+
+	request := listRequest(name, index)
+	index.listed[name] = request
+
+	return request
+}
+
+// buildFontIndex indexes the font files under dirs, reading of each font
+// its names and its style.
 func buildFontIndex(dirs []string) *fontIndex {
 	index := &fontIndex{byFamily: map[string][]installedFace{}, byFile: map[string][]installedFace{}}
+	walked := map[string]bool{}
 
 	for _, dir := range dirs {
-		_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
-			if err != nil || entry.IsDir() || !isFontFile(path) {
-				return nil //nolint:nilerr // an unreadable entry is skipped, not fatal
-			}
-
-			index.addFile(path)
-
-			return nil
-		})
+		index.addDirectory(dir, walked)
 	}
 
 	return index
+}
+
+// addDirectory indexes the font files under dir, in name order, through
+// symbolic links: dir may be one, and so may a directory or a file under
+// it, as a user's font directory linked from elsewhere is, and the
+// directories some systems link under share/fonts. walked holds the
+// directories read, by the path their links come to, so that one reached
+// twice, or a link that leads back to where it is, is read once.
+//
+// Only a file is opened: a pipe or a device named like a font is not one,
+// and opening it would wait for whoever writes to it.
+func (index *fontIndex) addDirectory(dir string, walked map[string]bool) {
+	resolved, err := filepath.EvalSymlinks(dir)
+	if err != nil || walked[resolved] {
+		return
+	}
+
+	walked[resolved] = true
+
+	entries, err := os.ReadDir(resolved)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		path := filepath.Join(resolved, entry.Name())
+
+		// What the entry is, or leads to.
+		info, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+
+		switch {
+		case info.IsDir():
+			index.addDirectory(path, walked)
+		case info.Mode().IsRegular() && isFontFile(path):
+			index.addFile(path)
+		}
+	}
 }
 
 func isFontFile(path string) bool {
 	return slices.Contains(fontSuffixes, strings.ToLower(filepath.Ext(path)))
 }
 
-// addFile indexes the faces of one font file under their family names,
-// typographic and legacy, and under the file's name.
+// addFile indexes the faces of one font file under every family name each
+// goes by, in whatever language, and under the file's name. A face the font
+// parser does not take is indexed too, as one that cannot be loaded: a
+// family whose regular face is such a one is then known to have it, and is
+// not answered for by its medium.
 func (index *fontIndex) addFile(path string) {
-	file := strings.ToLower(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)))
+	// #nosec G304 -- a file found in the platform's font directories
+	file, err := os.Open(path)
+	if err != nil {
+		return
+	}
 
-	_ = withFonts(path, func(face int, member *sfnt.Font) bool {
-		var buf sfnt.Buffer
+	faces, err := readFaces(file)
+	_ = file.Close()
 
-		subfamily := firstName(member, &buf, sfnt.NameIDTypographicSubfamily, sfnt.NameIDSubfamily)
-		entry := installedFace{path: path, index: face, style: parseStyle(subfamily)}
+	if err != nil {
+		return
+	}
 
-		families := map[string]bool{}
-
-		for _, id := range []sfnt.NameID{sfnt.NameIDTypographicFamily, sfnt.NameIDFamily} {
-			if family, err := member.Name(&buf, id); err == nil && family != "" {
-				families[strings.ToLower(family)] = true
-			}
-		}
-
-		for family := range families {
-			index.byFamily[family] = append(index.byFamily[family], entry)
-		}
-
-		index.byFile[file] = append(index.byFile[file], entry)
-		index.faces = append(index.faces, entry)
+	loadable := map[int]bool{}
+	_ = withFonts(path, func(member int, _ *sfnt.Font) bool {
+		loadable[member] = true
 
 		return true
 	})
-}
 
-func firstName(f *sfnt.Font, buf *sfnt.Buffer, ids ...sfnt.NameID) string {
-	for _, id := range ids {
-		if name, err := f.Name(buf, id); err == nil && name != "" {
-			return name
+	collection := strings.EqualFold(filepath.Ext(path), ".ttc")
+	name := strings.ToLower(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)))
+
+	for member, face := range faces {
+		if len(face.families) == 0 || !collection && member > 0 {
+			continue
 		}
-	}
 
-	return ""
+		if !collection {
+			member = -1
+		}
+
+		entry := installedFace{path: path, index: member, style: face.style, unloadable: !loadable[member]}
+
+		for _, family := range face.families {
+			key := strings.ToLower(family)
+			index.byFamily[key] = append(index.byFamily[key], entry)
+
+			words, _ := nameWords(family)
+			index.words = max(index.words, len(words))
+		}
+
+		index.byFile[name] = append(index.byFile[name], entry)
+		index.faces = append(index.faces, entry)
+	}
 }
 
 // withFonts opens a font file and calls visit with each face it holds, read
@@ -546,6 +839,19 @@ func withFonts(path string, visit func(index int, f *sfnt.Font) bool) error {
 	}
 
 	return nil
+}
+
+// loadable is the faces of faces the font parser takes.
+func loadable(faces []installedFace) []installedFace {
+	kept := make([]installedFace, 0, len(faces))
+
+	for _, face := range faces {
+		if !face.unloadable {
+			kept = append(kept, face)
+		}
+	}
+
+	return kept
 }
 
 // best returns the face of faces closest to style.
@@ -807,22 +1113,45 @@ func (c *fontCaches) resolve(index *fontIndex, name string, request fontRequest)
 		}
 	}
 
-	for _, family := range request.candidates() {
-		if face, ok := best(index.byFamily[strings.ToLower(family)], request.style); ok {
-			if loaded, err := c.load(face); err == nil {
-				return loaded, nil
-			}
-		}
+	if loaded, ok := c.amongFamilies(index, request); ok {
+		return loaded, nil
 	}
 
 	file := strings.ToLower(strings.TrimSuffix(filepath.Base(name), filepath.Ext(name)))
-	if face, ok := best(index.byFile[file], request.style); ok {
+	if face, ok := best(loadable(index.byFile[file]), request.style); ok {
 		if loaded, err := c.load(face); err == nil {
 			return loaded, nil
 		}
 	}
 
 	return embeddedFont(request.generic, request.style)
+}
+
+// amongFamilies is the font for request among the families it names and
+// their stand-ins: each family's face for the style, when it can be loaded;
+// then, of each family, the nearest face that can. A family whose own face
+// for the style cannot be loaded so gives way to the next one's that can,
+// and answers with another of its faces only when no family has better.
+func (c *fontCaches) amongFamilies(index *fontIndex, request fontRequest) (*loadedFont, bool) {
+	for _, nearest := range []bool{false, true} {
+		for _, wanted := range request.candidates() {
+			faces := index.byFamily[strings.ToLower(wanted.family)]
+			if nearest {
+				faces = loadable(faces)
+			}
+
+			face, ok := best(faces, request.style)
+			if !ok || face.unloadable || wanted.condensed && !face.style.condensed {
+				continue
+			}
+
+			if loaded, err := c.load(face); err == nil {
+				return loaded, true
+			}
+		}
+	}
+
+	return nil, false
 }
 
 // remember keeps loaded as what the name under key resolved to, forgetting
@@ -854,24 +1183,34 @@ func (c *fontCaches) namedFace(path string, style fontStyle) (installedFace, boo
 		return installedFace{}, false
 	}
 
-	var faces []installedFace
+	// The styles are read as the index reads them: see readFaces.
+	data, err := whole.read()
+	if err != nil {
+		return installedFace{}, false
+	}
 
-	add := func(index int, member *sfnt.Font) {
-		var buf sfnt.Buffer
-
-		subfamily := firstName(member, &buf, sfnt.NameIDTypographicSubfamily, sfnt.NameIDSubfamily)
-		faces = append(faces, installedFace{path: path, index: index, style: parseStyle(subfamily), named: true})
+	read, err := readFaces(bytes.NewReader(data))
+	if err != nil {
+		return installedFace{}, false
 	}
 
 	if file.collection == nil {
-		add(-1, file.font)
+		if len(read) == 0 {
+			return installedFace{}, false
+		}
 
-		return best(faces, style)
+		return installedFace{path: path, index: -1, style: read[0].style, named: true}, true
 	}
 
-	for index := range file.collection.NumFonts() {
-		if member, memberErr := file.collection.Font(index); memberErr == nil {
-			add(index, member)
+	var faces []installedFace
+
+	for index, member := range read {
+		if index >= file.collection.NumFonts() {
+			break
+		}
+
+		if _, memberErr := file.collection.Font(index); memberErr == nil {
+			faces = append(faces, installedFace{path: path, index: index, style: member.style, named: true})
 		}
 	}
 
@@ -905,7 +1244,8 @@ func fontForSpan(ctx context.Context, textFont *TextFont) (*loadedFont, error) {
 
 // fontFor resolves a span's font, once per name, alias and flags.
 func fontFor(textFont *TextFont) (*loadedFont, error) {
-	request := requestFor(textFont.Name(), textFont.PostScriptAlias(), textFont.Flags())
+	// A name is read against the families there are: see splitFamilyStyle.
+	request := fonts.installed().requestFor(textFont.Name(), textFont.PostScriptAlias(), textFont.Flags())
 
 	key := fmt.Sprintf("%s|%v|%s|%+v", textFont.Name(), request.families, request.generic, request.style)
 	if isFontFile(textFont.Name()) {
