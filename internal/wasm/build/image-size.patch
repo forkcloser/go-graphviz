@@ -1,0 +1,43 @@
+--- lib/gvc/gvusershape.c
++++ lib/gvc/gvusershape.c
+@@ -36,7 +36,19 @@
+ 
+ static Dict_t *ImageDict;
+ 
++// go-graphviz: an image is sized once a layout, where it was once for as
++// long as the process lives: a file that changes is sized again. Layouts
++// are counted, and each image keeps the count it was sized at.
++static unsigned ImageLayout;
++
+ typedef struct {
++  usershape_t us; // first: a sized_t is handed about as its usershape_t
++  unsigned layout;
++} sized_t;
++
++void gvusershape_layout_begins(void) { ImageLayout++; }
++
++typedef struct {
+   char *template;
+   size_t size;
+   imagetype_t type;
+@@ -769,8 +781,18 @@
+   if (!ImageDict)
+     ImageDict = dtopen(&ImageDictDisc, Dttree);
+ 
+-  if (!(us = gvusershape_find(name))) {
+-    us = gv_alloc(sizeof(usershape_t));
++  us = gvusershape_find(name);
++  if (us && ((sized_t *)us)->layout != ImageLayout) {
++    // go-graphviz: sized at another layout. The entry goes, name last: the
++    // dictionary frees the entry and leaves its name.
++    char *stale = us->name;
++    dtdelete(ImageDict, us);
++    agstrfree(0, stale, false);
++    us = NULL;
++  }
++  if (!us) {
++    us = gv_alloc(sizeof(sized_t));
++    ((sized_t *)us)->layout = ImageLayout;
+ 
+     us->name = agstrdup(0, name);
+     if (!gvusershape_file_access(us)) {

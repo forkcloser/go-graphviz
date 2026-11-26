@@ -168,6 +168,40 @@ grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${user
   exit 1
 }
 
+# Another in that file: Graphviz sizes an image once, by name, and keeps the size for as
+# long as the process lives, which for its dot is one run and here is every
+# layout the module ever does: a file that changed between two layouts kept
+# the size it had at the first. image-size.patch counts layouts and sizes an
+# image again when its size is of another layout, once a layout and not once
+# a node; the entry is replaced, never dropped unasked, since a render finds
+# its images there and may follow another graph's layout. gvLayoutJobs, which
+# every layout goes through, does the counting. The patch is applied to
+# gvusershape.c as webp-size.patch left it, by digest, for the reason above.
+image_size_base=046997239f311a80c3c8e49e1d5f149d7536ca87c241b431f15165e00bc33a9e
+echo "${image_size_base}  ${usershape}" | sha256sum -c - > /dev/null || {
+  echo "gvusershape.c: not the file image-size.patch was written against; recheck the patch for this Graphviz" >&2
+  exit 1
+}
+(cd "${gv}" && patch -p0 -N) < "${here}/image-size.patch"
+grep -q 'go-graphviz: an image is sized once a layout' "${usershape}" || {
+  echo "gvusershape.c: image-size.patch did not apply" >&2
+  exit 1
+}
+gvcproc="${gv}/lib/gvc/gvcproc.h"
+sed -i.orig 's/^    usershape_t \*gvusershape_find(const char \*name);$/& void gvusershape_layout_begins(void);/' "${gvcproc}"
+rm -f "${gvcproc}.orig"
+grep -q 'void gvusershape_layout_begins(void);$' "${gvcproc}" || {
+  echo "gvcproc.h: gvusershape_find is not declared as this fix expects" >&2
+  exit 1
+}
+gvlayout="${gv}/lib/gvc/gvlayout.c"
+sed -i.orig 's/^    int rc;$/& gvusershape_layout_begins();/' "${gvlayout}"
+rm -f "${gvlayout}.orig"
+[ "$(grep -c '^    int rc; gvusershape_layout_begins();$' "${gvlayout}")" = 1 ] || {
+  echo "gvlayout.c: gvLayoutJobs does not look like the one this fix is for" >&2
+  exit 1
+}
+
 # Graphviz's lib/neatogen has sources for optional engines (ipsep, the vpsc
 # constraint solver) that the configure flags upstream used excluded; the
 # list below is the engine set the original container build compiled.
