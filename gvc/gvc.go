@@ -12,8 +12,9 @@ import (
 	_ "image/jpeg" // registers the decoder image.Decode needs
 	_ "image/png"  // registers the decoder image.Decode needs
 	"io"
-	"os"
 	"strings"
+
+	"github.com/forkcloser/go-xos"
 
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/internal/wasm"
@@ -233,7 +234,7 @@ func (c *Context) RenderFilename(ctx context.Context, graph *cgraph.Graph, forma
 	}
 
 	// #nosec G306 -- the caller names its own output file, readable like the dot command's
-	if err := os.WriteFile(filename, buf.Bytes(), outputFileMode); err != nil {
+	if err := xos.WriteFile(filename, buf.Bytes(), outputFileMode); err != nil {
 		return fmt.Errorf("writing %s: %w", filename, err)
 	}
 

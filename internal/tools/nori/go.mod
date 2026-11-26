@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/bufbuild/protocompile v0.14.1
+	github.com/forkcloser/go-xos v1.0.0-rc.1
 	google.golang.org/protobuf v1.36.12
 )
 

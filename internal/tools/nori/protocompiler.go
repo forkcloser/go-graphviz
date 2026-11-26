@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"io"
-	"os"
 
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
@@ -12,6 +11,8 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"github.com/forkcloser/go-xos"
 )
 
 type errorReporter struct {
@@ -37,7 +38,7 @@ func ProtoCompile(
 		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
 			ImportPaths: importPaths,
 			Accessor: func(p string) (io.ReadCloser, error) {
-				return os.Open(p)
+				return xos.Open(p)
 			},
 		}),
 		SourceInfoMode: protocompile.SourceInfoStandard,

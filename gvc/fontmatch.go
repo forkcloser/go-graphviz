@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -25,6 +24,8 @@ import (
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
+
+	"github.com/forkcloser/go-xos"
 
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
@@ -544,7 +545,7 @@ func (f installedFace) fileKey() string {
 func (f installedFace) read() ([]byte, error) {
 	if !f.named || !wasm.FileSystemNamed() {
 		// #nosec G304 -- a file found in the platform's font directories, or named by the graph
-		data, err := os.ReadFile(f.path)
+		data, err := xos.ReadFile(f.path)
 		if err != nil {
 			return nil, fmt.Errorf("reading font %s: %w", f.path, err)
 		}
@@ -719,7 +720,7 @@ func (index *fontIndex) addDirectory(dir string, walked map[string]bool) {
 
 	walked[resolved] = true
 
-	entries, err := os.ReadDir(resolved)
+	entries, err := xos.ReadDir(resolved)
 	if err != nil {
 		return
 	}
@@ -728,7 +729,7 @@ func (index *fontIndex) addDirectory(dir string, walked map[string]bool) {
 		path := filepath.Join(resolved, entry.Name())
 
 		// What the entry is, or leads to.
-		info, err := os.Stat(path)
+		info, err := xos.Stat(path)
 		if err != nil {
 			continue
 		}
@@ -753,7 +754,7 @@ func isFontFile(path string) bool {
 // not answered for by its medium.
 func (index *fontIndex) addFile(path string) {
 	// #nosec G304 -- a file found in the platform's font directories
-	file, err := os.Open(path)
+	file, err := xos.Open(path)
 	if err != nil {
 		return
 	}
@@ -804,7 +805,7 @@ func (index *fontIndex) addFile(path string) {
 // a collection.
 func withFonts(path string, visit func(index int, f *sfnt.Font) bool) error {
 	// #nosec G304 -- a file found in the platform's font directories or named by the graph
-	file, err := os.Open(path)
+	file, err := xos.Open(path)
 	if err != nil {
 		return fmt.Errorf("opening font %s: %w", path, err)
 	}

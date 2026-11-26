@@ -34,8 +34,9 @@ import (
 	"io"
 	"io/fs"
 	"iter"
-	"os"
 	"sync/atomic"
+
+	"github.com/forkcloser/go-xos"
 
 	"github.com/forkcloser/go-graphviz/cgraph"
 	"github.com/forkcloser/go-graphviz/gvc"
@@ -192,7 +193,7 @@ func (g *Graphviz) RenderFilename(ctx context.Context, graph *Graph, format Form
 	// Written once the render has returned: a renderer's error is known
 	// only then, and a render that failed leaves the file as it was.
 	// #nosec G306 -- the caller names its own output file, readable like the dot command's
-	if err := os.WriteFile(path, buf.Bytes(), outputFileMode); err != nil {
+	if err := xos.WriteFile(path, buf.Bytes(), outputFileMode); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
 

@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/forkcloser/go-xos"
 )
 
 // reentrantLock serializes the module. Graphviz is single-threaded with
@@ -501,13 +502,13 @@ func (w *WasmFileSystem) Open(name string) (fs.File, error) {
 		return sub.Open(rel) //nolint:wrapcheck // see above
 	}
 
-	file, err := os.Open(rel) // #nosec G304 -- opening the file a graph names is the point
+	file, err := xos.Open(rel)
 	if err == nil || !errors.Is(err, fs.ErrNotExist) || filepath.IsAbs(rel) {
 		return file, err //nolint:wrapcheck // see above
 	}
 
 	// #nosec G304 -- as above
-	if rooted, rootErr := os.Open(string(filepath.Separator) + rel); rootErr == nil {
+	if rooted, rootErr := xos.Open(string(filepath.Separator) + rel); rootErr == nil {
 		return rooted, nil
 	}
 
