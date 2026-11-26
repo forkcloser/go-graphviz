@@ -3,7 +3,6 @@ package graphviz_test
 import (
 	"bytes"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -47,11 +46,12 @@ const oracleRequired = "required"
 // oracle.
 //
 // It is the one `just oracle` fetches into build/oracle, pinned in pins.yaml
-// beside the release it is built from: there, a dot that is not that release
-// fails the test, and so does a missing one when GO_GRAPHVIZ_ORACLE says it
-// was fetched, which is how the CI lanes run. Without it, a dot on PATH of
-// the same major.minor will do (a patch release keeps the writer), and the
-// test skips when there is none.
+// beside the release it is built from, and no other: there, a dot that is
+// not that release fails the test, and so does a missing one when
+// GO_GRAPHVIZ_ORACLE says it was fetched, which is how the CI lanes run.
+// Without it the test skips. A dot found on PATH is not taken: it is the
+// machine's, of whatever release and build, and a patch release changes what
+// Graphviz's dot does.
 func nativeDot(t *testing.T) string {
 	t.Helper()
 
@@ -80,16 +80,9 @@ func nativeDot(t *testing.T) string {
 		t.Fatalf("no native dot at %s: `just oracle` fetches it", pinned)
 	}
 
-	dot, err := exec.LookPath("dot")
-	if err != nil {
-		t.Skip("no native dot: `just oracle` fetches the pinned one")
-	}
+	t.Skipf("no native dot at %s: `just oracle` fetches the pinned one", pinned)
 
-	if got := dotVersion(t, dot); majorMinor(got) != majorMinor(want) {
-		t.Skipf("%s is graphviz %q, not %s: `just oracle` fetches the pinned one", dot, got, want)
-	}
-
-	return dot
+	return ""
 }
 
 // dotVersion is the version `dot -V` prints after its banner, empty when it
@@ -128,12 +121,6 @@ func embeddedGraphvizVersion(t *testing.T) string {
 }
 
 var pinnedGraphviz = regexp.MustCompile(`(?s)- name: graphviz\n.*?\n\s+version: (\S+)`)
-
-func majorMinor(version string) string {
-	parts := strings.SplitN(version, ".", 3)
-
-	return strings.Join(parts[:min(2, len(parts))], ".")
-}
 
 // TestContractCanonMatchesTheNativeDot: the canonical form go-graphviz
 // renders for a graph laid out with dot (-Tcanon: the graph written back,

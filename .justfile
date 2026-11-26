@@ -43,8 +43,8 @@ converge: wasm
 # native dot forkcloser/testbin builds, unpatched, from the Graphviz release
 # the module is built from, pinned per platform in pins.yaml (dot-<os>-<arch>)
 # and verified against its digest. It lands in build/oracle/graphviz-<os>-<arch>,
-# where the tests look for it. A platform with no pin gets nothing, and the
-# tests fall back to a dot on PATH or skip.
+# where the tests look for it, and nowhere else. A platform with no pin gets
+# nothing, and the tests skip.
 [doc('Fetch the pinned native dot the tests compare the module with (build/oracle)')]
 oracle:
     #!/usr/bin/env bash
