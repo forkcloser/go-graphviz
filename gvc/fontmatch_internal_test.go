@@ -231,7 +231,9 @@ func TestGlyphFallbackRuns(t *testing.T) {
 
 	fallback := newGlyphFallback(writeFonts(t, map[string][]byte{"bold.ttf": gobold.TTF}))
 
-	runs := fallback.runs("café au lait", primary, 12, 72)
+	regularStyle := fontStyle{weight: weightRegular}
+
+	runs := fallback.runs("café au lait", primary, regularStyle, 12, 72)
 	if len(runs) != 3 || runs[0].text != "caf" || runs[1].text != "é" || runs[2].text != " au lait" {
 		t.Fatalf("runs %+v, want caf, é, au lait", runs)
 	}
@@ -241,11 +243,11 @@ func TestGlyphFallbackRuns(t *testing.T) {
 	}
 
 	none := newGlyphFallback(writeFonts(t, map[string][]byte{}))
-	if runs := none.runs("café", primary, 12, 72); len(runs) != 1 || runs[0].face != primary {
+	if runs := none.runs("café", primary, regularStyle, 12, 72); len(runs) != 1 || runs[0].face != primary {
 		t.Errorf("with no fallback font, runs %+v, want the whole span with its face", runs)
 	}
 
-	if loaded, known := none.byRune['é']; !known || loaded != nil {
+	if loaded, known := none.byRune[styledRune{'é', regularStyle}]; !known || loaded != nil {
 		t.Error("the missing glyph's answer not remembered")
 	}
 }
@@ -305,7 +307,9 @@ func TestSymbolEncodedFont(t *testing.T) {
 		t.Skip("no symbol-encoded font installed (Windows has Symbol and Wingdings)")
 	}
 
-	runs := newGlyphFallback(&fontIndex{byFamily: map[string][]installedFace{}}).runs("ABC", face, 12, 72)
+	runs := newGlyphFallback(
+		&fontIndex{byFamily: map[string][]installedFace{}},
+	).runs("ABC", face, fontStyle{weight: weightRegular}, 12, 72)
 
 	want := string([]rune{symbolBase + 'A', symbolBase + 'B', symbolBase + 'C'})
 	if len(runs) != 1 || runs[0].face != face || runs[0].text != want {

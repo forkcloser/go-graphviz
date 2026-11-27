@@ -25,6 +25,8 @@ type faceNames struct {
 	// written.
 	families []string
 	style    fontStyle
+	// covers is the characters the face maps to a glyph.
+	covers charCoverage
 }
 
 var errFontFile = errors.New("not a font file this reader knows")
@@ -177,6 +179,7 @@ func readFace(file io.ReaderAt, offset int64) (faceNames, error) {
 	return faceNames{
 		families: families,
 		style:    readStyle(table("OS/2", os2Read), table("head", headRead), subfamily),
+		covers:   readCoverage(table("cmap", maxCmapTable)),
 	}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"os"
 	"path/filepath"
@@ -574,6 +575,12 @@ type fontIndex struct {
 	// for a graph that names a font file.
 	byFile map[string][]installedFace
 	faces  []installedFace
+	// covers is the characters each face maps to a glyph, and family the
+	// name its siblings are indexed under, in lower case: for the fallback,
+	// which asks every face for a character and then the face's family for
+	// the style.
+	covers map[installedFace]charCoverage
+	family map[installedFace]string
 
 	// listed keeps the last names read against the index, as many as
 	// maxResolved: a graph sets most of its text in a few names, and each
@@ -796,6 +803,12 @@ func (index *fontIndex) addFile(path string) {
 
 		index.byFile[name] = append(index.byFile[name], entry)
 		index.faces = append(index.faces, entry)
+
+		if index.covers == nil {
+			index.covers, index.family = map[installedFace]charCoverage{}, map[installedFace]string{}
+		}
+
+		index.covers[entry], index.family[entry] = face.covers, strings.ToLower(face.families[0])
 	}
 }
 
@@ -1242,6 +1255,11 @@ func fontForSpan(ctx context.Context, textFont *TextFont) (*loadedFont, error) {
 	return fontFor(textFont)
 }
 
+// styleOf is the style a span's font name and flags ask for.
+func styleOf(textFont *TextFont) fontStyle {
+	return fonts.installed().requestFor(textFont.Name(), textFont.PostScriptAlias(), textFont.Flags()).style
+}
+
 // fontFor resolves a span's font, once per name, alias and flags.
 func fontFor(textFont *TextFont) (*loadedFont, error) {
 	// A name is read against the families there are: see splitFamilyStyle.
@@ -1385,24 +1403,47 @@ func fallbackFamilies() []string {
 
 // glyphFallback finds, for characters a font lacks, an installed font that
 // has them, and remembers the answer, including that there is none.
+//
+// The answer for a character is the same whatever was asked before: the
+// faces are asked in one order, the wide-coverage families' and then every
+// installed face as indexed, and the first that has the character with ink
+// gives its family, whose face of the span's style draws it when that one
+// has the character too.
 type glyphFallback struct {
 	mu    sync.Mutex
 	index *fontIndex
-	// byRune is the face that has each character asked for, nil for none,
-	// for the last maxFallbackRunes characters: the face and not its font,
-	// which is loaded when it is asked for and kept as its file is.
-	byRune map[rune]*installedFace
-	// found is the faces that answered before, tried first.
-	found []installedFace
+	// order is the faces a character is looked for in.
+	order []installedFace
+	// byRune is the face that has each character asked for, in each style
+	// it was asked in, nil for none, for the last maxFallbackRunes of them:
+	// the face and not its font, which is loaded when it is asked for and
+	// kept as its file is.
+	byRune map[styledRune]*installedFace
+}
+
+// styledRune is a character in the style of the span that has it.
+type styledRune struct {
+	char  rune
+	style fontStyle
 }
 
 func newGlyphFallback(index *fontIndex) *glyphFallback {
-	return &glyphFallback{index: index, byRune: map[rune]*installedFace{}}
+	fallback := &glyphFallback{index: index, byRune: map[styledRune]*installedFace{}}
+
+	for _, family := range fallbackFamilies() {
+		if face, ok := best(index.byFamily[strings.ToLower(family)], fontStyle{weight: weightRegular}); ok {
+			fallback.order = append(fallback.order, face)
+		}
+	}
+
+	fallback.order = append(fallback.order, index.faces...)
+
+	return fallback
 }
 
 // fontsFor returns a font for each of chars that some installed font has a
-// drawable glyph for.
-func (g *glyphFallback) fontsFor(chars []rune) map[rune]*loadedFont {
+// drawable glyph for, in style where the font's family has it so.
+func (g *glyphFallback) fontsFor(chars []rune, style fontStyle) map[rune]*loadedFont {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -1411,7 +1452,7 @@ func (g *glyphFallback) fontsFor(chars []rune) map[rune]*loadedFont {
 	var missing []rune
 
 	for _, char := range chars {
-		face, known := g.byRune[char]
+		face, known := g.byRune[styledRune{char, style}]
 
 		switch {
 		case !known:
@@ -1423,16 +1464,28 @@ func (g *glyphFallback) fontsFor(chars []rune) map[rune]*loadedFont {
 		}
 	}
 
-	for _, candidate := range g.candidates(len(missing) > 0) {
+	// placeholders is, for a character, the first face that has an outline
+	// for it that encloses nothing: what draws it when no face does better.
+	placeholders := map[rune]installedFace{}
+
+	for _, candidate := range g.order {
 		if len(missing) == 0 {
 			break
 		}
 
-		missing = g.take(candidate, missing, result)
+		missing = g.take(candidate, style, missing, result, placeholders)
 	}
 
 	for _, char := range missing {
-		g.remember(char, nil)
+		var answer *installedFace
+
+		if face, ok := placeholders[char]; ok {
+			if loaded, err := fonts.load(face); err == nil {
+				answer, result[char] = &face, loaded
+			}
+		}
+
+		g.remember(styledRune{char, style}, answer)
 	}
 
 	return result
@@ -1440,7 +1493,7 @@ func (g *glyphFallback) fontsFor(chars []rune) map[rune]*loadedFont {
 
 // remember keeps face as the answer for char, forgetting every answer first
 // when it would be one more than maxFallbackRunes.
-func (g *glyphFallback) remember(char rune, face *installedFace) {
+func (g *glyphFallback) remember(char styledRune, face *installedFace) {
 	if len(g.byRune) >= maxFallbackRunes {
 		clear(g.byRune)
 	}
@@ -1448,60 +1501,105 @@ func (g *glyphFallback) remember(char rune, face *installedFace) {
 	g.byRune[char] = face
 }
 
-// candidates lists the faces to search, if any: the fonts that answered
-// before, the wide-coverage families, then every installed face.
-func (g *glyphFallback) candidates(needed bool) []installedFace {
-	if !needed {
-		return nil
-	}
-
-	candidates := slices.Clone(g.found)
-
-	for _, family := range fallbackFamilies() {
-		if face, ok := best(g.index.byFamily[strings.ToLower(family)], fontStyle{weight: weightRegular}); ok {
-			candidates = append(candidates, face)
-		}
-	}
-
-	return append(candidates, g.index.faces...)
-}
-
-// take records the characters of missing that candidate has, in result
-// and for later, and returns those it does not have.
-func (g *glyphFallback) take(candidate installedFace, missing []rune, result map[rune]*loadedFont) []rune {
-	covered := coverage(candidate, missing)
-	if len(covered) == 0 {
+// take records the characters of missing that candidate draws, in result
+// and for later, and returns those it does not: each from the face of
+// candidate's family in style when that face draws it too, from candidate
+// otherwise. A character candidate has a placeholder for is not drawn by it,
+// and candidate is noted in placeholders as the first to have that much.
+func (g *glyphFallback) take(
+	candidate installedFace,
+	style fontStyle,
+	missing []rune,
+	result map[rune]*loadedFont,
+	placeholders map[rune]installedFace,
+) []rune {
+	has := g.glyphs(candidate, missing)
+	if len(has) == 0 {
 		return missing
 	}
 
-	loaded, err := fonts.load(candidate)
-	if err != nil {
-		return missing
-	}
+	styled := has
 
-	if !slices.Contains(g.found, candidate) {
-		g.found = append(g.found, candidate)
+	sibling, ok := best(g.index.byFamily[g.index.family[candidate]], style)
+	if ok && sibling != candidate {
+		styled = g.glyphs(sibling, slices.Collect(maps.Keys(has)))
 	}
 
 	var still []rune
 
 	for _, char := range missing {
-		if covered[char] {
-			g.remember(char, &candidate)
-			result[char] = loaded
-		} else {
+		face := candidate
+		if styled[char].drawn() {
+			face = sibling
+		}
+
+		if _, noted := placeholders[char]; has[char] == placeholderGlyph && !noted {
+			placeholders[char] = candidate
+		}
+
+		if !has[char].drawn() {
 			still = append(still, char)
+
+			continue
+		}
+
+		if loaded, err := fonts.load(face); err == nil {
+			g.remember(styledRune{char, style}, &face)
+			result[char] = loaded
 		}
 	}
 
 	return still
 }
 
-// coverage reports which of chars face has an outline glyph for, reading
-// the font lazily; a font with bitmap glyphs only, such as a colour emoji
-// font, has none the renderer can draw.
-func coverage(face installedFace, chars []rune) map[rune]bool {
-	covered := map[rune]bool{}
+// glyphKind is what a face has for a character; none, at zero.
+type glyphKind int
+
+const (
+	// placeholderGlyph: an outline that encloses nothing. A colour emoji
+	// font keeps one, two points an em apart, for each of its pictures,
+	// which are bitmaps the renderer does not draw; taken for the
+	// character, it left it blank where another font had it drawn.
+	placeholderGlyph glyphKind = iota + 1
+	// blankGlyph: no outline at all. The character is blank in the font, as
+	// a space is, a variation selector, a filler, the braille cell with no
+	// dot: that is how it is drawn, and no other font is asked.
+	blankGlyph
+	// inkGlyph: an outline that encloses something.
+	inkGlyph
+)
+
+// drawn reports whether the face draws the character as it means to.
+func (kind glyphKind) drawn() bool {
+	return kind == blankGlyph || kind == inkGlyph
+}
+
+// glyphs is what face has for each of chars it has: those its table maps,
+// which costs nothing to ask, looked at in the font, read then.
+func (g *glyphFallback) glyphs(face installedFace, chars []rune) map[rune]glyphKind {
+	if face.unloadable {
+		return nil
+	}
+
+	covers, mapped := g.index.covers[face], chars[:0:0]
+
+	for _, char := range chars {
+		if covers.has(char) {
+			mapped = append(mapped, char)
+		}
+	}
+
+	if len(mapped) == 0 {
+		return nil
+	}
+
+	return glyphKinds(face, mapped)
+}
+
+// glyphKinds is the kind of glyph face has for each of chars it has one
+// for, reading the font lazily.
+func glyphKinds(face installedFace, chars []rune) map[rune]glyphKind {
+	kinds := map[rune]glyphKind{}
 
 	_ = withFonts(face.path, func(index int, member *sfnt.Font) bool {
 		if index != face.index {
@@ -1516,15 +1614,58 @@ func coverage(face installedFace, chars []rune) map[rune]bool {
 				continue
 			}
 
-			if _, err := member.LoadGlyph(&buf, glyph, fixed.I(int(member.UnitsPerEm())), nil); err == nil {
-				covered[char] = true
+			segments, err := member.LoadGlyph(&buf, glyph, fixed.I(int(member.UnitsPerEm())), nil)
+
+			switch {
+			case err != nil:
+			case len(segments) == 0:
+				kinds[char] = blankGlyph
+			case encloses(segments):
+				kinds[char] = inkGlyph
+			default:
+				kinds[char] = placeholderGlyph
 			}
 		}
 
 		return false
 	})
 
-	return covered
+	return kinds
+}
+
+// encloses reports whether an outline encloses anything: whether a contour
+// of it has three points, those its curves are drawn towards included, that
+// are not on one line. A point, or a line gone over and back, fills nothing.
+func encloses(segments sfnt.Segments) bool {
+	var start, last fixed.Point26_6
+
+	for _, segment := range segments {
+		points := segment.Args[:1]
+
+		switch segment.Op {
+		case sfnt.SegmentOpMoveTo:
+			start, last = segment.Args[0], segment.Args[0]
+
+			continue
+		case sfnt.SegmentOpQuadTo:
+			points = segment.Args[:2]
+		case sfnt.SegmentOpCubeTo:
+			points = segment.Args[:3]
+		case sfnt.SegmentOpLineTo:
+		}
+
+		for _, point := range points {
+			// Twice the area of the triangle from the contour's start.
+			a, b := last.Sub(start), point.Sub(start)
+			if int64(a.X)*int64(b.Y) != int64(a.Y)*int64(b.X) {
+				return true
+			}
+
+			last = point
+		}
+	}
+
+	return false
 }
 
 // textRun is a stretch of text drawn with one face.
@@ -1535,14 +1676,14 @@ type textRun struct {
 
 // runs splits text into runs: the characters primary has a glyph for stay
 // with it, a symbol-encoded font's characters move to its private use area,
-// and the others go to the first installed font that has them, or stay
-// with primary when none does.
-func (g *glyphFallback) runs(text string, primary font.Face, size, dpi float64) []textRun {
+// and the others go to the installed font the fallback gives for them in
+// style, the span's, or stay with primary when there is none.
+func (g *glyphFallback) runs(text string, primary font.Face, style fontStyle, size, dpi float64) []textRun {
 	chars := []rune(text)
 	mapped, faces, missing := classify(chars, primary)
 
 	if len(missing) > 0 {
-		found := g.fontsFor(missing)
+		found := g.fontsFor(missing, style)
 
 		for i, char := range chars {
 			if faces[i] == nil {

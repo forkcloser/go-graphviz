@@ -3,6 +3,7 @@ package graphviz_test
 import (
 	"encoding/binary"
 	"fmt"
+	"maps"
 	"math"
 	"os"
 	"path/filepath"
@@ -45,6 +46,12 @@ type corpusFace struct {
 	// unparsable gives the font a character map the font parser does not
 	// take: the face is there and cannot be drawn with.
 	unparsable bool
+	// also are characters the font has beside its own, each drawn as its A
+	// and so as wide; blank are characters it has as its space, a glyph
+	// with no outline; placeholder are characters it has as an outline
+	// that encloses nothing, twenty units wider than its A, which is what a
+	// colour emoji font keeps for each of its pictures.
+	also, blank, placeholder []rune
 }
 
 // corpusSize is the font size at which a label of ten A is a tenth of the
@@ -284,6 +291,14 @@ func (face corpusFace) tables(t *testing.T) map[string][]byte {
 	binary.BigEndian.PutUint16(os2[selection:], flags)
 	tables["OS/2"] = os2
 
+	if len(face.also)+len(face.blank)+len(face.placeholder) > 0 {
+		tables["cmap"] = face.characterMap(t, parsed)
+	}
+
+	if len(face.placeholder) > 0 {
+		face.hollowOut(t, parsed, tables)
+	}
+
 	if face.unparsable {
 		// One subtable, for the Macintosh's Japanese: a version, a count,
 		// then platform 1, encoding 1 and where the subtable is; the
@@ -294,6 +309,148 @@ func (face corpusFace) tables(t *testing.T) map[string][]byte {
 
 	return tables
 }
+
+// characterMap is a cmap table for the face: the printable ASCII of plain,
+// the font it is made from, then also as its A and blank as its space, in
+// one subtable of segmented coverage for Windows, which takes characters of
+// any plane.
+func (face corpusFace) characterMap(t *testing.T, plain *sfnt.Font) []byte {
+	t.Helper()
+
+	var buf sfnt.Buffer
+
+	glyphs := map[rune]sfnt.GlyphIndex{}
+
+	for char := rune(' '); char <= '~'; char++ {
+		glyph, err := plain.GlyphIndex(&buf, char)
+		if err != nil || glyph == 0 {
+			t.Fatalf("no glyph for %q: %v", char, err)
+		}
+
+		glyphs[char] = glyph
+	}
+
+	for _, char := range face.also {
+		glyphs[char] = glyphs['A']
+	}
+
+	for _, char := range face.blank {
+		glyphs[char] = glyphs[' ']
+	}
+
+	// The glyph of the tilde, which hollowOut empties.
+	for _, char := range face.placeholder {
+		glyphs[char] = glyphs['~']
+	}
+
+	// A version, one subtable, for platform 3 in encoding 10, 12 bytes in;
+	// then format 12, its length, no language and a group a character.
+	const header, group = 16, 12
+
+	out := []byte{0, 0, 0, 1, 0, 3, 0, 10, 0, 0, 0, 12, 0, 12, 0, 0}
+	out = binary.BigEndian.AppendUint32(out, uint32(header+group*len(glyphs)))
+	out = binary.BigEndian.AppendUint32(out, 0)
+	out = binary.BigEndian.AppendUint32(out, uint32(len(glyphs)))
+
+	for _, char := range slices.Sorted(maps.Keys(glyphs)) {
+		out = binary.BigEndian.AppendUint32(out, uint32(char))
+		out = binary.BigEndian.AppendUint32(out, uint32(char))
+		out = binary.BigEndian.AppendUint32(out, uint32(glyphs[char]))
+	}
+
+	return out
+}
+
+// hollowOut makes the tilde's glyph, in tables, a placeholder: two contours
+// of one point each, an em's corner apart, as Apple's colour emoji font has
+// for a picture; and gives it an advance of its own.
+func (face corpusFace) hollowOut(t *testing.T, plain *sfnt.Font, tables map[string][]byte) {
+	t.Helper()
+
+	var buf sfnt.Buffer
+
+	tilde, err := plain.GlyphIndex(&buf, '~')
+	if err != nil || tilde == 0 {
+		t.Fatalf("no glyph for the tilde: %v", err)
+	}
+
+	// Two contours; a box of 800 units; the last point of each contour; no
+	// instructions; a point on the curve where the pen is, and one at two
+	// distances of 16 bits; those distances, 800 each; two bytes to end on
+	// a multiple of four.
+	outline := []byte{
+		0, 2, 0, 0, 0, 0, 3, 0x20, 3, 0x20,
+		0, 0, 0, 1,
+		0, 0,
+		0x31, 0x01,
+		3, 0x20, 3, 0x20,
+		0, 0,
+	}
+
+	// head says, at its end, whether loca counts in halves on 16 bits or
+	// in bytes on 32.
+	const locationFormat = 50
+
+	head, loca, glyf := tables["head"], tables["loca"], tables["glyf"]
+	if len(head) < locationFormat+2 {
+		t.Fatal("the font has no head table to say how its glyphs are found")
+	}
+
+	long := binary.BigEndian.Uint16(head[locationFormat:]) != 0
+
+	width := 2
+	if long {
+		width = 4
+	}
+
+	count := len(loca) / width
+
+	place := func(i int) int {
+		if long {
+			return int(binary.BigEndian.Uint32(loca[width*i:]))
+		}
+
+		return 2 * int(binary.BigEndian.Uint16(loca[width*i:]))
+	}
+
+	if int(tilde)+1 >= count || place(int(tilde)+1) > len(glyf) {
+		t.Fatal("the tilde's glyph is not where loca says")
+	}
+
+	start, end := place(int(tilde)), place(int(tilde)+1)
+	moved := len(outline) - (end - start)
+
+	relocated := make([]byte, 0, len(loca))
+
+	for i := range count {
+		at := place(i)
+		if i > int(tilde) {
+			at += moved
+		}
+
+		if long {
+			relocated = binary.BigEndian.AppendUint32(relocated, uint32(at))
+		} else {
+			relocated = binary.BigEndian.AppendUint16(relocated, uint16(at/2))
+		}
+	}
+
+	tables["loca"] = relocated
+	tables["glyf"] = slices.Concat(glyf[:start], outline, glyf[end:])
+
+	const metric = 4
+
+	hmtx := slices.Clone(tables["hmtx"])
+	if len(hmtx) < metric*(int(tilde)+1) {
+		t.Fatal("the tilde's glyph has no advance of its own")
+	}
+
+	binary.BigEndian.PutUint16(hmtx[metric*int(tilde):], face.advance+placeholderWider)
+	tables["hmtx"] = hmtx
+}
+
+// placeholderWider is how much wider than its A a font's placeholder is.
+const placeholderWider = 20
 
 // font is the face as a TrueType font file.
 func (face corpusFace) font(t *testing.T) []byte {
