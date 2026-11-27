@@ -8,9 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"iter"
-	"os"
 	"strconv"
 	"strings"
+
+	"github.com/forkcloser/go-xos"
 
 	"github.com/forkcloser/go-graphviz/internal/wasm"
 )
@@ -885,7 +886,7 @@ func readGraph(read func(context.Context) (*wasm.Graph, error)) (*Graph, error) 
 
 func ParseFile(path string) (*Graph, error) {
 	// #nosec G304 -- reading the file the caller names is this function's purpose
-	file, err := os.ReadFile(path)
+	file, err := xos.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}

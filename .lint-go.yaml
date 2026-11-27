@@ -180,6 +180,10 @@ golangci:
               # vector and draw packages the raster renderer draws with.
               - github.com/tetratelabs/wazero
               - golang.org/x/image
+              # The files this module opens go through xos: os, call for
+              # call, and on Windows a file that can be renamed or removed
+              # while it is open.
+              - github.com/forkcloser/go-xos
       # internal/wasm is this module's own binding, generated from bind.proto;
       # an error it returns is already the module's own, and cgraph and gvc
       # are the thin typed layer over it, as the root package is over them.

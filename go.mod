@@ -3,6 +3,7 @@ module github.com/forkcloser/go-graphviz
 go 1.26.0
 
 require (
+	github.com/forkcloser/go-xos v1.0.0-rc.1
 	github.com/tetratelabs/wazero v1.12.0
 	golang.org/x/image v0.48.0
 )
