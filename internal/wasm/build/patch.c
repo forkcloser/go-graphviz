@@ -13,6 +13,8 @@
 #include "gvplugin_render.h"
 #include "gvio.h"
 #include "textspan.h"
+// For safefile.
+#include "utils.h"
 #include "bridge.h"
 
 // WASM_EXPORT exports a bridge function from the module under its own name;
@@ -397,6 +399,19 @@ Agraph_t *bridge_reader_next(bridge_reader_t *reader) {
 void bridge_reader_close(bridge_reader_t *reader) {
   free(reader->text);
   free(reader);
+}
+
+// bridge_image_file is the path Graphviz opens for the image file a graph
+// names: safefile, which the layout sized the image through. That is the
+// name itself, or, when the graph laid out last has an imagepath and the
+// name is not absolute, the first file of that name in its directories.
+// Empty when there is none: the renderer opens what the layout sized, or
+// nothing.
+char *bridge_image_file(const char *name) {
+  const char *path = safefile(name);
+
+  // Not written through: bind.c copies it out.
+  return (char *)(path ? path : "");
 }
 
 // bridge_version is the Graphviz release the module is built from, as

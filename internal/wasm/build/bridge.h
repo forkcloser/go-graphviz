@@ -37,6 +37,10 @@ void bridge_reader_close(bridge_reader_t *reader);
 // gvcVersion answers it.
 char *bridge_version(void);
 
+// bridge_image_file is the path Graphviz opens for the image file a graph
+// names, empty when it finds none.
+char *bridge_image_file(const char *name);
+
 // bridge_render_data is gvRenderData, and leaves no job on the context when
 // the render failed.
 int bridge_render_data(GVC_t *gvc, graph_t *g, const char *format,

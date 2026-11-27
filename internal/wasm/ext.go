@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -480,12 +481,14 @@ type WasmFileSystem struct {
 }
 
 // Open opens a file Graphviz or the renderer names. The runtime mounts this
-// file system at /, so Graphviz's names arrive relative to it, /a/b.png as
-// a/b.png, while the renderer's arrive as the graph wrote them; trimming the
-// leading slash makes both open the same file. On the host, a name is tried
-// from the working directory and then from the root, since the mount has lost
-// which of the two the graph meant; a name that resolves today keeps
-// resolving to the same file.
+// file system at /, so Graphviz's names arrive relative to it and clean,
+// /a//b.png as a/b.png, while the renderer's arrive as the graph wrote them,
+// or as Graphviz joined them to a directory of the graph's imagepath;
+// trimming the leading slash and, for a named file system, which takes a
+// clean name alone, cleaning the rest makes both open the same file. On the
+// host, a name is tried from the working directory and then from the root,
+// since the mount has lost which of the two the graph meant; a name that
+// resolves today keeps resolving to the same file.
 func (w *WasmFileSystem) Open(name string) (fs.File, error) {
 	fsMu.Lock()
 	sub := w.subFS
@@ -498,7 +501,7 @@ func (w *WasmFileSystem) Open(name string) (fs.File, error) {
 
 	// An fs.FS returns its *PathError as it is.
 	if sub != nil {
-		return sub.Open(rel) //nolint:wrapcheck // see above
+		return sub.Open(path.Clean(rel)) //nolint:wrapcheck // see above
 	}
 
 	file, err := os.Open(rel) // #nosec G304 -- opening the file a graph names is the point

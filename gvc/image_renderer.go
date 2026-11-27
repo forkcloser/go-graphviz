@@ -12,6 +12,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"io/fs"
 	"math"
 	"sync"
 
@@ -259,7 +260,7 @@ func (r *ImageRenderer) BezierCurve(_ context.Context, job *Job, points []*Point
 // LoadImage draws a node's image into the box Graphviz computed for it,
 // which already applies imagescale and imagepos: stretched to the box under
 // the page's transform, as Graphviz's Cairo image loader draws it.
-func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape, box *BoxFloat, _ bool) error {
+func (r *ImageRenderer) LoadImage(ctx context.Context, job *Job, shape *UserShape, box *BoxFloat, _ bool) error {
 	left, top := r.toX(job, box.LL().X()), r.toY(job, -box.UR().Y())
 	width := int(math.Round(r.toX(job, box.UR().X()-box.LL().X())))
 	height := int(math.Round(r.toY(job, box.UR().Y()-box.LL().Y())))
@@ -272,7 +273,19 @@ func (r *ImageRenderer) LoadImage(_ context.Context, job *Job, shape *UserShape,
 		return fmt.Errorf("%w: %s drawn at %d by %d pixels", ErrImageTooLarge, shape.Name(), width, height)
 	}
 
-	img, err := r.nodeImage(shape.Name(), width, height)
+	// The file the layout sized: the name, or where the graph's imagepath
+	// has it. Asked of Graphviz here, inside the render of that graph: the
+	// imagepath it reads is the one of the graph laid out last.
+	file, err := wasm.ImageFile(ctx, shape.Name())
+	if err != nil {
+		return err
+	}
+
+	if file == "" {
+		return fmt.Errorf("opening image %s: %w", shape.Name(), fs.ErrNotExist)
+	}
+
+	img, err := r.nodeImage(file, width, height)
 	if err != nil {
 		return err
 	}

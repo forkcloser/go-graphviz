@@ -1860,6 +1860,15 @@ option (nori.file).export = {
     alias: "bridge_version"
     return { kind: CHARPTR }
   }
+  // imageFile is the path Graphviz opens for an image a graph names: the
+  // name, or the file of that name in a directory of the imagepath of the
+  // graph laid out last; empty when it finds none (patch.c).
+  func {
+    name: "imageFile"
+    alias: "bridge_image_file"
+    args { kind: CHARPTR }
+    return { kind: CHARPTR }
+  }
   method {
     recv: "Context"
     name: "layout"
