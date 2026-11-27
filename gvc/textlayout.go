@@ -154,7 +154,7 @@ func layoutText(ctx context.Context, span *wasm.Textspan, _ []string) (bool, err
 		return false, err
 	}
 
-	width := advance(fonts.fallback().runs(span.GetStr(), face, size, pointsPerInch))
+	width := advance(fonts.fallback().runs(span.GetStr(), face, styleOf(textFont), size, pointsPerInch))
 
 	if err := wasm.SetTextspanSize(ctx, span, width, size*lineSpacing); err != nil {
 		return false, err

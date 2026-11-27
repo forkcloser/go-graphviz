@@ -175,7 +175,7 @@ func (r *ImageRenderer) TextSpan(ctx context.Context, job *Job, pos *PointFloat,
 	// so the span is drawn run by run, and justified by the width drawn:
 	// Graphviz's own renderers justify by the width their text layout
 	// measured, which is the width they draw.
-	runs := fonts.fallback().runs(span.Text(), primary, size, dpi)
+	runs := fonts.fallback().runs(span.Text(), primary, styleOf(span.Font()), size, dpi)
 	width := advance(runs)
 
 	penX := r.toX(job, pos.X())

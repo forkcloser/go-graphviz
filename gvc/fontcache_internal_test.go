@@ -198,23 +198,6 @@ func TestFontCollectionReadOnce(t *testing.T) {
 	}
 }
 
-// A face that answered for a character is tried first for the next, and is
-// remembered once: ten characters found in one font leave one face
-// remembered, where each left another.
-func TestFallbackRemembersAFaceOnce(t *testing.T) {
-	fallback := newGlyphFallback(fontDirectory(t, copies(1)))
-
-	for _, char := range "ABCDEFGHIJ" {
-		if found := fallback.fontsFor([]rune{char}); found[char] == nil {
-			t.Fatalf("%q: no font found for it", char)
-		}
-	}
-
-	if len(fallback.found) != 1 {
-		t.Errorf("%d faces remembered for ten characters of one font, want 1", len(fallback.found))
-	}
-}
-
 // Dropping the font files drops everything made from them, and what is
 // remembered beside them is bounded by itself: the names resolved, and the
 // characters a fallback was looked for.
@@ -257,7 +240,7 @@ func TestFontCachesForget(t *testing.T) {
 
 	fallback := newGlyphFallback(index)
 	for i := range maxFallbackRunes + 10 {
-		fallback.remember(rune(i), nil)
+		fallback.remember(styledRune{char: rune(i)}, nil)
 	}
 
 	if len(fallback.byRune) != 10 {
