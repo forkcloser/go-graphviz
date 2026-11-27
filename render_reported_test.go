@@ -14,9 +14,8 @@ import (
 	"github.com/forkcloser/go-graphviz/gvc"
 )
 
-// reportedGraphs are graphs Graphviz reports an error for and draws all the
-// same, each with what it reports: dot 16.1.1 prints the error, writes its
-// output and exits 1 for every one of them.
+// reportedGraphs are graphs Graphviz reports an error for, at layout, and
+// draws all the same, each with what it reports.
 func reportedGraphs() map[string][2]string {
 	return map[string][2]string{
 		"a record label": {
@@ -35,8 +34,10 @@ func reportedGraphs() map[string][2]string {
 }
 
 // A render Graphviz reports an error during is written whole and returns
-// that error, as dot writes its output and exits 1: it returned nil, and the
-// message waited in the module for the next failure to carry it.
+// that error: it returned nil, and the message waited in the module for the
+// next failure to carry it. Whether to keep what was written is the
+// caller's: Graphviz's dot wrote it through 16.1.1 and, from 16.1.2, writes
+// nothing for a graph whose layout reported an error.
 func TestRenderReturnsWhatGraphvizReported(t *testing.T) {
 	ctx := t.Context()
 
