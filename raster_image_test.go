@@ -318,3 +318,91 @@ func TestRasterNodeImageTooLarge(t *testing.T) {
 		t.Fatalf("Render returned %v, want %v", err, gvc.ErrImageTooLarge)
 	}
 }
+
+// A node is sized by its image as the file is at that layout. Graphviz keeps
+// the size of every image it has sized, by name, for as long as the module
+// lives, so a file that changed between two layouts kept its first size: the
+// node, and the box the image is drawn in.
+func TestNodeImageIsSizedAtEachLayout(t *testing.T) {
+	const dot = `digraph { a [shape=box label="" color=white image="resized.png"] }`
+
+	drawn := func(side int) image.Rectangle {
+		data := encodePNG(t, solidImage(side, side, color.RGBA{R: 255, A: 255}))
+
+		return redBounds(renderWithImages(t, fstest.MapFS{"resized.png": {Data: data}}, dot, graphviz.PNG))
+	}
+
+	for _, side := range []int{40, 200, 40} {
+		if got := drawn(side); math.Abs(float64(got.Dx()-side)) > 2 || math.Abs(float64(got.Dy()-side)) > 2 {
+			t.Errorf("an image of %d pixels a side is drawn %d by %d", side, got.Dx(), got.Dy())
+		}
+	}
+}
+
+// A graph that is laid out is drawn with its images whatever was laid out
+// since. Sizing an image anew at each layout replaces what Graphviz keeps of
+// it and never drops it: a render finds its images there, and one dropped
+// at another graph's layout would not be drawn.
+func TestImageDrawnAfterAnotherLayout(t *testing.T) {
+	const (
+		side = 40
+		with = `digraph { a [shape=box label="" color=white image="kept.png"] }`
+	)
+
+	ctx := t.Context()
+
+	graphviz.SetFileSystem(fstest.MapFS{
+		"kept.png": {Data: encodePNG(t, solidImage(side, side, color.RGBA{R: 255, A: 255}))},
+	})
+	t.Cleanup(func() { graphviz.SetFileSystem(nil) })
+
+	c, err := gvc.New(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, c.Close) })
+
+	laidOut := func(dot string) *graphviz.Graph {
+		graph, parseErr := graphviz.ParseBytes([]byte(dot))
+		if parseErr != nil {
+			t.Fatal(parseErr)
+		}
+
+		if layoutErr := c.Layout(ctx, graph, "dot"); layoutErr != nil {
+			t.Fatal(layoutErr)
+		}
+
+		t.Cleanup(func() {
+			if freeErr := c.FreeLayout(ctx, graph); freeErr != nil {
+				t.Error(freeErr)
+			}
+
+			closeOrError(t, graph.Close)
+		})
+
+		return graph
+	}
+
+	for name, since := range map[string]string{
+		"a graph with no image":  `digraph { b }`,
+		"a graph with the image": with,
+	} {
+		graph := laidOut(with)
+		laidOut(since)
+
+		var out bytes.Buffer
+		if renderErr := c.RenderData(ctx, graph, "png", &out); renderErr != nil {
+			t.Fatalf("%s laid out since: %v", name, renderErr)
+		}
+
+		img, _, decodeErr := image.Decode(&out)
+		if decodeErr != nil {
+			t.Fatal(decodeErr)
+		}
+
+		if got := redBounds(img); math.Abs(float64(got.Dx()-side)) > 2 || math.Abs(float64(got.Dy()-side)) > 2 {
+			t.Errorf("%s laid out since: the image is drawn %d by %d, want %d a side", name, got.Dx(), got.Dy(), side)
+		}
+	}
+}
