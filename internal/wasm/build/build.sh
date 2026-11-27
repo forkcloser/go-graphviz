@@ -173,10 +173,9 @@ grep -q 'go-graphviz: the canvas size of each of the three WebP layouts' "${user
 # layout the module ever does: a file that changed between two layouts kept
 # the size it had at the first. image-size.patch counts layouts and sizes an
 # image again when its size is of another layout, once a layout and not once
-# a node; the entry is replaced, never dropped unasked, since a render finds
-# its images there and may follow another graph's layout. gvLayoutJobs, which
-# every layout goes through, does the counting. The patch is applied to
-# gvusershape.c as webp-size.patch left it, by digest, for the reason above.
+# a node. gvLayoutJobs, which every layout goes through, does the counting.
+# The patch is applied to gvusershape.c as webp-size.patch left it, by
+# digest, for the reason above.
 image_size_base=046997239f311a80c3c8e49e1d5f149d7536ca87c241b431f15165e00bc33a9e
 echo "${image_size_base}  ${usershape}" | sha256sum -c - > /dev/null || {
   echo "gvusershape.c: not the file image-size.patch was written against; recheck the patch for this Graphviz" >&2

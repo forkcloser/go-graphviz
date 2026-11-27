@@ -110,6 +110,12 @@ func (c *Context) Close() error {
 // FreeLayout leaves the layout in the module. After any other error there
 // is nothing to free: what the layout left on the graph, Layout has freed.
 //
+// A layout the graph already has is freed first: laying a graph out again
+// needs no FreeLayout between the two.
+//
+// The graph a Layout lays out is the one the process can render, until the
+// next Layout of any graph on any context: see ErrNotLaidOutLast.
+//
 // ctx is honoured until the layout starts: when it is done before the
 // module is free for this call, Layout returns its error and lays nothing
 // out. A layout that is running is not interrupted, whatever ctx does.
@@ -126,15 +132,31 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 			return ErrClosed
 		}
 
+		// A layout the graph already has is freed first. Graphviz lays out
+		// over it: the earlier one stays in the module for good, and what
+		// one engine left on the graph traps the module under another's.
+		if _, err := c.gvc.FreeLayout(ctx, toGraphWasm(graph)); err != nil {
+			return err
+		}
+
 		mark := wasm.ErrorMark()
 		ran = true
+
+		// A layout that fails leaves Graphviz's state neither the last
+		// graph's nor this one's: nothing is to be rendered from it.
+		laidOutLast = 0
 
 		res, err := c.gvc.Layout(ctx, toGraphWasm(graph), engine)
 		if err != nil {
 			return err
 		}
 
-		return outcome(res, mark)
+		err = outcome(res, mark)
+		if err == nil || errors.Is(err, ErrReported) {
+			laidOutLast = rootOf(graph)
+		}
+
+		return err
 	})
 
 	// A callback's error reaches here and not the calls above: Graphviz went
@@ -152,6 +174,8 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 // RenderData renders graph, which a Layout has laid out, in format and
 // writes the result to w. An error that is ErrReported comes after the
 // write: the render is whole, and Graphviz reported an error during it.
+// A graph that is not the one laid out last is not rendered: the error is
+// ErrNotLaidOutLast, and nothing is written.
 //
 // ctx is honoured until the render starts, as Layout's is; a render that is
 // running is not interrupted.
@@ -165,6 +189,15 @@ func (c *Context) RenderData(ctx context.Context, graph *cgraph.Graph, format st
 		// Read in the turn that uses it: see Close.
 		if c.gvc == nil {
 			return ErrClosed
+		}
+
+		if err := wasm.Trapped(); err != nil {
+			return err
+		}
+
+		// No graph is no graph laid out, which Graphviz says itself.
+		if graph != nil && rootOf(graph) != laidOutLast {
+			return ErrNotLaidOutLast
 		}
 
 		defer c.releasePages()
@@ -440,6 +473,34 @@ var ErrClosed = errors.New("graphviz context is closed")
 // the file is there, as dot writes its output and exits 1. The error is a
 // cgraph.ErrGraphviz too, with the message Graphviz reported.
 var ErrReported = errors.New("reported, and the call went on to its end")
+
+// ErrNotLaidOutLast is returned by a render of a graph that is not the one
+// laid out last in the process, on whatever context: Graphviz keeps what a
+// layout found of a graph's attributes, and how far it got, in variables of
+// its own, one set for the process, which the next layout replaces and a
+// render reads. Rendering another graph from them traps the module.
+//
+// The graph keeps its layout, to free. Laid out again, which frees that
+// layout first, it is the one to render. After a layout that failed there
+// is no graph to render.
+var ErrNotLaidOutLast = errors.New("the graph is not the one laid out last")
+
+// laidOutLast is the root, by its address in the module, of the graph laid
+// out last, or 0 after a layout that failed. It is read and written in a
+// turn in the module alone.
+//
+//nolint:gochecknoglobals // the module is one for the process, and so is the graph it laid out last
+var laidOutLast uint64
+
+// rootOf is the address in the module of graph's root, 0 for no graph: one
+// that Graphviz refuses, as not laid out.
+func rootOf(graph *cgraph.Graph) uint64 {
+	if graph == nil {
+		return 0
+	}
+
+	return wasm.WasmPtr(toGraphWasm(graph).GetRoot())
+}
 
 // ErrNoContext is returned when Graphviz cannot allocate a rendering context.
 var ErrNoContext = errors.New("graphviz context could not be created")

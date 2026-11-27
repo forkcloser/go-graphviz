@@ -7,16 +7,24 @@
 // single-threaded, so calls are serialized: instances and graphs may be used
 // from any goroutine, and a call waits for the one in progress. Render,
 // RenderImage and RenderFilename hold the module from layout to the end of
-// the render, so the same graph may be rendered from several goroutines; a
-// caller sequencing gvc's Layout, RenderData and FreeLayout on a graph
-// itself must not let another goroutine render that graph in between. A callback a
-// render makes (a RenderEngine method, a FontLoader) runs inside that call
-// and may use the API on the same goroutine; another goroutine's call waits
-// until the render ends. The context and the handles a callback receives
-// (the Job, its points, spans and colours) identify that call to the lock,
-// so a callback must not hand them to another goroutine while it runs; the
-// points, spans, boxes and colours are copies that are freed when the
-// callback returns, so they are not to be kept past it either.
+// the render, so the same graph may be rendered from several goroutines.
+//
+// A caller sequencing gvc's Layout, RenderData and FreeLayout itself renders
+// the graph the process laid out last and no other: a layout of any graph,
+// on any context and from any goroutine, takes its place, and a render of
+// the earlier one returns gvc.ErrNotLaidOutLast. Such a caller keeps other
+// layouts out between its Layout and its RenderData, or lays the graph out
+// again on that error. While a layout runs no graph can be rendered.
+//
+// A callback a render makes (a RenderEngine method, a FontLoader) runs
+// inside that call and may use the API on the same goroutine, within that
+// rule: a render it asks for from inside a layout is refused. Another
+// goroutine's call waits until the render ends. The context and the handles
+// a callback receives (the Job, its points, spans and colours) identify that
+// call to the lock, so a callback must not hand them to another goroutine
+// while it runs; the points, spans, boxes and colours are copies that are
+// freed when the callback returns, so they are not to be kept past it
+// either.
 //
 // Getters that return a value and no error (Job.Width, Symbol.Name,
 // ObjectState.PenColor, …) read the WebAssembly module's memory and panic if
