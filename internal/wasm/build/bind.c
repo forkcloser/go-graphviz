@@ -3801,6 +3801,17 @@ void wasm_bridge_version(void ** _arg0) {
   *_arg0 = v;
 }
 
+WASM_EXPORT(wasm_bridge_imageFile)
+void wasm_bridge_imageFile(void * _arg0, void ** _arg1) {
+  char * arg0;
+  arg0 = (char *)_arg0;
+  char * ret = bridge_image_file(
+    arg0
+  );
+  GoString *v = newString(ret);
+  *_arg1 = v;
+}
+
 WASM_EXPORT(wasm_bridge_Context_layout)
 void wasm_bridge_Context_layout(void * _arg0, void * _arg1, void * _arg2, int* _arg3) {
   GVC_t * arg0;

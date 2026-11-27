@@ -406,3 +406,64 @@ func TestImageDrawnAfterAnotherLayout(t *testing.T) {
 		}
 	}
 }
+
+// A node's image is found on the graph's imagepath, as Graphviz finds it to
+// size it: the first file of that name in the path's directories, a name
+// that is absolute being taken as it is. The renderer opened the name as
+// the graph has it, so an image the layout had sized failed the render
+// ("opening image pic.png: file does not exist").
+func TestRasterNodeImageOnTheImagepath(t *testing.T) {
+	const side = 40
+
+	red := encodePNG(t, solidImage(side, side, color.RGBA{R: 255, A: 255}))
+	blue := encodePNG(t, solidImage(side, side, color.RGBA{B: 255, A: 255}))
+
+	images := fstest.MapFS{
+		"pics/sub/pic.png": {Data: red},
+		"first/pic.png":    {Data: red},
+		"second/pic.png":   {Data: blue},
+		"pic.png":          {Data: blue},
+		"other/readme.txt": {Data: []byte("no image here")},
+	}
+
+	// graph is a graph whose one node shows the image named, with imagepath
+	// set.
+	graph := func(imagepath, name string) string {
+		return `digraph { imagepath="` + imagepath + `"; a [shape=box label="" color=white image="` + name + `"] }`
+	}
+
+	for name, tc := range map[string]struct {
+		imagepath, image string
+	}{
+		"one directory":                     {"pics/sub", "pic.png"},
+		"the second of two":                 {"other:pics/sub", "pic.png"},
+		"the first that has it":             {"first:second", "pic.png"},
+		"a rooted directory":                {"/pics/sub", "pic.png"},
+		"an absolute name, whatever it is":  {"second", "/first/pic.png"},
+		"a name with a directory, under it": {"pics", "sub/pic.png"},
+		// A directory written another way is the same directory: Graphviz
+		// joins it to the name as it is written.
+		"a trailing slash":          {"pics/sub/", "pic.png"},
+		"a leading dot":             {"./pics/sub", "pic.png"},
+		"a trailing dot":            {"pics/sub/.", "pic.png"},
+		"two slashes":               {"pics//sub", "pic.png"},
+		"up and down again":         {"pics/sub/../sub", "pic.png"},
+		"through another":           {"other/../pics/sub", "pic.png"},
+		"a name not clean, no path": {"", "./first/../pics//sub/pic.png"},
+	} {
+		got := redBounds(renderWithImages(t, images, graph(tc.imagepath, tc.image), graphviz.PNG))
+		if math.Abs(float64(got.Dx()-side)) > 2 || math.Abs(float64(got.Dy()-side)) > 2 {
+			t.Errorf("%s (imagepath=%q image=%q): the red image is drawn %d by %d, want %d a side",
+				name, tc.imagepath, tc.image, got.Dx(), got.Dy(), side)
+		}
+	}
+
+	// A name the path does not have is no image, a file of that name outside
+	// the path or not: Graphviz warns at the layout and the node is drawn
+	// without it.
+	outside := fstest.MapFS{"pic.png": {Data: red}, "other/readme.txt": {Data: []byte("no image here")}}
+
+	if got := redBounds(renderWithImages(t, outside, graph("other", "pic.png"), graphviz.PNG)); !got.Empty() {
+		t.Errorf("an image the imagepath does not have is drawn, %d by %d", got.Dx(), got.Dy())
+	}
+}

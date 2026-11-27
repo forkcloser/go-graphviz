@@ -11100,3 +11100,21 @@ func Version(ctx context.Context) (string, error) {
 	}
 	return ret, nil
 }
+
+func ImageFile(ctx context.Context, _arg0 string) (string, error) {
+	var zero string
+	arg0, err := mod.toStringWasmValue(ctx, _arg0)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, arg0)
+	p, err := mod.callWithRet(ctx, "imageFile", arg0)
+	if err != nil {
+		return zero, err
+	}
+	ret, err := mod.toString(ctx, p)
+	if err != nil {
+		return zero, err
+	}
+	return ret, nil
+}
