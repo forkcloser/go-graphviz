@@ -261,3 +261,48 @@ func TestCustomPluginsAfterCollection(t *testing.T) {
 		}
 	}
 }
+
+// A layout of a graph that has one frees the earlier one. Graphviz lays out
+// over it: the earlier one stayed in the module, about 1.6 KiB for two
+// nodes at each layout, and what one engine left on the graph trapped the
+// module under the next ("out of bounds memory access" in dot_position).
+func TestLayoutOverALayoutLeavesNoMemory(t *testing.T) {
+	ctx := t.Context()
+
+	c, err := gvc.New(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, c.Close) })
+
+	graph, err := graphviz.ParseBytes([]byte(`digraph { a -> b; b [shape=box label="text"] }`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { closeOrError(t, graph.Close) })
+
+	engines := []string{"dot", "neato", "circo"}
+	round := 0
+
+	growth := memoryGrowth(3000, func() {
+		round++
+
+		if layoutErr := c.Layout(ctx, graph, engines[round%len(engines)]); layoutErr != nil {
+			t.Fatal(layoutErr)
+		}
+	})
+	if growth != 0 {
+		t.Errorf("3000 layouts of one graph, none freed, grew the module by %d bytes", growth)
+	}
+
+	var out bytes.Buffer
+	if err = c.RenderData(ctx, graph, "svg", &out); err != nil || out.Len() == 0 {
+		t.Errorf("the graph laid out last of them renders %d bytes, %v", out.Len(), err)
+	}
+
+	if err = c.FreeLayout(ctx, graph); err != nil {
+		t.Error(err)
+	}
+}

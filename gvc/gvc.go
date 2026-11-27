@@ -110,6 +110,9 @@ func (c *Context) Close() error {
 // FreeLayout leaves the layout in the module. After any other error there
 // is nothing to free: what the layout left on the graph, Layout has freed.
 //
+// A layout the graph already has is freed first: laying a graph out again
+// needs no FreeLayout between the two.
+//
 // The graph a Layout lays out is the one the process can render, until the
 // next Layout of any graph on any context: see ErrNotLaidOutLast.
 //
@@ -127,6 +130,13 @@ func (c *Context) Layout(ctx context.Context, graph *cgraph.Graph, engine string
 		// Read in the turn that uses it: see Close.
 		if c.gvc == nil {
 			return ErrClosed
+		}
+
+		// A layout the graph already has is freed first. Graphviz lays out
+		// over it: the earlier one stays in the module for good, and what
+		// one engine left on the graph traps the module under another's.
+		if _, err := c.gvc.FreeLayout(ctx, toGraphWasm(graph)); err != nil {
+			return err
 		}
 
 		mark := wasm.ErrorMark()
@@ -470,8 +480,9 @@ var ErrReported = errors.New("reported, and the call went on to its end")
 // its own, one set for the process, which the next layout replaces and a
 // render reads. Rendering another graph from them traps the module.
 //
-// The graph keeps its layout, to free. Freed and laid out again, it is the
-// one to render. After a layout that failed there is no graph to render.
+// The graph keeps its layout, to free. Laid out again, which frees that
+// layout first, it is the one to render. After a layout that failed there
+// is no graph to render.
 var ErrNotLaidOutLast = errors.New("the graph is not the one laid out last")
 
 // laidOutLast is the root, by its address in the module, of the graph laid

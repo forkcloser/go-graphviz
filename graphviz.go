@@ -13,9 +13,8 @@
 // the graph the process laid out last and no other: a layout of any graph,
 // on any context and from any goroutine, takes its place, and a render of
 // the earlier one returns gvc.ErrNotLaidOutLast. Such a caller keeps other
-// layouts out between its Layout and its RenderData, or, on that error,
-// frees the graph's layout and lays it out again. While a layout runs no
-// graph can be rendered.
+// layouts out between its Layout and its RenderData, or lays the graph out
+// again on that error. While a layout runs no graph can be rendered.
 //
 // A callback a render makes (a RenderEngine method, a FontLoader) runs
 // inside that call and may use the API on the same goroutine, within that
